@@ -5,6 +5,7 @@
 > - Based on: [`digital-life-project-overview.md`](digital-life-project-overview.md) — the initial project proposition
 > - Addresses: [`unified-review.md`](unified-review.md) — all critical/high/medium issues raised in the peer review
 > - Revised: 2026-02-10 — incorporates second-round review feedback on validation bias, reproducibility, and statistical design
+> - Revised: 2026-02-10 — incorporates Gemini external review: LLM scoped to ablation study, added blind spots (genotype encoding, thermodynamics, debugger), parallel writing strategy
 
 ## Interview Summary
 
@@ -15,9 +16,9 @@
 | アーキテクチャ | **ハイブリッド** — swarmエージェントがorganism的上位構造を形成する二層構造 |
 | スケール | 小規模: 10-50エージェント/organism、環境に10-50 organisms |
 | 投稿先 | **ALIFE 2026 Full Paper (8p)**、締切 **2026-04-01** |
-| 計算環境 | Mac Mini M2 Pro + ローカルLLM (Ollama) |
+| 計算環境 | Mac Mini M2 Pro |
 | 実装言語 | **Python + Rust ハイブリッド**（コアシミュレーション: Rust、実験管理/分析: Python） |
-| エージェントの脳 | **進化的NNコントローラーが主軸**。ローカルLLMは比較実験用の代替コンポーネント |
+| エージェントの脳 | **進化的NNコントローラー**（主軸）。ローカルLLMはablation study（1実験）のみ |
 | 代謝リソース | **未定** — Phase 1で実験的に決定 |
 | 環境 | 連続2D空間 |
 | ビジュアル | 中程度（基本的な2D描画、論文用figure品質） |
@@ -86,7 +87,7 @@
 | 代謝ネットワークが1000ステップ維持不可 | グラフベース → 連続力学系ベース（ODEベース代謝） |
 | ハイブリッド二層構造が不安定 | Swarmを落とし、Agent-basedに単純化 |
 | 7基準統合が間に合わない | 論文を「代謝+恒常性+細胞組織化」の3基準に絞り、残りは将来研究 |
-| ローカルLLMが遅すぎる | LLMを捨て、進化的NNコントローラーに一本化 |
+| ローカルLLMがablation studyに使えない | ablation節を削除しNNのみで論文構成（将来研究に記載） |
 
 ### H4. スケジュール → 8週間計画（下記）
 
@@ -112,14 +113,17 @@
 - [ ] Rust + Python プロジェクトセットアップ（PyO3 or maturin）
 - [ ] 連続2D環境の基本フレームワーク実装
 - [ ] 再現性基盤の構築（下記「再現性仕様」参照）
+- [ ] **リアルタイムビジュアルデバッガー**の実装（egui or macroquad。開発効率に直結）
+- [ ] **Genotype-Phenotype マッピング**の設計（direct encoding + 冗長領域）
 
 **Go/No-Go (Week 1末)**:
 - 進化的NNコントローラーの基本動作確認（50エージェントで実用速度か？）
-- ローカルLLMベンチマーク: 比較実験の実現可能性判定
 
 ### Week 2-3 (02/17-03/02): Phase 1A — 代謝 + 細胞組織化 (calibration set)
 
 **目標**: 単一organismが自律的に維持される最小システム
+
+**並行執筆**: Methods セクション（システム設計の記述）を実装と同時に草稿
 
 **代謝**:
 - [ ] リソースタイプの決定（予備実験で3種類を比較テスト）
@@ -127,7 +131,8 @@
   - 候補B: 空間的リソース（光、栄養素の空間分布）
   - 候補C: 情報リソース（環境からの情報を処理して有用な形に変換）
 - [ ] グラフベース代謝ネットワーク実装（Rustコア）
-- [ ] 代謝ネットワークの遺伝的エンコーディング
+- [ ] **熱力学的制約**: エネルギー損失率、廃棄物蓄積、エントロピー増大の組み込み
+- [ ] 代謝ネットワークの遺伝的エンコーディング（Week 1で設計したGenotype-Phenotypeマッピング適用）
 - [ ] 廃棄物排出メカニズム
 
 **細胞組織化**:
@@ -135,17 +140,23 @@
 - [ ] アクティブ境界維持プロセス（代謝コスト消費）
 - [ ] 境界崩壊メカニズム（維持コストが払えないと溶解）
 
+**Go/No-Go (Week 2 Day 3 = 02/19)**:
+- Swarm境界が安定しているか？
+- No → 単一エージェント型の円形メンブレンにフォールバック
+
 **Go/No-Go (Week 3末)**:
 - 単一organismが1000タイムステップ自律維持できるか？
 - No → 代謝をODEベースに切り替え（ピボットA）
+- No (代謝+境界の両方が不安定) → 手動設計による安定システムで「System Design論文」にピボット
 
 ### Week 4 (03/03-03/09): Phase 1B — 恒常性 + 刺激応答 (calibration set)
 
 **目標**: 環境摂動からの回復能力
 
+**並行執筆**: Experimental Setup セクション（環境条件、摂動プロトコル）を草稿
+
 - [ ] 内部状態ベクトルの実装（代謝スループット、境界完全性、リソースレベル）
-- [ ] 進化的NNコントローラーによる恒常性調整（主軸）
-- [ ] ローカルLLMコントローラーの並行実装（比較実験用）
+- [ ] 進化的NNコントローラーによる恒常性調整
 - [ ] 感覚入力の実装（リソース勾配、他organism検出、環境条件）
 - [ ] 環境摂動テスト（リソース枯渇、温度変化的イベント）
 - [ ] 恒常性メトリクス: 摂動後の回復時間、内部状態の分散
@@ -173,6 +184,8 @@
 
 **目標**: 集団進化の動作確認
 
+**並行執筆**: Related Work セクション（既存システム比較表を含む）を草稿
+
 - [ ] 複数organism（10-50体）の同時シミュレーション
 - [ ] 遺伝的変異（点変異、挿入/欠失、重複）
 - [ ] 環境変動（リソース分布の変化、新たな摂動タイプ）
@@ -189,22 +202,24 @@
 
 - [ ] **Final test set** (seeds 100-199) による本評価の実施。calibrationで固定した閾値を適用
 - [ ] 各基準の統計検定（Mann-Whitney U, Holm-Bonferroni補正, Cohen's d報告）
-- [ ] NN vs LLM コントローラー比較実験の実施・結果分析
+- [ ] **LLM ablation study**: NNコントローラーをローカルLLMに差し替えた単一条件実験（時間が許す場合のみ）
 - [ ] 既存システムとの文献ベース比較表の完成（ルーブリック適用、inter-rater κ算出）
+- [ ] **Killer figure作成**: 7生物学的基準 → 7計算的実装の対応マップ
 - [ ] 非公式知覚評価の実施（同僚5-10名にデモを見せる）
 - [ ] 論文用figure生成（シミュレーションスナップショット、メトリクス推移グラフ）
 - [ ] 動画作成（補足資料用）
 
-### Week 7.5-8 (03/29-04/01): Phase 5 — 論文執筆
+### Week 7.5-8 (03/29-04/01): Phase 5 — 論文仕上げ
 
 **目標**: Full Paper (8p) 完成 + 投稿
 
+並行執筆済みセクション（Methods, Experimental Setup, Related Work）を統合し、残りを執筆:
+
 - [ ] Abstract + Introduction（理論的基盤、C1対応）
-- [ ] Related Work（既存システム比較、H2対応）
-- [ ] System Design（ハイブリッドアーキテクチャの詳細）
-- [ ] Experiments & Results（定量評価、C2対応）
-- [ ] Discussion（限界、ピボット結果、将来研究）
+- [ ] Results（定量評価結果、C2対応）
+- [ ] Discussion（限界、LLM ablation結果（あれば）、将来研究）
 - [ ] 参考文献の書誌情報完備（L1対応）
+- [ ] 全体の統合・推敲
 - [ ] ドメイン専門家によるレビュー
 - [ ] **04/01 投稿**
 
@@ -240,7 +255,7 @@
 各Organism内部:
 - Swarm Agents: 境界維持、感覚、運動を担う個別エージェント群
 - Metabolic Network: グラフベースの代謝経路（遺伝的にエンコード）
-- Neural Controller: 恒常性調整 + 行動制御（主軸: 進化的NN、比較: ローカルLLM）
+- Neural Controller: 恒常性調整 + 行動制御（進化的NN。LLMはablation studyのみ）
 - Genome: 代謝ネットワーク + 発生プログラム + NNアーキテクチャを符号化
 ```
 
@@ -252,7 +267,8 @@
 |--------|:------:|:----:|---------|
 | 代謝ネットワークが維持不可 | 高 | 中 | ODEベース代謝に切替 |
 | ハイブリッド二層が不安定 | 高 | 中 | Agent-basedに単純化 |
-| ローカルLLMが比較実験に使えない | 低 | 中 | NNのみで論文を構成（LLM比較は将来研究） |
+| LLM ablation studyが実施不可 | 低 | 中 | ablation節を省略（将来研究に記載） |
+| Swarm境界が不安定 (Week 2 Day 3) | 中 | 中 | 単一エージェント型円形メンブレンにフォールバック |
 | 7基準統合が間に合わない | 高 | 中 | 3-5基準に絞る |
 | 8週間でFull Paper完成不可 | 中 | 中 | Extended Abstractに切替 |
 | M2 Proで集団進化が回らない | 中 | 低 | 集団サイズ縮小 or クラウドGPU |
@@ -292,15 +308,15 @@
 |------|------|
 | ランダムシード | calibration: 0-99, final test: 100-199。全シードをconfig fileで管理 |
 | 進化的NNコントローラー | アーキテクチャ・初期化方法・変異率を論文に記載 |
-| ローカルLLM（比較実験用） | モデル名・量子化レベル・temperature・top_p・seedを固定し記録 |
-| 推論バックエンド | Ollama バージョン、OS、ハードウェアを記録 |
+| ローカルLLM（ablation studyのみ） | モデル名・量子化レベル・temperature・top_p・seedを固定し記録 |
+| 推論バックエンド | Ollama バージョン、OS、ハードウェアを記録（ablation実施時のみ） |
 | シミュレーション | タイムステップ数、環境サイズ、リソース初期配置を固定 |
 | コード | Git commit hashと対応する実験結果を紐付け |
 
-**注意**: ローカルLLMは研究主張の中心ではなく代替可能コンポーネントとして扱う。主軸の進化的NNコントローラーはシード固定で完全再現可能。LLM比較実験は「同一プロンプト・同一パラメータで再実行可能」な水準を目指すが、LLMの非決定性は論文のlimitationとして明記する。
+**注意**: 論文の主張は進化的NNコントローラー（シード固定で完全再現可能）のみに依存する。LLMは論文Section 5.3相当のablation studyとして「NNコントローラーを基盤モデルに差し替えた場合の比較」を1実験のみ実施する。時間不足の場合はablationを省略し、将来研究として記載する。LLMの非決定性はlimitationとして明記する。
 
 ---
 
 *Document generated: 2026-02-08*
-*Revised: 2026-02-10 — second-round review feedback incorporated*
-*Based on: unified-review.md + interview results + second-round review*
+*Revised: 2026-02-10 — second-round review + Gemini external review incorporated*
+*Based on: unified-review.md + interview results + second-round review + Gemini review*
