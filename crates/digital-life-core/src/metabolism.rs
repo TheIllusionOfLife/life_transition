@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::sync::OnceLock;
 
 /// Per-organism metabolic state.
 #[derive(Clone, Debug)]
@@ -102,7 +103,7 @@ impl ToyMetabolism {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct GraphMetabolism {
     pub graph: MetabolicGraph,
     pub uptake_rate: f32,
@@ -112,6 +113,14 @@ pub struct GraphMetabolism {
     pub max_energy: f32,
     pub waste_decay_rate: f32,
     pub max_waste: f32,
+    cache: OnceLock<std::sync::Mutex<GraphExecutionCache>>,
+}
+
+#[derive(Clone, Debug, Default)]
+struct GraphExecutionCache {
+    node_id_fingerprint: u64,
+    node_index_by_id: HashMap<u16, usize>,
+    incoming: Vec<f32>,
 }
 
 impl Default for GraphMetabolism {
@@ -126,7 +135,35 @@ impl Default for GraphMetabolism {
             max_energy: toy.max_energy,
             waste_decay_rate: toy.waste_decay_rate,
             max_waste: toy.max_waste,
+            cache: OnceLock::new(),
         }
+    }
+}
+
+impl Clone for GraphMetabolism {
+    fn clone(&self) -> Self {
+        Self {
+            graph: self.graph.clone(),
+            uptake_rate: self.uptake_rate,
+            conversion_efficiency: self.conversion_efficiency,
+            waste_ratio: self.waste_ratio,
+            energy_loss_rate: self.energy_loss_rate,
+            max_energy: self.max_energy,
+            waste_decay_rate: self.waste_decay_rate,
+            max_waste: self.max_waste,
+            cache: OnceLock::new(),
+        }
+    }
+}
+
+impl GraphMetabolism {
+    fn node_fingerprint(&self) -> u64 {
+        self.graph
+            .nodes
+            .iter()
+            .fold(1469598103934665603u64, |acc, node| {
+                acc.wrapping_mul(1099511628211).wrapping_add(node.id as u64)
+            })
     }
 }
 
@@ -155,19 +192,32 @@ impl GraphMetabolism {
         let uptake = (self.uptake_rate * dt).min(state.resource).max(0.0);
         state.resource -= uptake;
 
-        let mut incoming = vec![0.0f32; self.graph.nodes.len()];
-        incoming[0] = uptake;
-
-        let mut index_by_id = HashMap::with_capacity(self.graph.nodes.len());
-        for (idx, node) in self.graph.nodes.iter().enumerate() {
-            index_by_id.insert(node.id, idx);
+        let cache = self
+            .cache
+            .get_or_init(|| std::sync::Mutex::new(GraphExecutionCache::default()));
+        let mut cache = cache.lock().expect("graph cache mutex poisoned");
+        let fingerprint = self.node_fingerprint();
+        if cache.node_id_fingerprint != fingerprint
+            || cache.node_index_by_id.len() != self.graph.nodes.len()
+        {
+            cache.node_index_by_id.clear();
+            cache.node_index_by_id.reserve(self.graph.nodes.len());
+            for (idx, node) in self.graph.nodes.iter().enumerate() {
+                cache.node_index_by_id.insert(node.id, idx);
+            }
+            cache.node_id_fingerprint = fingerprint;
         }
+        if cache.incoming.len() != self.graph.nodes.len() {
+            cache.incoming.resize(self.graph.nodes.len(), 0.0);
+        }
+        cache.incoming.fill(0.0);
+        cache.incoming[0] = uptake;
 
         let mut terminal_product = 0.0f32;
         let mut inefficiency_loss = 0.0f32;
 
         for (idx, node) in self.graph.nodes.iter().enumerate() {
-            let substrate = incoming[idx].max(0.0);
+            let substrate = cache.incoming[idx].max(0.0);
             if substrate <= 0.0 {
                 continue;
             }
@@ -177,7 +227,7 @@ impl GraphMetabolism {
 
             let mut allocated = 0.0f32;
             for edge in self.graph.edges.iter().filter(|edge| edge.from == node.id) {
-                if let Some(&to_idx) = index_by_id.get(&edge.to) {
+                if let Some(&to_idx) = cache.node_index_by_id.get(&edge.to) {
                     if allocated >= produced {
                         break;
                     }
@@ -188,7 +238,7 @@ impl GraphMetabolism {
                     let desired = produced * ratio;
                     let flow = desired.min(produced - allocated);
                     let transferred = flow * 0.98;
-                    incoming[to_idx] += transferred;
+                    cache.incoming[to_idx] += transferred;
                     allocated += flow;
                     inefficiency_loss += flow - transferred;
                 }

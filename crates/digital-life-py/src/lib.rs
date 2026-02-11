@@ -61,19 +61,35 @@ fn step_once(
 
 #[pyfunction]
 fn run_experiment_json(config_json: &str, steps: usize, sample_every: usize) -> PyResult<String> {
-    let config: SimConfig = serde_json::from_str(config_json)
-        .map_err(|e| PyValueError::new_err(format!("invalid config json: {e}")))?;
+    run_experiment_json_impl(config_json, steps, sample_every).map_err(PyValueError::new_err)
+}
+
+fn run_experiment_json_impl(
+    config_json: &str,
+    steps: usize,
+    sample_every: usize,
+) -> Result<String, String> {
+    if steps > World::MAX_EXPERIMENT_STEPS {
+        return Err(format!(
+            "steps ({steps}) exceeds supported maximum ({})",
+            World::MAX_EXPERIMENT_STEPS
+        ));
+    }
+    let config: SimConfig =
+        serde_json::from_str(config_json).map_err(|e| format!("invalid config json: {e}"))?;
     let (agents, nns) = bootstrap_entities(
         config.num_organisms,
         config.agents_per_organism,
         config.world_size,
     )
-    .map_err(|e| PyValueError::new_err(format!("invalid world configuration: {e}")))?;
+    .map_err(|e| format!("invalid world configuration: {e}"))?;
     let mut world = World::try_new(agents, nns, config)
-        .map_err(|e| PyValueError::new_err(format!("invalid world configuration: {e}")))?;
-    let summary = world.run_experiment(steps, sample_every);
+        .map_err(|e| format!("invalid world configuration: {e}"))?;
+    let summary = world
+        .try_run_experiment(steps, sample_every)
+        .map_err(|e| format!("invalid experiment parameters: {e}"))?;
     serde_json::to_string(&summary)
-        .map_err(|e| PyValueError::new_err(format!("failed to serialize experiment summary: {e}")))
+        .map_err(|e| format!("failed to serialize experiment summary: {e}"))
 }
 
 fn bootstrap_entities(
@@ -179,5 +195,13 @@ mod tests {
             serde_json::from_str(&output).expect("output should be valid json");
         assert_eq!(payload["steps"].as_u64(), Some(10));
         assert!(payload["samples"].as_array().is_some());
+    }
+
+    #[test]
+    fn run_experiment_json_impl_rejects_zero_sampling_interval() {
+        let config_json =
+            serde_json::to_string(&SimConfig::default()).expect("config should serialize");
+        let result = run_experiment_json_impl(&config_json, 10, 0);
+        assert!(result.is_err());
     }
 }

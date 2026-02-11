@@ -9,6 +9,7 @@ pub enum MetabolismMode {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(default)]
 pub struct SimConfig {
     /// Deterministic seed for reproducible simulation runs.
     pub seed: u64,
@@ -36,6 +37,16 @@ pub struct SimConfig {
     pub boundary_decay_base_rate: f32,
     /// Additional boundary decay scale from low energy and waste pressure.
     pub boundary_decay_energy_scale: f32,
+    /// Weight applied to waste when computing boundary maintenance pressure.
+    pub boundary_waste_pressure_scale: f32,
+    /// Per-step boundary repair multiplier from available energy.
+    pub boundary_repair_rate: f32,
+    /// Boundary threshold below which the organism is considered collapsed.
+    pub boundary_collapse_threshold: f32,
+    /// Energy threshold used in terminal viability checks.
+    pub death_energy_threshold: f32,
+    /// Boundary threshold used in terminal viability checks.
+    pub death_boundary_threshold: f32,
     /// Selects metabolism engine behavior.
     pub metabolism_mode: MetabolismMode,
 }
@@ -56,6 +67,11 @@ impl Default for SimConfig {
             metabolic_viability_floor: 0.2,
             boundary_decay_base_rate: 0.003,
             boundary_decay_energy_scale: 0.02,
+            boundary_waste_pressure_scale: 0.5,
+            boundary_repair_rate: 0.01,
+            boundary_collapse_threshold: 0.05,
+            death_energy_threshold: 0.0,
+            death_boundary_threshold: 0.1,
             metabolism_mode: MetabolismMode::Toy,
         }
     }
