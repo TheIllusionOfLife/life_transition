@@ -96,6 +96,7 @@ pub enum WorldInitError {
     InvalidReproductionMinEnergy,
     InvalidReproductionMinBoundary,
     InvalidReproductionEnergyCost,
+    InvalidReproductionEnergyBalance,
     InvalidReproductionChildMinAgents,
     InvalidReproductionSpawnRadius,
     InvalidCrowdingNeighborThreshold,
@@ -167,6 +168,12 @@ impl fmt::Display for WorldInitError {
             }
             WorldInitError::InvalidReproductionEnergyCost => {
                 write!(f, "reproduction_energy_cost must be finite and positive")
+            }
+            WorldInitError::InvalidReproductionEnergyBalance => {
+                write!(
+                    f,
+                    "reproduction_min_energy must be greater than or equal to reproduction_energy_cost"
+                )
             }
             WorldInitError::InvalidReproductionChildMinAgents => {
                 write!(f, "reproduction_child_min_agents must be positive")
@@ -453,7 +460,7 @@ impl World {
             return Err(WorldInitError::InvalidReproductionEnergyCost);
         }
         if config.reproduction_min_energy < config.reproduction_energy_cost {
-            return Err(WorldInitError::InvalidReproductionMinEnergy);
+            return Err(WorldInitError::InvalidReproductionEnergyBalance);
         }
         if config.reproduction_child_min_agents == 0 {
             return Err(WorldInitError::InvalidReproductionChildMinAgents);
@@ -1481,7 +1488,7 @@ mod tests {
         let result = World::try_new(agents, vec![nn], cfg);
         assert!(matches!(
             result,
-            Err(WorldInitError::InvalidReproductionMinEnergy)
+            Err(WorldInitError::InvalidReproductionEnergyBalance)
         ));
     }
 
