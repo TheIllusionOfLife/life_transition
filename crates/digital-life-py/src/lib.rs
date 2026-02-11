@@ -21,8 +21,12 @@ fn default_config_json() -> PyResult<String> {
 fn validate_config_json(config_json: &str) -> PyResult<bool> {
     let config: SimConfig = serde_json::from_str(config_json)
         .map_err(|e| PyValueError::new_err(format!("invalid config json: {e}")))?;
-    let (agents, nns) = bootstrap_entities(config.num_organisms, config.agents_per_organism)
-        .map_err(|e| PyValueError::new_err(format!("invalid world configuration: {e}")))?;
+    let (agents, nns) = bootstrap_entities(
+        config.num_organisms,
+        config.agents_per_organism,
+        config.world_size,
+    )
+    .map_err(|e| PyValueError::new_err(format!("invalid world configuration: {e}")))?;
     World::try_new(agents, nns, config)
         .map(|_| true)
         .map_err(|e| PyValueError::new_err(format!("invalid world configuration: {e}")))
@@ -41,8 +45,8 @@ fn step_once(
         )));
     }
 
-    let (agents, nns) =
-        bootstrap_entities(num_organisms, agents_per_organism).map_err(PyValueError::new_err)?;
+    let (agents, nns) = bootstrap_entities(num_organisms, agents_per_organism, world_size)
+        .map_err(PyValueError::new_err)?;
     let config = SimConfig {
         num_organisms,
         agents_per_organism,
@@ -58,12 +62,14 @@ fn step_once(
 fn bootstrap_entities(
     num_organisms: usize,
     agents_per_organism: usize,
+    world_size: f64,
 ) -> Result<(Vec<Agent>, Vec<NeuralNet>), String> {
     let total_agents = checked_total_agents(num_organisms, agents_per_organism)?;
+    let wrapped_origin = 0.0f64.rem_euclid(world_size.max(1.0));
     let agents = (0..total_agents)
         .map(|i| {
             let organism_id = (i / agents_per_organism.max(1)) as u16;
-            Agent::new(i as u32, organism_id, [50.0, 50.0])
+            Agent::new(i as u32, organism_id, [wrapped_origin, wrapped_origin])
         })
         .collect();
     let nns = (0..num_organisms)

@@ -89,25 +89,14 @@ impl ToyMetabolism {
         external_resource: f32,
         dt: f32,
     ) -> MetabolismFlux {
-        let external_cap = (self.uptake_rate * dt).max(0.0);
-        let consumed_external = external_resource.max(0.0).min(external_cap);
-        state.resource += consumed_external;
-
-        let uptake = (self.uptake_rate * dt).min(state.resource).max(0.0);
-        state.resource -= uptake;
-        state.energy += uptake * self.conversion_efficiency;
-        state.waste += uptake * self.waste_ratio;
-        state.waste = (state.waste - self.waste_decay_rate * dt).clamp(0.0, self.max_waste);
-
-        // Minimal thermodynamic loss to avoid unbounded free energy growth.
-        let retained = (1.0 - self.energy_loss_rate * dt).clamp(0.0, 1.0);
-        state.energy = (state.energy * retained).clamp(0.0, self.max_energy);
-
-        MetabolismFlux {
-            consumed_external,
-            consumed_total: uptake,
-            produced_waste: uptake * self.waste_ratio,
-        }
+        let params = MetabolismParams::from_toy(self);
+        apply_metabolism_step(
+            params,
+            self.conversion_efficiency,
+            state,
+            external_resource,
+            dt,
+        )
     }
 }
 
@@ -158,25 +147,8 @@ impl GraphMetabolism {
                 / self.graph.nodes.len() as f32
         };
         let converted_eff = (self.conversion_efficiency * node_efficiency).clamp(0.0, 1.0);
-
-        let external_cap = (self.uptake_rate * dt).max(0.0);
-        let consumed_external = external_resource.max(0.0).min(external_cap);
-        state.resource += consumed_external;
-
-        let uptake = (self.uptake_rate * dt).min(state.resource).max(0.0);
-        state.resource -= uptake;
-        state.energy += uptake * converted_eff;
-        state.waste += uptake * self.waste_ratio;
-        state.waste = (state.waste - self.waste_decay_rate * dt).clamp(0.0, self.max_waste);
-
-        let retained = (1.0 - self.energy_loss_rate * dt).clamp(0.0, 1.0);
-        state.energy = (state.energy * retained).clamp(0.0, self.max_energy);
-
-        MetabolismFlux {
-            consumed_external,
-            consumed_total: uptake,
-            produced_waste: uptake * self.waste_ratio,
-        }
+        let params = MetabolismParams::from_graph(self);
+        apply_metabolism_step(params, converted_eff, state, external_resource, dt)
     }
 }
 
@@ -203,6 +175,68 @@ impl MetabolismEngine {
             MetabolismEngine::Toy(engine) => engine.step(state, external_resource, dt),
             MetabolismEngine::Graph(engine) => engine.step(state, external_resource, dt),
         }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+struct MetabolismParams {
+    uptake_rate: f32,
+    waste_ratio: f32,
+    energy_loss_rate: f32,
+    max_energy: f32,
+    waste_decay_rate: f32,
+    max_waste: f32,
+}
+
+impl MetabolismParams {
+    fn from_toy(engine: &ToyMetabolism) -> Self {
+        Self {
+            uptake_rate: engine.uptake_rate,
+            waste_ratio: engine.waste_ratio,
+            energy_loss_rate: engine.energy_loss_rate,
+            max_energy: engine.max_energy,
+            waste_decay_rate: engine.waste_decay_rate,
+            max_waste: engine.max_waste,
+        }
+    }
+
+    fn from_graph(engine: &GraphMetabolism) -> Self {
+        Self {
+            uptake_rate: engine.uptake_rate,
+            waste_ratio: engine.waste_ratio,
+            energy_loss_rate: engine.energy_loss_rate,
+            max_energy: engine.max_energy,
+            waste_decay_rate: engine.waste_decay_rate,
+            max_waste: engine.max_waste,
+        }
+    }
+}
+
+fn apply_metabolism_step(
+    params: MetabolismParams,
+    conversion_efficiency: f32,
+    state: &mut MetabolicState,
+    external_resource: f32,
+    dt: f32,
+) -> MetabolismFlux {
+    let external_cap = (params.uptake_rate * dt).max(0.0);
+    let consumed_external = external_resource.max(0.0).min(external_cap);
+    state.resource += consumed_external;
+
+    let uptake = (params.uptake_rate * dt).min(state.resource).max(0.0);
+    state.resource -= uptake;
+    state.energy += uptake * conversion_efficiency;
+    state.waste += uptake * params.waste_ratio;
+    state.waste = (state.waste - params.waste_decay_rate * dt).clamp(0.0, params.max_waste);
+
+    // Minimal thermodynamic loss to avoid unbounded free energy growth.
+    let retained = (1.0 - params.energy_loss_rate * dt).clamp(0.0, 1.0);
+    state.energy = (state.energy * retained).clamp(0.0, params.max_energy);
+
+    MetabolismFlux {
+        consumed_external,
+        consumed_total: uptake,
+        produced_waste: uptake * params.waste_ratio,
     }
 }
 

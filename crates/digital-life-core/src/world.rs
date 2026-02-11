@@ -4,6 +4,7 @@ use crate::metabolism::{MetabolicState, MetabolismEngine};
 use crate::nn::NeuralNet;
 use crate::resource::ResourceField;
 use crate::spatial;
+use std::f64::consts::PI;
 use std::time::Instant;
 use std::{error::Error, fmt};
 
@@ -23,7 +24,8 @@ pub struct World {
     metabolic_states: Vec<MetabolicState>,
     metabolism: MetabolismEngine,
     resource_field: ResourceField,
-    org_pos_sums: Vec<[f64; 2]>,
+    // Per-organism accumulators: [sin(x), cos(x), sin(y), cos(y)].
+    org_toroidal_sums: Vec<[f64; 4]>,
     org_counts: Vec<usize>,
 }
 
@@ -105,9 +107,17 @@ impl World {
             metabolic_states,
             metabolism: MetabolismEngine::default(),
             resource_field: ResourceField::new(world_size, 1.0, 1.0),
-            org_pos_sums: vec![[0.0, 0.0]; num_organisms],
+            org_toroidal_sums: vec![[0.0, 0.0, 0.0, 0.0]; num_organisms],
             org_counts: vec![0; num_organisms],
         })
+    }
+
+    fn toroidal_mean_coord(sum_sin: f64, sum_cos: f64, world_size: f64) -> f64 {
+        if sum_sin == 0.0 && sum_cos == 0.0 {
+            return 0.0;
+        }
+        let angle = sum_sin.atan2(sum_cos);
+        (angle.rem_euclid(2.0 * PI) / (2.0 * PI)) * world_size
     }
 
     fn validate_config_for_state(
@@ -270,20 +280,34 @@ impl World {
         }
 
         if self.config.enable_metabolism {
-            self.org_pos_sums.fill([0.0, 0.0]);
+            self.org_toroidal_sums.fill([0.0, 0.0, 0.0, 0.0]);
             self.org_counts.fill(0);
+            let world_size = self.config.world_size;
+            let tau_over_world = (2.0 * PI) / world_size;
             for agent in &self.agents {
                 let idx = agent.organism_id as usize;
-                self.org_pos_sums[idx][0] += agent.position[0];
-                self.org_pos_sums[idx][1] += agent.position[1];
+                let theta_x = agent.position[0] * tau_over_world;
+                let theta_y = agent.position[1] * tau_over_world;
+                self.org_toroidal_sums[idx][0] += theta_x.sin();
+                self.org_toroidal_sums[idx][1] += theta_x.cos();
+                self.org_toroidal_sums[idx][2] += theta_y.sin();
+                self.org_toroidal_sums[idx][3] += theta_y.cos();
                 self.org_counts[idx] += 1;
             }
 
             for (org_id, state) in self.metabolic_states.iter_mut().enumerate() {
                 let center = if self.org_counts[org_id] > 0 {
                     [
-                        self.org_pos_sums[org_id][0] / self.org_counts[org_id] as f64,
-                        self.org_pos_sums[org_id][1] / self.org_counts[org_id] as f64,
+                        Self::toroidal_mean_coord(
+                            self.org_toroidal_sums[org_id][0],
+                            self.org_toroidal_sums[org_id][1],
+                            world_size,
+                        ),
+                        Self::toroidal_mean_coord(
+                            self.org_toroidal_sums[org_id][2],
+                            self.org_toroidal_sums[org_id][3],
+                            world_size,
+                        ),
                     ]
                 } else {
                     [0.0, 0.0]
@@ -534,6 +558,24 @@ mod tests {
         assert!(
             after <= before,
             "resource field should be consumed by metabolism"
+        );
+    }
+
+    #[test]
+    fn toroidal_center_uses_wrapped_mean_for_resource_sampling() {
+        let mut world = make_world(2, 100.0);
+        // Cluster crosses boundary around x=0/100; mean should remain near edge, not center.
+        world.agents[0].position = [0.1, 50.0];
+        world.agents[1].position = [99.9, 50.0];
+        world.resource_field.set(0.0, 50.0, 2.0);
+        world.resource_field.set(50.0, 50.0, 0.0);
+        world.step();
+        let edge_resource = world.resource_field().get(0.0, 50.0);
+        let center_resource = world.resource_field().get(50.0, 50.0);
+        assert!(edge_resource < 2.0, "edge resource should be consumed");
+        assert!(
+            (center_resource - 0.0).abs() < f32::EPSILON,
+            "center resource should remain unchanged"
         );
     }
 }
