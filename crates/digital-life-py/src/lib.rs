@@ -19,17 +19,9 @@ fn default_config_json() -> PyResult<String> {
 
 #[pyfunction]
 fn validate_config_json(config_json: &str) -> PyResult<bool> {
-    let config: SimConfig = serde_json::from_str(config_json)
-        .map_err(|e| PyValueError::new_err(format!("invalid config json: {e}")))?;
-    let (agents, nns) = bootstrap_entities(
-        config.num_organisms,
-        config.agents_per_organism,
-        config.world_size,
-    )
-    .map_err(|e| PyValueError::new_err(format!("invalid world configuration: {e}")))?;
-    World::try_new(agents, nns, config)
+    world_from_config_json(config_json)
         .map(|_| true)
-        .map_err(|e| PyValueError::new_err(format!("invalid world configuration: {e}")))
+        .map_err(PyValueError::new_err)
 }
 
 #[pyfunction]
@@ -75,6 +67,15 @@ fn run_experiment_json_impl(
             World::MAX_EXPERIMENT_STEPS
         ));
     }
+    let mut world = world_from_config_json(config_json)?;
+    let summary = world
+        .try_run_experiment(steps, sample_every)
+        .map_err(|e| format!("invalid experiment parameters: {e}"))?;
+    serde_json::to_string(&summary)
+        .map_err(|e| format!("failed to serialize experiment summary: {e}"))
+}
+
+fn world_from_config_json(config_json: &str) -> Result<World, String> {
     let config: SimConfig =
         serde_json::from_str(config_json).map_err(|e| format!("invalid config json: {e}"))?;
     let (agents, nns) = bootstrap_entities(
@@ -83,13 +84,7 @@ fn run_experiment_json_impl(
         config.world_size,
     )
     .map_err(|e| format!("invalid world configuration: {e}"))?;
-    let mut world = World::try_new(agents, nns, config)
-        .map_err(|e| format!("invalid world configuration: {e}"))?;
-    let summary = world
-        .try_run_experiment(steps, sample_every)
-        .map_err(|e| format!("invalid experiment parameters: {e}"))?;
-    serde_json::to_string(&summary)
-        .map_err(|e| format!("failed to serialize experiment summary: {e}"))
+    World::try_new(agents, nns, config).map_err(|e| format!("invalid world configuration: {e}"))
 }
 
 fn bootstrap_entities(
@@ -202,6 +197,12 @@ mod tests {
         let config_json =
             serde_json::to_string(&SimConfig::default()).expect("config should serialize");
         let result = run_experiment_json_impl(&config_json, 10, 0);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn world_from_config_json_rejects_invalid_payload() {
+        let result = world_from_config_json("{\"world_size\": \"bad\"}");
         assert!(result.is_err());
     }
 }
