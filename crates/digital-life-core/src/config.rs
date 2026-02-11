@@ -60,3 +60,27 @@ impl Default for SimConfig {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn legacy_config_json_deserializes_with_defaults() {
+        let legacy_json = r#"{
+            "seed": 42,
+            "world_size": 100.0,
+            "num_organisms": 1,
+            "agents_per_organism": 1,
+            "sensing_radius": 5.0,
+            "max_speed": 2.0,
+            "dt": 0.1,
+            "neighbor_norm": 50.0,
+            "enable_metabolism": true,
+            "enable_boundary_maintenance": true
+        }"#;
+        let cfg: SimConfig = serde_json::from_str(legacy_json).expect("legacy config should parse");
+        assert_eq!(cfg.metabolism_mode, MetabolismMode::Toy);
+        assert!(cfg.boundary_decay_base_rate > 0.0);
+    }
+}

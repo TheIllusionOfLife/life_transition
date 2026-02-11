@@ -736,4 +736,31 @@ mod tests {
         let world = World::new(agents, vec![nn], config);
         assert!(matches!(world.metabolism, MetabolismEngine::Graph(_)));
     }
+
+    #[test]
+    fn try_new_rejects_invalid_boundary_decay_config() {
+        let agents = vec![Agent::new(0, 0, [0.0, 0.0])];
+        let nn = NeuralNet::from_weights(std::iter::repeat_n(0.0f32, NeuralNet::WEIGHT_COUNT));
+        let cfg = SimConfig {
+            num_organisms: 1,
+            agents_per_organism: 1,
+            boundary_decay_base_rate: -0.1,
+            ..SimConfig::default()
+        };
+        let result = World::try_new(agents, vec![nn], cfg);
+        assert!(matches!(
+            result,
+            Err(WorldInitError::InvalidBoundaryDecayBaseRate)
+        ));
+    }
+
+    #[test]
+    fn try_run_experiment_rejects_too_many_steps() {
+        let mut world = make_world(1, 100.0);
+        let result = world.try_run_experiment(World::MAX_EXPERIMENT_STEPS + 1, 1);
+        assert!(matches!(
+            result,
+            Err(ExperimentError::TooManySteps { .. })
+        ));
+    }
 }

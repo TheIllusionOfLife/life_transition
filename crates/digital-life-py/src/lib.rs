@@ -165,4 +165,19 @@ mod tests {
         assert!(value["metabolic_viability_floor"].as_f64().is_some());
         assert!(value["metabolism_mode"].as_str().is_some());
     }
+
+    #[test]
+    fn run_experiment_json_impl_returns_summary_json() {
+        let config_json = serde_json::to_string(&SimConfig {
+            num_organisms: 1,
+            agents_per_organism: 1,
+            ..SimConfig::default()
+        })
+        .expect("config should serialize");
+        let output = run_experiment_json_impl(&config_json, 10, 5).expect("experiment should run");
+        let payload: serde_json::Value =
+            serde_json::from_str(&output).expect("output should be valid json");
+        assert_eq!(payload["steps"].as_u64(), Some(10));
+        assert!(payload["samples"].as_array().is_some());
+    }
 }
