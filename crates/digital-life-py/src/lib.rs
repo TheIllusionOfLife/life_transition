@@ -136,4 +136,14 @@ mod tests {
             World::MAX_TOTAL_AGENTS
         );
     }
+
+    #[test]
+    fn run_experiment_json_returns_summary_payload() {
+        let config = default_config_json().expect("default config should serialize");
+        let output = run_experiment_json(&config, 20, 5).expect("experiment should run");
+        let value: serde_json::Value =
+            serde_json::from_str(&output).expect("summary output must be valid JSON");
+        assert_eq!(value["steps"].as_u64(), Some(20));
+        assert!(value["samples"].as_array().is_some());
+    }
 }

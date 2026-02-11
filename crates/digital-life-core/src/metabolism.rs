@@ -306,4 +306,62 @@ mod tests {
         assert!((0.0..=metabolism.max_energy).contains(&state.energy));
         assert!((0.0..=metabolism.max_waste).contains(&state.waste));
     }
+
+    #[test]
+    fn graph_topology_changes_energy_outcome() {
+        let mut connected_state = MetabolicState::default();
+        let mut disconnected_state = MetabolicState::default();
+
+        let connected = GraphMetabolism {
+            graph: MetabolicGraph {
+                nodes: vec![
+                    MetabolicNode {
+                        id: 0,
+                        catalytic_efficiency: 1.0,
+                    },
+                    MetabolicNode {
+                        id: 1,
+                        catalytic_efficiency: 1.0,
+                    },
+                ],
+                edges: vec![MetabolicEdge {
+                    from: 0,
+                    to: 1,
+                    flux_ratio: 1.0,
+                }],
+            },
+            conversion_efficiency: 1.0,
+            max_energy: 10.0,
+            ..GraphMetabolism::default()
+        };
+
+        let disconnected = GraphMetabolism {
+            graph: MetabolicGraph {
+                nodes: vec![
+                    MetabolicNode {
+                        id: 0,
+                        catalytic_efficiency: 1.0,
+                    },
+                    MetabolicNode {
+                        id: 1,
+                        catalytic_efficiency: 1.0,
+                    },
+                ],
+                edges: Vec::new(),
+            },
+            conversion_efficiency: 1.0,
+            max_energy: 10.0,
+            ..GraphMetabolism::default()
+        };
+
+        for _ in 0..10 {
+            let _ = connected.step(&mut connected_state, 1.0, 1.0);
+            let _ = disconnected.step(&mut disconnected_state, 1.0, 1.0);
+        }
+
+        assert!(
+            connected_state.energy > disconnected_state.energy,
+            "connected graph should retain more usable energy than disconnected graph"
+        );
+    }
 }

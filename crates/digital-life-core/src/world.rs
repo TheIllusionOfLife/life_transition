@@ -578,4 +578,13 @@ mod tests {
             "center resource should remain unchanged"
         );
     }
+
+    #[test]
+    fn run_experiment_produces_non_empty_summary() {
+        let mut world = make_world(10, 100.0);
+        let summary = world.run_experiment(50, 10);
+        assert_eq!(summary.steps, 50);
+        assert!(!summary.samples.is_empty());
+        assert!(summary.final_alive_count <= world.config().num_organisms);
+    }
 }
