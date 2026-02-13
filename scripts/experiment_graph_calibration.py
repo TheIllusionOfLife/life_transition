@@ -8,47 +8,20 @@ Usage:
 """
 
 import json
-import sys
 import time
 from pathlib import Path
 
 import digital_life
 
+from experiment_utils import log, run_single
+
 STEPS = 2000
 SAMPLE_EVERY = 50
 SEEDS = list(range(0, 30))  # calibration set
 
-TUNED_BASELINE = {
-    "boundary_decay_base_rate": 0.001,
-    "boundary_repair_rate": 0.05,
-    "metabolic_viability_floor": 0.1,
-    "crowding_neighbor_threshold": 50.0,
-    "homeostasis_decay_rate": 0.01,
-    "growth_maturation_steps": 200,
-    "growth_immature_metabolic_efficiency": 0.3,
-    "resource_regeneration_rate": 0.01,
-}
-
-
-def log(msg: str) -> None:
-    print(msg, file=sys.stderr)
-
-
-def make_config(seed: int, overrides: dict) -> str:
-    config = json.loads(digital_life.default_config_json())
-    config["seed"] = seed
-    config.update(TUNED_BASELINE)
-    config.update(overrides)
-    return json.dumps(config)
-
-
-def run_single(seed: int, overrides: dict) -> dict:
-    config_json = make_config(seed, overrides)
-    result_json = digital_life.run_experiment_json(config_json, STEPS, SAMPLE_EVERY)
-    return json.loads(result_json)
-
 
 def summarize_results(label: str, results: list[dict]) -> dict:
+    """Compute summary statistics for a set of experiment results."""
     alive_counts = [r["final_alive_count"] for r in results]
     energies = [r["samples"][-1]["energy_mean"] for r in results if r["samples"]]
     return {
@@ -82,7 +55,7 @@ def main():
 
         for seed in SEEDS:
             ts = time.perf_counter()
-            result = run_single(seed, overrides)
+            result = run_single(seed, STEPS, SAMPLE_EVERY, overrides)
             elapsed = time.perf_counter() - ts
             results.append(result)
             log(f"  seed={seed:3d}  alive={result['final_alive_count']:4d}  {elapsed:.2f}s")

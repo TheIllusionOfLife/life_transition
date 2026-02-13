@@ -108,12 +108,32 @@ impl ToyMetabolism {
 
 const DEFAULT_EDGE_TRANSFER_EFFICIENCY: f32 = 0.98;
 
+// Genome decoding constants
+const MIN_NODE_COUNT: f32 = 2.0;
+const MAX_NODE_COUNT: f32 = 4.0;
+const NODE_COUNT_SCALE: f32 = 2.0;
+const NODE_COUNT_OFFSET: f32 = 2.0;
+const CATALYTIC_EFF_SCALE: f32 = 0.9;
+const CATALYTIC_EFF_OFFSET: f32 = 0.1;
+const EDGE_EXISTENCE_THRESHOLD: f32 = 0.3;
+const FLUX_RATIO_MIN: f32 = 0.1;
+const FLUX_RATIO_MAX: f32 = 1.0;
+const EDGE_TRANSFER_EFF_SCALE: f32 = 0.3;
+const EDGE_TRANSFER_EFF_OFFSET: f32 = 0.7;
+const CONVERSION_EFF_SCALE: f32 = 0.7;
+const CONVERSION_EFF_OFFSET: f32 = 0.3;
+
 fn sigmoid(x: f32) -> f32 {
     1.0 / (1.0 + (-x).exp())
 }
 
 /// Decode a 16-float genome segment into entry node ID for a graph with `node_count` nodes.
+///
+/// # Panics
+///
+/// Panics if `segment.len() < 2`.
 pub fn decode_entry_node_id(segment: &[f32], node_count: usize) -> u16 {
+    debug_assert!(segment.len() >= 2, "segment must have at least 2 elements");
     let raw = (sigmoid(segment[1]) * node_count as f32).floor() as usize;
     raw.min(node_count.saturating_sub(1)) as u16
 }
@@ -132,11 +152,13 @@ pub fn decode_entry_node_id(segment: &[f32], node_count: usize) -> u16 {
 pub fn decode_metabolic_graph(segment: &[f32]) -> MetabolicGraph {
     debug_assert!(segment.len() >= 16);
 
-    let node_count = (sigmoid(segment[0]) * 2.0 + 2.0).round().clamp(2.0, 4.0) as usize;
+    let node_count = (sigmoid(segment[0]) * NODE_COUNT_SCALE + NODE_COUNT_OFFSET)
+        .round()
+        .clamp(MIN_NODE_COUNT, MAX_NODE_COUNT) as usize;
 
     let nodes: Vec<MetabolicNode> = (0..node_count)
         .map(|i| {
-            let eff = sigmoid(segment[2 + i]) * 0.9 + 0.1;
+            let eff = sigmoid(segment[2 + i]) * CATALYTIC_EFF_SCALE + CATALYTIC_EFF_OFFSET;
             MetabolicNode {
                 id: i as u16,
                 catalytic_efficiency: eff,
@@ -152,11 +174,11 @@ pub fn decode_metabolic_graph(segment: &[f32]) -> MetabolicGraph {
             continue;
         }
         let val = segment[6 + slot];
-        if val.abs() <= 0.3 {
+        if val.abs() <= EDGE_EXISTENCE_THRESHOLD {
             continue;
         }
         let (from, to) = if val > 0.0 { (i, j) } else { (j, i) };
-        let flux_ratio = val.abs().clamp(0.1, 1.0);
+        let flux_ratio = val.abs().clamp(FLUX_RATIO_MIN, FLUX_RATIO_MAX);
         edges.push(MetabolicEdge {
             from: from as u16,
             to: to as u16,
@@ -171,8 +193,14 @@ pub fn decode_metabolic_graph(segment: &[f32]) -> MetabolicGraph {
 pub fn decode_graph_metabolism(segment: &[f32]) -> GraphMetabolism {
     let graph = decode_metabolic_graph(segment);
     let entry_node_id = decode_entry_node_id(segment, graph.nodes.len());
-    let edge_transfer_efficiency = sigmoid(segment[12]) * 0.3 + 0.7;
-    let conversion_efficiency = sigmoid(segment[13]) * 0.7 + 0.3;
+    let edge_transfer_efficiency =
+        sigmoid(segment[12]) * EDGE_TRANSFER_EFF_SCALE + EDGE_TRANSFER_EFF_OFFSET;
+    let conversion_efficiency = sigmoid(segment[13]) * CONVERSION_EFF_SCALE + CONVERSION_EFF_OFFSET;
+
+    debug_assert!(
+        validate_metabolic_graph(&graph, entry_node_id),
+        "decoded graph must be structurally valid"
+    );
 
     GraphMetabolism {
         graph,

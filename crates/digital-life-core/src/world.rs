@@ -14,6 +14,19 @@ use std::f64::consts::PI;
 use std::time::Instant;
 use std::{error::Error, fmt};
 
+/// Decode a genome's metabolic segment into a per-organism `MetabolismEngine`.
+///
+/// Returns `Some(engine)` in Graph mode, `None` in Toy mode (uses shared engine).
+fn decode_organism_metabolism(genome: &Genome, mode: MetabolismMode) -> Option<MetabolismEngine> {
+    match mode {
+        MetabolismMode::Graph => {
+            let gm = crate::metabolism::decode_graph_metabolism(genome.segment_data(1));
+            Some(MetabolismEngine::Graph(gm))
+        }
+        MetabolismMode::Toy => None,
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct StepTimings {
     pub spatial_build_us: u64,
@@ -367,13 +380,13 @@ impl World {
         let mut init_rng = ChaCha12Rng::seed_from_u64(config.seed.wrapping_add(1));
         if config.metabolism_mode == MetabolismMode::Graph {
             for org in &mut organisms {
-                let mut seg = [0.0f32; 16];
+                let mut seg = [0.0f32; Genome::METABOLIC_SIZE];
                 for v in &mut seg {
                     *v = init_rng.random_range(-0.5f32..0.5);
                 }
                 org.genome.set_segment_data(1, &seg);
-                let gm = crate::metabolism::decode_graph_metabolism(org.genome.segment_data(1));
-                org.metabolism_engine = Some(MetabolismEngine::Graph(gm));
+                org.metabolism_engine =
+                    decode_organism_metabolism(&org.genome, config.metabolism_mode);
             }
         }
 
@@ -971,12 +984,8 @@ impl World {
                 energy: self.config.reproduction_energy_cost,
                 ..MetabolicState::default()
             };
-            let child_metabolism_engine = if self.config.metabolism_mode == MetabolismMode::Graph {
-                let gm = crate::metabolism::decode_graph_metabolism(child_genome.segment_data(1));
-                Some(MetabolismEngine::Graph(gm))
-            } else {
-                None
-            };
+            let child_metabolism_engine =
+                decode_organism_metabolism(&child_genome, self.config.metabolism_mode);
             let child = OrganismRuntime {
                 id: child_id,
                 stable_id: self.next_organism_stable_id,
@@ -2109,17 +2118,19 @@ mod tests {
         world.organisms[0].metabolic_state.energy = 1.0;
         world.organisms[0].boundary_integrity = 1.0;
         world.step();
-        if world.population_stats().total_births >= 1 {
-            let child = world
-                .organisms
-                .iter()
-                .find(|o| o.generation == 1)
-                .expect("child should exist");
-            assert!(
-                child.metabolism_engine.is_some(),
-                "child in Graph mode should have its own metabolism engine"
-            );
-        }
+        assert!(
+            world.population_stats().total_births >= 1,
+            "reproduction must occur for this test to be valid"
+        );
+        let child = world
+            .organisms
+            .iter()
+            .find(|o| o.generation == 1)
+            .expect("child should exist");
+        assert!(
+            child.metabolism_engine.is_some(),
+            "child in Graph mode should have its own metabolism engine"
+        );
     }
 
     #[test]
@@ -2145,17 +2156,19 @@ mod tests {
         world.organisms[0].boundary_integrity = 1.0;
         let parent_seg = world.organisms[0].genome.segment_data(1).to_vec();
         world.step();
-        if world.population_stats().total_births >= 1 {
-            let child = world
-                .organisms
-                .iter()
-                .find(|o| o.generation == 1)
-                .expect("child should exist");
-            let child_seg = child.genome.segment_data(1);
-            assert_ne!(
-                parent_seg, child_seg,
-                "child metabolic segment should differ from parent with high mutation rate"
-            );
-        }
+        assert!(
+            world.population_stats().total_births >= 1,
+            "reproduction must occur for this test to be valid"
+        );
+        let child = world
+            .organisms
+            .iter()
+            .find(|o| o.generation == 1)
+            .expect("child should exist");
+        let child_seg = child.genome.segment_data(1);
+        assert_ne!(
+            parent_seg, child_seg,
+            "child metabolic segment should differ from parent with high mutation rate"
+        );
     }
 }

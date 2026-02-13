@@ -8,27 +8,18 @@ Usage:
 """
 
 import json
-import sys
 import time
 from pathlib import Path
 
 import digital_life
 
+from experiment_utils import CONDITIONS, log, run_single
+
 STEPS = 2000
 SAMPLE_EVERY = 50
 SEEDS = list(range(100, 110))  # test set subset: n=10 for robustness check
 
-TUNED_BASELINE = {
-    "boundary_decay_base_rate": 0.001,
-    "boundary_repair_rate": 0.05,
-    "metabolic_viability_floor": 0.1,
-    "crowding_neighbor_threshold": 50.0,
-    "homeostasis_decay_rate": 0.01,
-    "growth_maturation_steps": 200,
-    "growth_immature_metabolic_efficiency": 0.3,
-    "resource_regeneration_rate": 0.01,
-    "metabolism_mode": "graph",
-}
+GRAPH_OVERRIDES = {"metabolism_mode": "graph"}
 
 REGIMES = {
     "default": {},
@@ -36,36 +27,6 @@ REGIMES = {
     "crowded": {"num_organisms": 80, "agents_per_organism": 30, "world_size": 80.0},
     "scarce": {"resource_regeneration_rate": 0.003},
 }
-
-CONDITIONS = {
-    "normal": {},
-    "no_metabolism": {"enable_metabolism": False},
-    "no_boundary": {"enable_boundary_maintenance": False},
-    "no_homeostasis": {"enable_homeostasis": False},
-    "no_response": {"enable_response": False},
-    "no_reproduction": {"enable_reproduction": False},
-    "no_evolution": {"enable_evolution": False},
-    "no_growth": {"enable_growth": False},
-}
-
-
-def log(msg: str) -> None:
-    print(msg, file=sys.stderr)
-
-
-def make_config(seed: int, regime_overrides: dict, condition_overrides: dict) -> str:
-    config = json.loads(digital_life.default_config_json())
-    config["seed"] = seed
-    config.update(TUNED_BASELINE)
-    config.update(regime_overrides)
-    config.update(condition_overrides)
-    return json.dumps(config)
-
-
-def run_single(seed: int, regime_overrides: dict, condition_overrides: dict) -> dict:
-    config_json = make_config(seed, regime_overrides, condition_overrides)
-    result_json = digital_life.run_experiment_json(config_json, STEPS, SAMPLE_EVERY)
-    return json.loads(result_json)
 
 
 def main():
@@ -89,7 +50,9 @@ def main():
 
             for seed in SEEDS:
                 t0 = time.perf_counter()
-                result = run_single(seed, regime_overrides, cond_overrides)
+                result = run_single(
+                    seed, STEPS, SAMPLE_EVERY, GRAPH_OVERRIDES, regime_overrides, cond_overrides
+                )
                 elapsed = time.perf_counter() - t0
                 results.append(result)
                 log(f"    seed={seed:3d}  alive={result['final_alive_count']:4d}  {elapsed:.2f}s")
