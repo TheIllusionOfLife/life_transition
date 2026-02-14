@@ -14,16 +14,24 @@ use std::f64::consts::PI;
 use std::time::Instant;
 use std::{error::Error, fmt};
 
+fn l2_distance(a: &[f32], b: &[f32]) -> f32 {
+    a.iter()
+        .zip(b.iter())
+        .map(|(x, y)| (x - y).powi(2))
+        .sum::<f32>()
+        .sqrt()
+}
+
 /// Decode a genome's metabolic segment into a per-organism `MetabolismEngine`.
 ///
-/// Returns `Some(engine)` in Graph mode, `None` in Toy mode (uses shared engine).
+/// Returns `Some(engine)` in Graph mode, `None` in Toy/Counter mode (uses shared engine).
 fn decode_organism_metabolism(genome: &Genome, mode: MetabolismMode) -> Option<MetabolismEngine> {
     match mode {
         MetabolismMode::Graph => {
             let gm = crate::metabolism::decode_graph_metabolism(genome.segment_data(1));
             Some(MetabolismEngine::Graph(gm))
         }
-        MetabolismMode::Toy => None,
+        MetabolismMode::Toy | MetabolismMode::Counter => None,
     }
 }
 
@@ -50,6 +58,15 @@ pub struct StepMetrics {
     pub mean_generation: f32,
     pub mean_genome_drift: f32,
     pub agent_id_exhaustion_events: usize,
+    // Extended metrics for peer review response
+    pub energy_std: f32,
+    pub waste_std: f32,
+    pub boundary_std: f32,
+    pub mean_age: f32,
+    pub internal_state_mean: [f32; 4],
+    pub internal_state_std: [f32; 4],
+    pub genome_diversity: f32,
+    pub max_generation: usize,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -58,6 +75,10 @@ pub struct RunSummary {
     pub sample_every: usize,
     pub final_alive_count: usize,
     pub samples: Vec<StepMetrics>,
+    #[serde(default)]
+    pub lifespans: Vec<usize>,
+    #[serde(default)]
+    pub total_reproduction_events: usize,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
@@ -88,6 +109,10 @@ pub struct World {
     next_organism_stable_id: u64,
     agent_id_exhaustions_last_step: usize,
     total_agent_id_exhaustions: usize,
+    lifespans: Vec<usize>,
+    /// Runtime resource regeneration rate, separate from config to avoid mutating
+    /// config at runtime during environment shifts.
+    current_resource_rate: f32,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -127,6 +152,7 @@ pub enum WorldInitError {
     InvalidGrowthMaturationSteps,
     InvalidGrowthImmatureMetabolicEfficiency,
     InvalidResourceRegenerationRate,
+    InvalidEnvironmentShiftResourceRate,
     WorldSizeTooLarge { max: f64, actual: f64 },
     AgentCountOverflow,
     TooManyAgents { max: usize, actual: usize },
@@ -251,6 +277,12 @@ impl fmt::Display for WorldInitError {
             }
             WorldInitError::InvalidResourceRegenerationRate => {
                 write!(f, "resource_regeneration_rate must be finite and non-negative")
+            }
+            WorldInitError::InvalidEnvironmentShiftResourceRate => {
+                write!(
+                    f,
+                    "environment_shift_resource_rate must be finite and non-negative"
+                )
             }
             WorldInitError::WorldSizeTooLarge { max, actual } => {
                 write!(f, "world_size ({actual}) exceeds supported maximum ({max})")
@@ -393,6 +425,9 @@ impl World {
         let max_agent_id = agents.iter().map(|a| a.id).max().unwrap_or(0);
         let metabolism = match config.metabolism_mode {
             MetabolismMode::Toy => MetabolismEngine::default(),
+            MetabolismMode::Counter => {
+                MetabolismEngine::Counter(crate::metabolism::CounterMetabolism::default())
+            }
             MetabolismMode::Graph => {
                 MetabolismEngine::Graph(crate::metabolism::GraphMetabolism::default())
             }
@@ -420,6 +455,8 @@ impl World {
             next_organism_stable_id,
             agent_id_exhaustions_last_step: 0,
             total_agent_id_exhaustions: 0,
+            lifespans: Vec::new(),
+            current_resource_rate: config.resource_regeneration_rate,
         })
     }
 
@@ -583,6 +620,11 @@ impl World {
         {
             return Err(WorldInitError::InvalidResourceRegenerationRate);
         }
+        if !(config.environment_shift_resource_rate.is_finite()
+            && config.environment_shift_resource_rate >= 0.0)
+        {
+            return Err(WorldInitError::InvalidEnvironmentShiftResourceRate);
+        }
         Ok(())
     }
 
@@ -612,11 +654,15 @@ impl World {
         if (self.config.world_size - config.world_size).abs() > f64::EPSILON {
             self.resource_field = ResourceField::new(config.world_size, 1.0, 1.0);
         }
+        self.current_resource_rate = config.resource_regeneration_rate;
         self.config = config;
         self.mutation_rates = Self::mutation_rates_from_config(&self.config);
         if mode_changed {
             self.metabolism = match self.config.metabolism_mode {
                 MetabolismMode::Toy => MetabolismEngine::default(),
+                MetabolismMode::Counter => {
+                    MetabolismEngine::Counter(crate::metabolism::CounterMetabolism::default())
+                }
                 MetabolismMode::Graph => {
                     MetabolismEngine::Graph(crate::metabolism::GraphMetabolism::default())
                 }
@@ -804,6 +850,13 @@ impl World {
         let mut boundary_sum = 0.0f32;
         let mut generation_sum = 0.0f32;
         let mut drift_sum = 0.0f32;
+        let mut age_sum = 0.0f32;
+        let mut max_gen: usize = 0;
+
+        // Collect values for SD computation
+        let mut energies = Vec::with_capacity(alive);
+        let mut wastes = Vec::with_capacity(alive);
+        let mut boundaries = Vec::with_capacity(alive);
 
         for org in self.organisms.iter().filter(|o| o.alive) {
             energy_sum += org.metabolic_state.energy;
@@ -811,13 +864,75 @@ impl World {
             boundary_sum += org.boundary_integrity;
             generation_sum += org.generation as f32;
             drift_sum += Self::genome_drift(org);
+            age_sum += org.age_steps as f32;
+            max_gen = max_gen.max(org.generation as usize);
+
+            energies.push(org.metabolic_state.energy);
+            wastes.push(org.metabolic_state.waste);
+            boundaries.push(org.boundary_integrity);
         }
+
+        let energy_mean = energy_sum / denom;
+        let waste_mean = waste_sum / denom;
+        let boundary_mean = boundary_sum / denom;
+
+        let std_dev = |vals: &[f32], mean: f32| -> f32 {
+            if vals.len() < 2 {
+                return 0.0;
+            }
+            let var =
+                vals.iter().map(|v| (v - mean).powi(2)).sum::<f32>() / (vals.len() - 1) as f32;
+            var.sqrt()
+        };
+
+        // Internal state: mean and SD across all alive agents (single-pass collection)
+        let alive_states: Vec<[f32; 4]> = self
+            .agents
+            .iter()
+            .filter(|a| {
+                self.organisms
+                    .get(a.organism_id as usize)
+                    .map(|o| o.alive)
+                    .unwrap_or(false)
+            })
+            .map(|a| a.internal_state)
+            .collect();
+
+        let is_count = alive_states.len();
+        let is_denom = is_count.max(1) as f32;
+        let mut is_sums = [0.0f32; 4];
+        for state in &alive_states {
+            for (s, &v) in is_sums.iter_mut().zip(state) {
+                *s += v;
+            }
+        }
+        let internal_state_mean = [
+            is_sums[0] / is_denom,
+            is_sums[1] / is_denom,
+            is_sums[2] / is_denom,
+            is_sums[3] / is_denom,
+        ];
+
+        let mut is_var = [0.0f32; 4];
+        if is_count >= 2 {
+            for state in &alive_states {
+                for ((v, &s), &m) in is_var.iter_mut().zip(state).zip(&internal_state_mean) {
+                    *v += (s - m).powi(2);
+                }
+            }
+            for v in &mut is_var {
+                *v = (*v / (is_count - 1) as f32).sqrt();
+            }
+        }
+
+        // Genome diversity: mean L2 distance between sampled pairs of alive organism genomes
+        let genome_diversity = self.compute_genome_diversity();
 
         StepMetrics {
             step,
-            energy_mean: energy_sum / denom,
-            waste_mean: waste_sum / denom,
-            boundary_mean: boundary_sum / denom,
+            energy_mean,
+            waste_mean,
+            boundary_mean,
             alive_count: alive,
             resource_total: self.resource_field.total(),
             birth_count: self.births_last_step,
@@ -826,6 +941,55 @@ impl World {
             mean_generation: generation_sum / denom,
             mean_genome_drift: drift_sum / denom,
             agent_id_exhaustion_events: self.agent_id_exhaustions_last_step,
+            energy_std: std_dev(&energies, energy_mean),
+            waste_std: std_dev(&wastes, waste_mean),
+            boundary_std: std_dev(&boundaries, boundary_mean),
+            mean_age: age_sum / denom,
+            internal_state_mean,
+            internal_state_std: is_var,
+            genome_diversity,
+            max_generation: max_gen,
+        }
+    }
+
+    fn compute_genome_diversity(&self) -> f32 {
+        let alive_genomes: Vec<&[f32]> = self
+            .organisms
+            .iter()
+            .filter(|o| o.alive)
+            .map(|o| o.genome.data())
+            .collect();
+        let n = alive_genomes.len();
+        if n < 2 {
+            return 0.0;
+        }
+
+        // Sample up to 50 random pairs to avoid O(n^2) cost
+        let max_pairs = 50usize;
+        let total_pairs = n * (n - 1) / 2;
+
+        if total_pairs <= max_pairs {
+            // Enumerate all pairs
+            let mut sum = 0.0f32;
+            for i in 0..n {
+                for j in (i + 1)..n {
+                    sum += l2_distance(alive_genomes[i], alive_genomes[j]);
+                }
+            }
+            sum / total_pairs as f32
+        } else {
+            // Use deterministic sampling based on step_index for reproducibility
+            let mut sample_rng = ChaCha12Rng::seed_from_u64(self.step_index as u64);
+            let mut sum = 0.0f32;
+            for _ in 0..max_pairs {
+                let i = sample_rng.random_range(0..n);
+                let mut j = sample_rng.random_range(0..n - 1);
+                if j >= i {
+                    j += 1;
+                }
+                sum += l2_distance(alive_genomes[i], alive_genomes[j]);
+            }
+            sum / max_pairs as f32
         }
     }
 
@@ -860,6 +1024,8 @@ impl World {
             });
         }
 
+        self.lifespans.clear();
+        let births_before = self.total_births;
         let mut samples = Vec::with_capacity(estimated_samples);
         for step in 1..=steps {
             self.step();
@@ -872,12 +1038,15 @@ impl World {
             sample_every,
             final_alive_count: self.alive_count(),
             samples,
+            lifespans: std::mem::take(&mut self.lifespans),
+            total_reproduction_events: self.total_births - births_before,
         })
     }
 
     fn mark_dead(&mut self, org_idx: usize) {
         if let Some(org) = self.organisms.get_mut(org_idx) {
             if org.alive {
+                self.lifespans.push(org.age_steps);
                 org.alive = false;
                 org.boundary_integrity = 0.0;
                 self.deaths_last_step += 1;
@@ -1283,9 +1452,17 @@ impl World {
             self.prune_dead_entities();
         }
 
-        if self.config.resource_regeneration_rate > 0.0 {
+        // Environment shift: change runtime resource rate at specified step.
+        // Uses a separate field to keep self.config immutable at runtime.
+        if self.config.environment_shift_step > 0
+            && self.step_index == self.config.environment_shift_step
+        {
+            self.current_resource_rate = self.config.environment_shift_resource_rate;
+        }
+
+        if self.current_resource_rate > 0.0 {
             self.resource_field
-                .regenerate(self.config.resource_regeneration_rate * self.config.dt as f32);
+                .regenerate(self.current_resource_rate * self.config.dt as f32);
         }
 
         let state_update_us = t2.elapsed().as_micros() as u64;
@@ -1507,6 +1684,7 @@ mod tests {
     fn toroidal_center_uses_wrapped_mean_for_resource_sampling() {
         let mut world = make_world(2, 100.0);
         world.config.resource_regeneration_rate = 0.0;
+        world.current_resource_rate = 0.0;
         world.agents[0].position = [0.1, 50.0];
         world.agents[1].position = [99.9, 50.0];
         world.resource_field_mut().set(0.0, 50.0, 2.0);
@@ -1994,6 +2172,7 @@ mod tests {
         world.config.death_energy_threshold = 0.0;
         world.config.enable_reproduction = false;
         world.config.resource_regeneration_rate = 0.0;
+        world.current_resource_rate = 0.0;
         world.organisms[0].maturity = 0.0; // fully immature
 
         // Deplete ALL resource sources: world grid, internal pool, and graph pool.
@@ -2169,6 +2348,138 @@ mod tests {
         assert_ne!(
             parent_seg, child_seg,
             "child metabolic segment should differ from parent with high mutation rate"
+        );
+    }
+
+    // ── Extended metrics tests (Phase 1) ──
+
+    #[test]
+    fn step_metrics_new_fields_are_populated() {
+        let mut world = make_world(10, 100.0);
+        let summary = world.run_experiment(10, 5);
+        let sample = summary.samples.last().expect("should have samples");
+        // SD fields should be non-negative
+        assert!(sample.energy_std >= 0.0);
+        assert!(sample.waste_std >= 0.0);
+        assert!(sample.boundary_std >= 0.0);
+        // mean_age should be non-negative
+        assert!(sample.mean_age >= 0.0);
+        // internal_state_mean values should be in [0, 1]
+        for &v in &sample.internal_state_mean {
+            assert!(
+                (0.0..=1.0).contains(&v),
+                "internal_state_mean out of range: {v}"
+            );
+        }
+        // internal_state_std should be non-negative
+        for &v in &sample.internal_state_std {
+            assert!(v >= 0.0, "internal_state_std negative: {v}");
+        }
+        // genome_diversity should be non-negative
+        assert!(
+            sample.genome_diversity >= 0.0,
+            "genome_diversity should be non-negative"
+        );
+    }
+
+    #[test]
+    fn lifespans_recorded_on_organism_death() {
+        let mut world = make_world(4, 100.0);
+        world.config.enable_metabolism = true;
+        world.config.death_energy_threshold = 1.0; // force death
+        world.resource_field_mut().set(50.0, 50.0, 0.0);
+        let summary = world.run_experiment(5, 5);
+        // Organism should die, producing at least one lifespan entry
+        assert!(
+            !summary.lifespans.is_empty(),
+            "lifespans should be recorded when organisms die"
+        );
+    }
+
+    #[test]
+    fn run_summary_total_reproduction_events() {
+        let mut world = make_world(10, 100.0);
+        world.organisms[0].metabolic_state.energy = 1.0;
+        world.organisms[0].boundary_integrity = 1.0;
+        let summary = world.run_experiment(5, 5);
+        // With high energy, reproduction should happen
+        assert!(
+            summary.total_reproduction_events >= 1,
+            "total_reproduction_events should count births"
+        );
+    }
+
+    #[test]
+    fn genome_diversity_is_bounded() {
+        let mut world = make_world(10, 100.0);
+        world.organisms[0].metabolic_state.energy = 1.0;
+        world.organisms[0].boundary_integrity = 1.0;
+        // Run enough steps for reproduction to occur
+        let summary = world.run_experiment(20, 10);
+        for sample in &summary.samples {
+            assert!(
+                sample.genome_diversity >= 0.0,
+                "genome_diversity must be non-negative"
+            );
+            assert!(
+                sample.genome_diversity.is_finite(),
+                "genome_diversity must be finite"
+            );
+        }
+    }
+
+    #[test]
+    fn genome_diversity_zero_for_single_organism() {
+        let mut world = make_world(10, 100.0);
+        world.config.enable_reproduction = false;
+        world.config.enable_metabolism = false;
+        world.config.enable_boundary_maintenance = false;
+        world.config.death_boundary_threshold = 0.0;
+        world.config.boundary_collapse_threshold = 0.0;
+        world.config.death_energy_threshold = 0.0;
+        let summary = world.run_experiment(5, 5);
+        let sample = summary.samples.last().unwrap();
+        assert!(
+            sample.genome_diversity < f32::EPSILON,
+            "genome_diversity should be 0 with only one organism"
+        );
+    }
+
+    // ── Environment shift tests (Phase 4) ──
+
+    #[test]
+    fn environment_shift_zero_produces_no_change() {
+        let mut world = make_world(10, 100.0);
+        world.config.environment_shift_step = 0; // disabled
+        world.config.environment_shift_resource_rate = 0.0;
+        let original_rate = world.current_resource_rate;
+        for _ in 0..50 {
+            world.step();
+        }
+        assert!(
+            (world.current_resource_rate - original_rate).abs() < f32::EPSILON,
+            "resource rate should not change when shift_step=0"
+        );
+    }
+
+    #[test]
+    fn environment_shift_changes_resource_rate_at_step() {
+        let mut world = make_world(10, 100.0);
+        world.config.environment_shift_step = 5;
+        world.config.environment_shift_resource_rate = 0.005;
+        world.config.resource_regeneration_rate = 0.01;
+        world.current_resource_rate = 0.01;
+        for _ in 0..4 {
+            world.step();
+        }
+        assert!(
+            (world.current_resource_rate - 0.01).abs() < f32::EPSILON,
+            "rate should be unchanged before shift step"
+        );
+        world.step(); // step 5
+        assert!(
+            (world.current_resource_rate - 0.005).abs() < f32::EPSILON,
+            "rate should change at shift step"
         );
     }
 }

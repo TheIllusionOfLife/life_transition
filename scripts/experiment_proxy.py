@@ -1,13 +1,18 @@
-"""Final criterion-ablation experiment (2000 steps, n=30, test set).
+"""Proxy control comparison experiment.
 
-Runs 8 conditions (normal baseline + 7 criterion ablations) with
-seeds 100-129 (test set) and 2000 steps for stronger evolution signal.
+Runs 3 metabolism conditions on the same seeds to demonstrate that
+graph metabolism provides qualitative advantage over simpler proxies.
+
+Conditions:
+  1. graph   - Full graph-based multi-step metabolism
+  2. toy     - Intermediate single-step with waste dynamics
+  3. counter - Minimal single-step, no waste production
 
 Usage:
-    uv run python scripts/experiment_final.py > experiments/final_data.tsv
+    uv run python scripts/experiment_proxy.py > experiments/proxy_data.tsv
 
 Output: TSV data to stdout + summary report to stderr.
-        Raw JSON saved to experiments/final_{condition}.json.
+        Raw JSON saved to experiments/proxy_{condition}.json.
 """
 
 import json
@@ -28,21 +33,16 @@ SAMPLE_EVERY = 50
 SEEDS = list(range(100, 130))  # test set: seeds 100-129, n=30
 
 CONDITIONS = {
-    "normal": {},
-    "no_metabolism": {"enable_metabolism": False},
-    "no_boundary": {"enable_boundary_maintenance": False},
-    "no_homeostasis": {"enable_homeostasis": False},
-    "no_response": {"enable_response": False},
-    "no_reproduction": {"enable_reproduction": False},
-    "no_evolution": {"enable_evolution": False},
-    "no_growth": {"enable_growth": False},
+    "graph": {"metabolism_mode": "graph"},
+    "toy": {"metabolism_mode": "toy"},
+    "counter": {"metabolism_mode": "counter"},
 }
 
 
 def main():
-    """Run final criterion-ablation experiment (8 conditions x 30 seeds)."""
+    """Run proxy control comparison experiment across 3 metabolism modes."""
     log(f"Digital Life v{digital_life.version()}")
-    log(f"Final experiment: {STEPS} steps, sample every {SAMPLE_EVERY}, "
+    log(f"Proxy control experiment: {STEPS} steps, sample every {SAMPLE_EVERY}, "
         f"seeds {SEEDS[0]}-{SEEDS[-1]} (n={len(SEEDS)})")
     log("")
 
@@ -72,7 +72,7 @@ def main():
         cond_elapsed = time.perf_counter() - cond_start
         log(f"  Condition time: {cond_elapsed:.1f}s")
 
-        raw_path = out_dir / f"final_{cond_name}.json"
+        raw_path = out_dir / f"proxy_{cond_name}.json"
         with open(raw_path, "w") as f:
             json.dump(results, f, indent=2)
         log(f"  Saved: {raw_path}")

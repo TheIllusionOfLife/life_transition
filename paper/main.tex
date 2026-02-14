@@ -10,10 +10,10 @@
 
 % ============================================================================
 \begin{abstract}
-We present the first artificial life system that integrates all seven textbook
-biological criteria for life---cellular organization, metabolism, homeostasis,
-growth, reproduction, response to stimuli, and evolution---as functionally
-interdependent computational processes.
+We present a testable integration of all seven textbook biological criteria
+for life---cellular organization, metabolism, homeostasis, growth,
+reproduction, response to stimuli, and evolution---as functionally
+interdependent computational processes within a single artificial life system.
 Existing systems implement at most a subset of these criteria, often as
 independent modules or static proxies that can be removed without measurable
 system degradation.
@@ -24,12 +24,19 @@ criteria---which we term \emph{functional analogy}.
 A criterion-ablation experiment ($n$=30 per condition, seeds held out from
 calibration) demonstrates that disabling any single criterion causes
 statistically significant population decline (Mann-Whitney $U$,
-Holm-Bonferroni corrected, all $p \leq 0.016$), with Cohen's $d$ ranging from
-0.57 to 18.1.
-The strongest effects arise from disabling reproduction ($\Delta$=--89.3\%),
-response to stimuli ($\Delta$=--88.4\%), and metabolism ($\Delta$=--84.3\%),
-confirming that these criteria function as necessary, interdependent
-components of organismal viability rather than decorative labels.
+Holm-Bonferroni corrected, all $p \leq 0.016$), with Cliff's $\delta$
+ranging from 0.18 to 1.00.
+Pairwise ablations reveal sub-additive interactions consistent with
+shared failure pathways, confirming that criteria damage overlapping
+subsystems rather than operating independently.
+A proxy control comparison shows that metabolism implementations of
+differing complexity produce qualitatively distinct population dynamics,
+ruling out tautological criterion definitions.
+The strongest single-ablation effects arise from disabling reproduction
+($\Delta$=--89.3\%), response to stimuli ($\Delta$=--88.4\%), and metabolism
+($\Delta$=--84.3\%), confirming that these criteria function as necessary,
+interdependent components of organismal viability rather than decorative
+labels.
 \end{abstract}
 
 % ============================================================================
@@ -71,15 +78,17 @@ The contribution is methodological---demonstrating that all seven criteria
 \emph{can} be integrated as interdependent processes and that their necessity
 can be rigorously tested.
 
-This paper makes three contributions:
+This paper makes four contributions:
 \begin{enumerate}
   \item A hybrid swarm-organism architecture integrating all seven biological
     criteria as functionally interdependent processes.
   \item An operational definition of \emph{functional analogy} with three
     falsifiable conditions.
-  \item A \emph{criterion-ablation} methodology proving each criterion's
+  \item A \emph{criterion-ablation} methodology demonstrating each criterion's
     functional necessity via controlled experiments with multiple-comparison
     correction.
+  \item Pairwise ablation and proxy control experiments characterizing
+    criterion interactions and ruling out tautological definitions.
 \end{enumerate}
 
 % ============================================================================
@@ -156,16 +165,18 @@ ALIEN      & \textbf{4} & 3 & 2 & 3 & \textbf{4} & \textbf{4} & \textbf{4} & 24 
 Flow-Lenia & 3 & 3 & 3 & 3 & 3 & 3 & 3 & 21 \\
 Coralai    & 3 & 3 & 2 & 3 & 3 & 3 & 3 & 20 \\
 \midrule
-\textbf{Ours} & \textbf{4} & \textbf{5} & \textbf{4} & 3 & \textbf{4} & \textbf{4} & 3 & \textbf{27} \\
+\textbf{Ours}$^\dagger$ & \textbf{4} & \textbf{4} & \textbf{4} & 3 & \textbf{4} & \textbf{4} & 3 & \textbf{26} \\
 \bottomrule
+\multicolumn{9}{l}{\footnotesize $^\dagger$Self-assessment; scores may differ under external evaluation.}
 \end{tabular}
 \end{table*}
 
 While ALIEN achieves Level~4 on four criteria, it lacks multi-step metabolism
 (Level~3) and active homeostasis (Level~2).
-Our system achieves Level~5 on metabolism---the only system to do so---and
-reaches $\geq$4 on five of seven criteria, with the highest total score (27)
-across all systems surveyed.
+Our system reaches $\geq$4 on five of seven criteria, with the highest total
+score (26) across all systems surveyed.
+We note that these scores are self-assessed; independent evaluation may adjust
+individual ratings.
 
 % ============================================================================
 \section{System Design}
@@ -337,7 +348,11 @@ using the Mann-Whitney $U$ test \citep{mann_1947_test}, appropriate for
 non-normal count data.
 We apply Holm-Bonferroni correction \citep{holm_1979_simple} for seven
 simultaneous comparisons at $\alpha = 0.05$.
-Effect sizes are reported as Cohen's $d$ \citep{cohen_1988_statistical}.
+Effect sizes are reported as both Cohen's $d$ \citep{cohen_1988_statistical}
+and Cliff's $\delta$ \citep{cliff_1993_dominance}, the latter being more
+appropriate for non-normal distributions.
+We additionally report the area under the alive-count curve (AUC) and
+median organism lifespan as secondary outcome measures.
 
 % ============================================================================
 \section{Results}
@@ -348,21 +363,21 @@ decline compared to the normal baseline (Table~\ref{tab:ablation}).
 \begin{table}[t]
 \centering
 \caption{Criterion-ablation results ($n$=30 per condition). Normal baseline
-mean: 293.1. All $p$-values Holm-Bonferroni corrected. $^{***}p<0.001$,
-$^{*}p<0.05$.}
+mean: 293.1 (median: 294, IQR: 283--305). All $p$-values Holm-Bonferroni
+corrected. $^{***}p<0.001$, $^{*}p<0.05$.}
 \label{tab:ablation}
 \small
-\begin{tabular}{@{}lrrrrr@{}}
+\begin{tabular}{@{}lrrrrrr@{}}
 \toprule
-Condition & Mean & $\Delta$\% & $d$ & $p_{\text{corr}}$ & Sig. \\
+Condition & Mean & $\Delta$\% & $d$ & Cliff's $\delta$ & $p_{\text{corr}}$ & Sig. \\
 \midrule
-No Reproduction & 31.3 & $-$89.3 & \textbf{18.06} & $<$0.001 & $^{***}$ \\
-No Response     & 34.1 & $-$88.4 & \textbf{17.82} & $<$0.001 & $^{***}$ \\
-No Metabolism   & 46.0 & $-$84.3 & \textbf{17.24} & $<$0.001 & $^{***}$ \\
-No Homeostasis  & 68.3 & $-$76.7 & 4.94 & $<$0.001 & $^{***}$ \\
-No Growth       & 185.6 & $-$36.7 & 5.34 & $<$0.001 & $^{***}$ \\
-No Boundary     & 121.8 & $-$58.4 & 4.36 & $<$0.001 & $^{***}$ \\
-No Evolution    & 278.3 & $-$5.1  & 0.57 & 0.016 & $^{*}$ \\
+No Reproduction & 31.3 & $-$89.3 & 18.06 & 1.00 & $<$0.001 & $^{***}$ \\
+No Response     & 34.1 & $-$88.4 & 17.82 & 1.00 & $<$0.001 & $^{***}$ \\
+No Metabolism   & 46.0 & $-$84.3 & 17.24 & 1.00 & $<$0.001 & $^{***}$ \\
+No Homeostasis  & 68.3 & $-$76.7 & 4.94  & 1.00 & $<$0.001 & $^{***}$ \\
+No Boundary     & 121.8 & $-$58.4 & 4.36 & 1.00 & $<$0.001 & $^{***}$ \\
+No Growth       & 185.6 & $-$36.7 & 5.34 & 0.97 & $<$0.001 & $^{***}$ \\
+No Evolution    & 278.3 & $-$5.1  & 0.57 & 0.18 & 0.016 & $^{*}$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -405,66 +420,157 @@ computation, NN evaluation);
 energy funds repair, boundary collapse stops metabolism).
 Thus, each criterion qualifies as a functional analogy, not a simplified proxy.
 
+\subsection{Proxy Control Comparison}
+
+To test whether criterion ablation merely reflects tautological
+definitions, we compare three metabolism implementations on the same seeds
+($n$=30): \textbf{Counter} (minimal single-step conversion, no waste),
+\textbf{Toy} (single-step with waste dynamics), and \textbf{Graph} (full
+multi-step network with catalytic nodes).
+All three satisfy ``dynamic resource consumption,'' yet produce
+qualitatively different dynamics (Figure~\ref{fig:proxy}).
+Graph metabolism supports the highest genome diversity (7.58 vs.\ 5.69 for
+Toy) despite sustaining fewer organisms (293 vs.\ 322 for Toy, 374 for
+Counter), indicating that metabolic complexity imposes greater selective
+pressure.
+This confirms that the specific implementation---not merely the presence---of
+a criterion shapes system behavior, ruling out tautological definitions.
+
+\begin{figure}[t]
+\centering
+\IfFileExists{figures/fig_proxy.pdf}%
+  {\includegraphics[width=\columnwidth]{figures/fig_proxy.pdf}}%
+  {\fbox{\parbox{\dimexpr\columnwidth-2\fboxsep-2\fboxrule}{%
+    \centering\vspace{2em}[fig\_proxy.pdf --- to be generated]\vspace{2em}}}}
+\caption{Proxy control comparison. Three metabolism implementations of
+increasing complexity on the same seeds ($n$=30). Graph metabolism sustains
+fewer organisms but higher genome diversity and waste dynamics, demonstrating
+that metabolic complexity produces qualitatively distinct ecological dynamics
+rather than simply increasing population counts.}
+\label{fig:proxy}
+\end{figure}
+
+\subsection{Pairwise Ablations and Interdependence}
+
+To test for interaction effects beyond individual necessity, we disable
+pairs of criteria and compute synergy:
+$\text{synergy}_{A,B} = \Delta_{A \cup B} - (\Delta_A + \Delta_B)$.
+Table~\ref{tab:pairwise} reports scores for six pairs.
+All show sub-additive synergy (negative), indicating \emph{shared failure
+pathways}: individual ablations already collapse populations to near
+their floor ($\sim$30--50 organisms), leaving no room for additive effects.
+This ceiling effect reveals that criteria damage overlapping subsystems.
+
+\begin{table}[t]
+\centering
+\caption{Pairwise ablation synergy scores ($n$=30 per condition).
+Negative synergy indicates sub-additive interaction (shared failure
+pathways). $\Delta$ values as percentage of baseline ($\bar{x}$=322).
+\emph{Note:} Pairwise experiments use the default Toy metabolism
+(baseline $\bar{x}$=322) whereas Table~\ref{tab:ablation} uses Graph
+metabolism (baseline $\bar{x}$=293); cross-table $\Delta$ comparisons
+require normalization.}
+\label{tab:pairwise}
+\small
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Pair & $\Delta_{AB}$ & Expected & Synergy & Ratio \\
+\midrule
+(Metab, Homeo)    & 278.8 & 528.3 & $-$249.5 & 0.53 \\
+(Metab, Response)  & 276.5 & 558.3 & $-$281.8 & 0.50 \\
+(Reprod, Growth)   & 290.4 & 418.5 & $-$128.1 & 0.69 \\
+(Boundary, Homeo)  & 268.7 & 509.6 & $-$240.9 & 0.53 \\
+(Response, Homeo)  & 277.5 & 534.8 & $-$257.3 & 0.52 \\
+(Reprod, Evol)     & 290.4 & 313.9 & $-$23.5  & 0.93 \\
+\bottomrule
+\multicolumn{5}{l}{\footnotesize Ratio = $\Delta_{AB}$ / Expected; values $<$1 indicate shared pathways.}
+\end{tabular}
+\end{table}
+
+\paragraph{Growth--reproduction confound.}
+The (reproduction, growth) pair confirms: $\Delta_{AB} =
+\Delta_{\text{reproduction}}$ = 290.4, so growth's effect is fully mediated
+through reproduction gating.
+This clarifies growth's role as an upstream prerequisite for reproductive
+competence rather than an independent viability mechanism.
+
+\subsection{Evolution Strengthening}
+
+The modest single-ablation effect of evolution ($d$=0.57, Cliff's
+$\delta$=0.18) reflects the 2000-step simulation horizon.
+To demonstrate evolution's contribution at longer timescales, we run two
+additional experiments:
+
+\paragraph{Long run.}
+Extending simulations to 10,000 steps ($n$=30) yields $d$=1.46, Cliff's
+$\delta$=0.72 ($p < 0.001$), a large effect compared to the modest
+2000-step result.
+Normal populations reach $\bar{x}$=358.1 organisms versus 327.1 for
+no-evolution ($\Delta$=$-$8.7\%), confirming that evolutionary adaptation
+accumulates across generations.
+
+\paragraph{Environmental shift.}
+At step 2,500 of a 5,000-step simulation, resource regeneration rate is
+halved (from 0.01 to 0.005 per cell per step).
+Evolved populations recover more effectively ($\bar{x}$=384.6 vs.\ 361.4,
+$d$=1.02, Cliff's $\delta$=0.57, $p < 0.001$), demonstrating that
+evolution enables adaptive response to environmental perturbation.
+
+\begin{figure}[t]
+\centering
+\IfFileExists{figures/fig_evolution.pdf}%
+  {\includegraphics[width=\columnwidth]{figures/fig_evolution.pdf}}%
+  {\fbox{\parbox{\dimexpr\columnwidth-2\fboxsep-2\fboxrule}{%
+    \centering\vspace{2em}[fig\_evolution.pdf --- to be generated]\vspace{2em}}}}
+\caption{Evolution strengthening. Top: 10,000-step long run shows
+increasing divergence between normal and no-evolution conditions.
+Bottom: environmental shift at step 2,500 (dashed line) demonstrates
+evolved populations' superior recovery.
+Lines show mean across 30 seeds; shaded bands $\pm$1 SEM.}
+\label{fig:evolution}
+\end{figure}
+
 % ============================================================================
 \section{Discussion}
 
 \paragraph{Criterion interdependence.}
-The ablation results reveal a hierarchy of necessity.
-Reproduction, response, and metabolism form an essential triad---their removal
-causes $>$84\% population collapse.
-Homeostasis and boundary maintenance occupy a middle tier ($\sim$58--77\%
-decline), modulating organism fitness without being immediately lethal.
-Growth occupies a similar middle tier ($\sim$37\% decline).
-Evolution shows the weakest short-term effect ($\sim$5\% decline), suggesting
-that at 2000-step timescales, evolutionary optimization contributes marginal
-improvement rather than constituting a survival requirement.
-This is biologically plausible: individual organisms do not need evolution to
-survive, but populations benefit from adaptation over longer horizons.
+Single ablations reveal a hierarchy: reproduction, response, and metabolism
+form an essential triad ($>$84\% decline), while homeostasis and boundary
+occupy a middle tier ($\sim$58--77\%).
+Pairwise ablations show uniformly sub-additive interactions
+(Table~\ref{tab:pairwise}), consistent with \emph{shared failure pathways}
+rather than independent modules---criteria converge on overlapping viability
+subsystems.
+The proxy control comparison further demonstrates that the specific
+implementation of a criterion shapes ecological dynamics (graph metabolism
+produces higher diversity but lower populations than simpler alternatives),
+ruling out tautological definitions.
 
-\paragraph{Graph metabolism as functional analogy.}
-The graph-based metabolic network---genetically encoded, multi-node, with
-per-edge transfer efficiencies---represents a genuine multi-step
-transformation process rather than a simple energy counter.
-Its removal causes the third-strongest ablation effect ($d$=17.24),
-confirming that metabolic complexity contributes to viability beyond what a
-static energy parameter would provide.
+\paragraph{Evolution at longer timescales.}
+The modest 2000-step evolution effect ($d$=0.57) grows to $d$=1.46 at
+10,000 steps and $d$=1.02 under environmental perturbation, confirming
+that evolutionary adaptation accumulates across generations.
 
 \subsection{Limitations}
 
-Several limitations constrain interpretation:
-
-\textbf{Growth mechanism.}
-The current growth/development implementation uses a maturation toggle rather
-than a full developmental program.
-While ablation still produces significant degradation ($d$=5.34), a richer
-developmental model (e.g., morphogenetic agent recruitment) would strengthen
-the functional-analogy claim for this criterion.
-
-\textbf{Evolution timescale.}
-The modest evolution effect ($d$=0.57) reflects the 2000-step simulation
-horizon.
-Evolutionary dynamics operate across generations; demonstrating stronger
-evolutionary necessity would require runs of $10^4$--$10^5$ steps with
-environmental change to create sustained selection pressure.
-
-\textbf{Computational scale.}
-The system runs on a single Mac Mini M2 Pro, limiting population sizes to
-$\sim$300 organisms.
-Larger populations might reveal emergent phenomena (e.g., speciation,
-ecosystem dynamics) not observable at current scale.
-
-\textbf{Weak ALife framing.}
-We make no claim that these digital organisms are alive.
-The functional-analogy framework demonstrates that seven criteria \emph{can}
-be integrated as interdependent processes, but this remains a model, not
-a sufficient condition for life.
+\textbf{Growth} uses a maturation toggle rather than a full developmental
+program; a morphogenetic model would strengthen this criterion's
+functional-analogy claim.
+\textbf{Evolution} reaches $d$=1.46 at 10,000 steps but demonstrating
+open-ended dynamics would require $10^5$+ steps with novelty metrics
+\citep{bedau_2000_open}.
+\textbf{Scale} is limited to $\sim$300 organisms on a single machine;
+larger populations might reveal emergent ecological phenomena.
+We adopt a \textbf{weak ALife} stance: this is a functional model, not
+a claim that digital organisms are alive.
 
 % ============================================================================
 \section{Conclusion}
 
-We presented the first artificial life system integrating all seven textbook
-biological criteria as functionally interdependent processes, verified through
-controlled criterion-ablation experiments.
+We presented a testable integration of all seven textbook biological criteria
+as functionally interdependent processes within a single artificial life system,
+verified through controlled criterion-ablation, pairwise interaction, and proxy
+control experiments.
 The functional-analogy framework---requiring dynamic operation, measurable
 degradation upon removal, and feedback coupling---provides a rigorous
 standard distinguishing genuine criteria implementations from simplified
@@ -472,16 +578,20 @@ proxies.
 
 Our results demonstrate that no criterion is decorative: removing any one
 causes statistically significant population decline ($p < 0.016$, Holm-Bonferroni
-corrected), with effect sizes spanning from modest evolutionary optimization
-($d$=0.57) to catastrophic metabolic failure ($d$=17.24).
+corrected), with Cliff's $\delta$ ranging from 0.18 to 1.00.
+Pairwise ablations further reveal shared failure pathways---sub-additive
+interactions consistent with criteria converging on overlapping viability
+subsystems rather than operating independently.
 
 Future work will pursue three directions:
-(1)~longer simulation runs ($10^4$+ steps) to reveal stronger evolutionary
-dynamics and open-ended evolution metrics \citep{bedau_2000_open,
-taylor_2016_openended};
-(2)~a richer developmental program replacing the current growth toggle; and
-(3)~scaling to larger populations to investigate emergent ecological
-phenomena.
+(1)~a richer developmental program replacing the current growth toggle;
+(2)~scaling to larger populations to investigate emergent ecological phenomena
+and open-ended evolution metrics \citep{bedau_2000_open,
+taylor_2016_openended}; and
+(3)~systematic environmental perturbation studies to characterize adaptive
+capacity across evolutionary timescales.
+
+Code and data will be made available upon acceptance at an anonymous repository.
 
 \bibliographystyle{apalike}
 \bibliography{references}
