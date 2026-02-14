@@ -25,7 +25,7 @@ A criterion-ablation experiment ($n$=30 per condition, seeds held out from
 calibration) demonstrates that disabling any single criterion causes
 statistically significant population decline (Mann-Whitney $U$,
 Holm-Bonferroni corrected, all $p \leq 0.016$), with Cliff's $\delta$
-ranging from 0.18 to 1.00.
+ranging from 0.32 to 1.00.
 Pairwise ablations reveal sub-additive interactions consistent with
 shared failure pathways, confirming that criteria damage overlapping
 subsystems rather than operating independently.
@@ -68,7 +68,9 @@ counterpart, satisfying three conditions:
     loop with another criterion, precluding independent-module implementations.
 \end{enumerate}
 This definition operationalizes the intuition behind autopoiesis
-\citep{maturana_1980_autopoiesis} and minimal-life frameworks
+\citep{maturana_1980_autopoiesis}, the chemoton model's integration
+of metabolic, boundary, and information subsystems
+\citep{ganti_2003_principles}, and minimal-life frameworks
 \citep{ruizmirazo_2004_universal} in a form amenable to experimental
 falsification.
 
@@ -258,7 +260,8 @@ Waste accumulates as a byproduct proportional to throughput.
 \paragraph{Homeostasis.}
 A feedforward neural network (8 inputs $\rightarrow$ 16 hidden with tanh
 $\rightarrow$ 4 outputs with tanh; 212 weights) processes sensory inputs
-(position, velocity, internal state, neighbor count) and produces velocity
+(normalized position $x,y$; velocity $v_x, v_y$; internal state
+$s_0, s_1, s_2$; neighbor density) and produces velocity
 adjustments and internal-state deltas.
 The internal state vector enables adaptive regulation: organisms that maintain
 internal variables within viable ranges survive longer.
@@ -363,7 +366,7 @@ decline compared to the normal baseline (Table~\ref{tab:ablation}).
 \begin{table}[t]
 \centering
 \caption{Criterion-ablation results ($n$=30 per condition). Normal baseline
-mean: 293.1 (median: 294, IQR: 283--305). All $p$-values Holm-Bonferroni
+mean: 293.1 (median: 294, IQR: 282--310). All $p$-values Holm-Bonferroni
 corrected. $^{***}p<0.001$, $^{*}p<0.05$.}
 \label{tab:ablation}
 \small
@@ -375,9 +378,9 @@ No Reproduction & 31.3 & $-$89.3 & 18.06 & 1.00 & $<$0.001 & $^{***}$ \\
 No Response     & 34.1 & $-$88.4 & 17.82 & 1.00 & $<$0.001 & $^{***}$ \\
 No Metabolism   & 46.0 & $-$84.3 & 17.24 & 1.00 & $<$0.001 & $^{***}$ \\
 No Homeostasis  & 68.3 & $-$76.7 & 4.94  & 1.00 & $<$0.001 & $^{***}$ \\
-No Boundary     & 121.8 & $-$58.4 & 4.36 & 1.00 & $<$0.001 & $^{***}$ \\
-No Growth       & 185.6 & $-$36.7 & 5.34 & 0.97 & $<$0.001 & $^{***}$ \\
-No Evolution    & 278.3 & $-$5.1  & 0.57 & 0.18 & 0.016 & $^{*}$ \\
+No Boundary     & 121.8 & $-$58.5 & 4.36 & 1.00 & $<$0.001 & $^{***}$ \\
+No Growth       & 185.6 & $-$36.7 & 5.34 & 1.00 & $<$0.001 & $^{***}$ \\
+No Evolution    & 278.3 & $-$5.1  & 0.57 & 0.32 & 0.016 & $^{*}$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -389,7 +392,7 @@ adaptive movement, or population renewal, organisms cannot sustain themselves.
 
 Figure~\ref{fig:timeseries} shows population trajectories across all
 conditions.
-The normal condition (black) stabilizes around 293 organisms by step~1000.
+The normal condition (black) stabilizes around 293 organisms by step~1900.
 Metabolic ablation (orange) causes rapid collapse within the first 200 steps,
 as organisms cannot produce energy to maintain boundaries.
 Reproduction ablation (blue) produces a slower but equally terminal decline,
@@ -404,7 +407,7 @@ necessity at these timescales.
 \includegraphics[width=\textwidth]{figures/fig_timeseries.pdf}
 \caption{Population dynamics under criterion ablation. Lines show mean alive
 count across 30 seeds (100--129); shaded bands show $\pm$1 SEM. Normal
-baseline (thick black) stabilizes near 293 organisms. Removing reproduction,
+baseline (thick black) stabilizes near 293 organisms by step~1900. Removing reproduction,
 response, or metabolism causes $>$84\% population collapse. Evolution ablation
 shows a modest 5\% decline ($d$=0.57), consistent with optimization rather
 than short-term survival necessity.}
@@ -460,36 +463,41 @@ All show sub-additive synergy (negative), indicating \emph{shared failure
 pathways}: individual ablations already collapse populations to near
 their floor ($\sim$30--50 organisms), leaving no room for additive effects.
 This ceiling effect reveals that criteria damage overlapping subsystems.
+The (metabolism, homeostasis) pair exemplifies the shared pathway:
+disabling metabolism eliminates energy production, starving boundary
+repair ($\Delta b_{\text{repair}} \propto e$); disabling homeostasis
+degrades adaptive behavior, accelerating waste accumulation, which
+amplifies boundary decay via the waste-pressure term ($s_w \cdot w$
+in $\Delta b_{\text{decay}}$).
+Both routes converge on boundary failure, explaining why
+$\Delta_{AB} = 249.9$ falls far below the additive expectation of 472.0.
 
 \begin{table}[t]
 \centering
-\caption{Pairwise ablation synergy scores ($n$=30 per condition).
-Negative synergy indicates sub-additive interaction (shared failure
-pathways). $\Delta$ values as percentage of baseline ($\bar{x}$=322).
-\emph{Note:} Pairwise experiments use the default Toy metabolism
-(baseline $\bar{x}$=322) whereas Table~\ref{tab:ablation} uses Graph
-metabolism (baseline $\bar{x}$=293); cross-table $\Delta$ comparisons
-require normalization.}
+\caption{Pairwise ablation synergy scores ($n$=30 per condition, Graph
+metabolism). Negative synergy indicates sub-additive interaction (shared
+failure pathways). Baseline $\bar{x}$=293.1, consistent with
+Table~\ref{tab:ablation}.}
 \label{tab:pairwise}
 \small
 \begin{tabular}{@{}lrrrr@{}}
 \toprule
 Pair & $\Delta_{AB}$ & Expected & Synergy & Ratio \\
 \midrule
-(Metab, Homeo)    & 278.8 & 528.3 & $-$249.5 & 0.53 \\
-(Metab, Response)  & 276.5 & 558.3 & $-$281.8 & 0.50 \\
-(Reprod, Growth)   & 290.4 & 418.5 & $-$128.1 & 0.69 \\
-(Boundary, Homeo)  & 268.7 & 509.6 & $-$240.9 & 0.53 \\
-(Response, Homeo)  & 277.5 & 534.8 & $-$257.3 & 0.52 \\
-(Reprod, Evol)     & 290.4 & 313.9 & $-$23.5  & 0.93 \\
+(Metab, Homeo)    & 249.9 & 472.0 & $-$222.0 & 0.53 \\
+(Metab, Response)  & 247.7 & 506.1 & $-$258.4 & 0.49 \\
+(Reprod, Growth)   & 261.9 & 369.4 & $-$107.5 & 0.71 \\
+(Boundary, Homeo)  & 181.9 & 396.2 & $-$214.3 & 0.46 \\
+(Response, Homeo)  & 256.4 & 483.9 & $-$227.5 & 0.53 \\
+(Reprod, Evol)     & 261.9 & 276.7 & $-$14.9  & 0.95 \\
 \bottomrule
-\multicolumn{5}{l}{\footnotesize Ratio = $\Delta_{AB}$ / Expected; values $<$1 indicate shared pathways.}
+\multicolumn{5}{l}{\footnotesize Expected = $\Delta_A + \Delta_B$ (additive null model); Ratio = $\Delta_{AB}$ / Expected.}
 \end{tabular}
 \end{table}
 
 \paragraph{Growth--reproduction confound.}
-The (reproduction, growth) pair confirms: $\Delta_{AB} =
-\Delta_{\text{reproduction}}$ = 290.4, so growth's effect is fully mediated
+The (reproduction, growth) pair confirms: $\Delta_{AB} \approx
+\Delta_{\text{reproduction}}$ = 261.9, so growth's effect is fully mediated
 through reproduction gating.
 This clarifies growth's role as an upstream prerequisite for reproductive
 competence rather than an independent viability mechanism.
@@ -497,12 +505,12 @@ competence rather than an independent viability mechanism.
 \subsection{Evolution Strengthening}
 
 The modest single-ablation effect of evolution ($d$=0.57, Cliff's
-$\delta$=0.18) reflects the 2000-step simulation horizon.
+$\delta$=0.32) reflects the 2000-step simulation horizon.
 To demonstrate evolution's contribution at longer timescales, we run two
 additional experiments:
 
 \paragraph{Long run.}
-Extending simulations to 10,000 steps ($n$=30) yields $d$=1.46, Cliff's
+Extending simulations to 10,000 steps ($n$=30) yields $d$=1.43, Cliff's
 $\delta$=0.72 ($p < 0.001$), a large effect compared to the modest
 2000-step result.
 Normal populations reach $\bar{x}$=358.1 organisms versus 327.1 for
@@ -513,7 +521,7 @@ accumulates across generations.
 At step 2,500 of a 5,000-step simulation, resource regeneration rate is
 halved (from 0.01 to 0.005 per cell per step).
 Evolved populations recover more effectively ($\bar{x}$=384.6 vs.\ 361.4,
-$d$=1.02, Cliff's $\delta$=0.57, $p < 0.001$), demonstrating that
+$d$=1.01, Cliff's $\delta$=0.57, $p < 0.001$), demonstrating that
 evolution enables adaptive response to environmental perturbation.
 
 \begin{figure}[t]
@@ -528,6 +536,36 @@ Bottom: environmental shift at step 2,500 (dashed line) demonstrates
 evolved populations' superior recovery.
 Lines show mean across 30 seeds; shaded bands $\pm$1 SEM.}
 \label{fig:evolution}
+\end{figure}
+
+\subsection{Homeostatic Regulation}
+
+Figure~\ref{fig:homeostasis} shows population-mean internal state
+trajectories for Normal versus No Homeostasis conditions.
+Under normal operation, the neural-network controller actively regulates
+internal state variable~$s_0$, maintaining it near 0.99 throughout
+the simulation (Panel~A, solid).
+When homeostasis is disabled, $s_0$ decays monotonically due to the
+passive decay term ($h_{\text{decay}} = 0.01$ per step), and the
+population exhibits high variance as organisms lack the ability to
+counteract perturbations (Panel~A, dashed; variance shown in Panel~B).
+This divergence confirms that the NN-driven homeostatic mechanism
+constitutes an active regulatory process---not a static parameter---that
+satisfies the functional-analogy requirement of sustained resource
+consumption with measurable degradation upon removal.
+
+\begin{figure}[t]
+\centering
+\IfFileExists{figures/fig_homeostasis.pdf}%
+  {\includegraphics[width=\columnwidth]{figures/fig_homeostasis.pdf}}%
+  {\fbox{\parbox{\dimexpr\columnwidth-2\fboxsep-2\fboxrule}{%
+    \centering\vspace{2em}[fig\_homeostasis.pdf --- to be generated]\vspace{2em}}}}
+\caption{Homeostatic regulation trajectories ($n$=30). (A)~Mean internal
+state variable~$s_0$ over time: Normal condition (solid) maintains
+regulation near 0.99, while No Homeostasis (dashed) shows passive decay.
+(B)~Population-level standard deviation of $s_0$: disabled homeostasis
+produces higher inter-organism variance. Shaded bands show $\pm$1 SEM.}
+\label{fig:homeostasis}
 \end{figure}
 
 % ============================================================================
@@ -547,16 +585,21 @@ produces higher diversity but lower populations than simpler alternatives),
 ruling out tautological definitions.
 
 \paragraph{Evolution at longer timescales.}
-The modest 2000-step evolution effect ($d$=0.57) grows to $d$=1.46 at
-10,000 steps and $d$=1.02 under environmental perturbation, confirming
+The modest 2000-step evolution effect ($d$=0.57) grows to $d$=1.43 at
+10,000 steps and $d$=1.01 under environmental perturbation, confirming
 that evolutionary adaptation accumulates across generations.
 
 \subsection{Limitations}
 
-\textbf{Growth} uses a maturation toggle rather than a full developmental
-program; a morphogenetic model would strengthen this criterion's
+\textbf{Cellular organization} is tracked via a scalar boundary-integrity
+variable rather than emergent spatial cohesion among swarm agents;
+an explicit spatial boundary model would provide a stronger functional
+analogy to biological membranes.
+\textbf{Growth} uses a maturation toggle that functions primarily as a
+reproduction gate rather than a full developmental program;
+a morphogenetic model would strengthen this criterion's
 functional-analogy claim.
-\textbf{Evolution} reaches $d$=1.46 at 10,000 steps but demonstrating
+\textbf{Evolution} reaches $d$=1.43 at 10,000 steps but demonstrating
 open-ended dynamics would require $10^5$+ steps with novelty metrics
 \citep{bedau_2000_open}.
 \textbf{Scale} is limited to $\sim$300 organisms on a single machine;
@@ -578,7 +621,7 @@ proxies.
 
 Our results demonstrate that no criterion is decorative: removing any one
 causes statistically significant population decline ($p < 0.016$, Holm-Bonferroni
-corrected), with Cliff's $\delta$ ranging from 0.18 to 1.00.
+corrected), with Cliff's $\delta$ ranging from 0.32 to 1.00.
 Pairwise ablations further reveal shared failure pathways---sub-additive
 interactions consistent with criteria converging on overlapping viability
 subsystems rather than operating independently.
