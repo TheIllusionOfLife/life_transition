@@ -592,9 +592,9 @@ def generate_graded() -> None:
 
     fig, ax = plt.subplots(figsize=(3.4, 2.8))
 
-    medians = [float(np.median(level_data[l])) for l in levels]
-    q25s = [float(np.percentile(level_data[l], 25)) for l in levels]
-    q75s = [float(np.percentile(level_data[l], 75)) for l in levels]
+    medians = [float(np.median(level_data[lv])) for lv in levels]
+    q25s = [float(np.percentile(level_data[lv], 25)) for lv in levels]
+    q75s = [float(np.percentile(level_data[lv], 75)) for lv in levels]
 
     ax.plot(levels, medians, "o-", color="#0072B2", linewidth=1.5, markersize=5)
     ax.fill_between(levels, q25s, q75s, color="#0072B2", alpha=0.2)
@@ -687,7 +687,6 @@ def generate_phenotype() -> None:
 
     traits = np.array(analysis.get("traits", []))
     labels = np.array(analysis.get("labels", []))
-    trait_names = analysis.get("trait_names", [])
 
     if traits.shape[0] < 4 or traits.shape[1] < 2:
         print("  SKIP: insufficient trait data for phenotype plot")

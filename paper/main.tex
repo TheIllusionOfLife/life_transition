@@ -685,9 +685,10 @@ after each stress phase. Lines: mean across 30 seeds; bands: $\pm$1 SEM.}
 
 \paragraph{Sham ablation control.}
 To confirm that observed ablation effects are functional rather than
-computational artifacts, we implement a sham process that performs
-distance calculations matching the cost of a real criterion update
-but discards results.
+computational artifacts, we implement a state-neutral sham process that
+performs spatial neighbor queries matching the computational cost of a
+real criterion update but discards all results without consuming RNG
+state or modifying simulation variables.
 Comparing sham-on versus sham-off ($n$=30, 1,000 steps) yields no
 significant difference (Mann-Whitney $U$, $p > 0.05$), validating
 that criterion ablation effects reflect genuine functional dependencies.
@@ -749,10 +750,10 @@ ruling out tautological definitions.
 Second, pairwise ablations reveal sub-additive interactions
 (Table~\ref{tab:pairwise}), indicating shared failure pathways
 inconsistent with independent modules.
-Third, the sham ablation control (a no-op process matching real
-criterion computational cost) produces no significant population
-difference, confirming that observed effects are functional, not
-computational artifacts.
+Third, the state-neutral sham ablation control (matching real
+criterion computational cost without modifying simulation state) produces
+no significant population difference, confirming that observed effects
+are functional, not computational artifacts.
 Fourth, graded metabolic ablation produces a proportional dose-response
 (Figure~\ref{fig:graded}), inconsistent with a binary on/off artifact.
 

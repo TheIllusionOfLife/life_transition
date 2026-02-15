@@ -155,6 +155,7 @@ pub enum WorldInitError {
     InvalidEnvironmentShiftResourceRate,
     InvalidMetabolismEfficiencyMultiplier,
     InvalidEnvironmentCycleLowRate,
+    ConflictingEnvironmentFeatures,
     WorldSizeTooLarge { max: f64, actual: f64 },
     AgentCountOverflow,
     TooManyAgents { max: usize, actual: usize },
@@ -290,6 +291,12 @@ impl fmt::Display for WorldInitError {
                 write!(
                     f,
                     "metabolism_efficiency_multiplier must be finite and within [0,1]"
+                )
+            }
+            WorldInitError::ConflictingEnvironmentFeatures => {
+                write!(
+                    f,
+                    "environment_shift_step and environment_cycle_period are mutually exclusive"
                 )
             }
             WorldInitError::InvalidEnvironmentCycleLowRate => {
@@ -648,6 +655,9 @@ impl World {
             && config.environment_cycle_low_rate >= 0.0)
         {
             return Err(WorldInitError::InvalidEnvironmentCycleLowRate);
+        }
+        if config.environment_shift_step > 0 && config.environment_cycle_period > 0 {
+            return Err(WorldInitError::ConflictingEnvironmentFeatures);
         }
         Ok(())
     }
@@ -1480,26 +1490,27 @@ impl World {
             self.prune_dead_entities();
         }
 
-        // Sham process: compute pairwise agent distances (real work) but discard result.
-        // Matches computational cost of a real criterion update without functional effect.
+        // Sham process: compute spatial neighbor queries (real work) but discard result.
+        // Uses the same spatial tree that real criteria use during this step,
+        // matching computational cost without functional effect.
         if self.config.enable_sham_process {
-            for org in &self.organisms {
-                if !org.alive {
+            let mut _sham_sum: f64 = 0.0;
+            for agent in &self.agents {
+                if !self
+                    .organisms
+                    .get(agent.organism_id as usize)
+                    .is_some_and(|o| o.alive)
+                {
                     continue;
                 }
-                let mut _sham_sum: f64 = 0.0;
-                for &aid in &org.agent_ids {
-                    if let Some(a) = self.agents.get(aid as usize) {
-                        let neighbor_count = spatial::count_neighbors(
-                            &tree,
-                            a.position,
-                            self.config.sensing_radius,
-                            a.id,
-                            self.config.world_size,
-                        );
-                        _sham_sum += neighbor_count as f64;
-                    }
-                }
+                let neighbor_count = spatial::count_neighbors(
+                    &tree,
+                    agent.position,
+                    self.config.sensing_radius,
+                    agent.id,
+                    self.config.world_size,
+                );
+                _sham_sum += neighbor_count as f64;
             }
         }
 
@@ -2704,11 +2715,11 @@ mod tests {
     // ── Sham ablation tests ──
 
     #[test]
-    fn enable_sham_process_defaults_to_true() {
+    fn enable_sham_process_defaults_to_false() {
         let cfg = SimConfig::default();
         assert!(
-            cfg.enable_sham_process,
-            "enable_sham_process should default to true"
+            !cfg.enable_sham_process,
+            "enable_sham_process should default to false (opt-in)"
         );
     }
 
@@ -2767,6 +2778,18 @@ mod tests {
             (cfg.environment_cycle_low_rate - 0.005).abs() < f32::EPSILON,
             "environment_cycle_low_rate should default to 0.005"
         );
-        assert!(cfg.enable_sham_process);
+        assert!(!cfg.enable_sham_process);
+    }
+
+    #[test]
+    fn environment_shift_and_cycle_are_mutually_exclusive() {
+        let mut world = make_world(10, 100.0);
+        world.config.environment_shift_step = 500;
+        world.config.environment_cycle_period = 200;
+        let result = world.set_config(world.config.clone());
+        assert!(matches!(
+            result,
+            Err(WorldInitError::ConflictingEnvironmentFeatures)
+        ));
     }
 }

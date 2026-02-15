@@ -171,7 +171,7 @@ impl Default for SimConfig {
             metabolism_efficiency_multiplier: 1.0,
             environment_cycle_period: 0,
             environment_cycle_low_rate: 0.005,
-            enable_sham_process: true,
+            enable_sham_process: false,
         }
     }
 }

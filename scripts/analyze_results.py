@@ -205,7 +205,9 @@ def jonckheere_terpstra(groups: list[np.ndarray]) -> tuple[float, float]:
                         jt += 1.0
                     elif xi == yj:
                         jt += 0.5
-    # Expected value and variance under null
+    # Expected value and variance under null (no-tie approximation).
+    # Tie correction omitted: with continuous-valued alive counts across
+    # 30 seeds per group, exact ties are rare and impact is negligible.
     n_total = sum(len(g) for g in groups)
     ns = [len(g) for g in groups]
     e_jt = (n_total ** 2 - sum(n ** 2 for n in ns)) / 4.0
@@ -452,7 +454,7 @@ def main():
         )
 
     # ── Extended analyses: graded, cyclic, sham ──
-    exp_dir = Path(prefix).parent
+    exp_dir = Path(prefix).resolve().parent
     graded_result = analyze_graded(exp_dir)
     cyclic_result = analyze_cyclic(exp_dir)
     sham_result = analyze_sham(exp_dir)

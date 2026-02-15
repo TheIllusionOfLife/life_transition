@@ -1,7 +1,7 @@
 """Phenotype clustering and niche analysis.
 
 Analyzes evolution experiment data to identify emergent phenotypic clusters
-and spatial niche associations among organisms at the final timestep.
+and spatial niche associations among populations at the final timestep.
 
 Usage:
     uv run python scripts/analyze_phenotype.py > experiments/phenotype_analysis.json
@@ -15,6 +15,7 @@ from pathlib import Path
 
 import numpy as np
 from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score
 from sklearn.preprocessing import StandardScaler
 
 from experiment_common import log
@@ -41,9 +42,9 @@ def load_evolution_data(exp_dir: Path) -> list[dict]:
 
 
 def extract_organism_traits(results: list[dict]) -> np.ndarray:
-    """Extract per-organism traits from final timestep samples.
+    """Extract per-seed population-level traits from final timestep samples.
 
-    Returns array of shape (n_organisms, 5) with columns:
+    Returns array of shape (n_seeds, 5) with columns:
     [energy_mean, waste_mean, boundary_mean, genome_diversity, mean_generation]
     """
     traits = []
@@ -70,21 +71,19 @@ def cluster_phenotypes(traits: np.ndarray, max_k: int = 5) -> dict:
     scaled = scaler.fit_transform(traits)
 
     # Try k=2..max_k and pick best silhouette
-    from sklearn.metrics import silhouette_score
-
     best_k = 2
     best_score = -1.0
+    best_model = None
     for k in range(2, min(max_k + 1, len(traits))):
         km = KMeans(n_clusters=k, n_init=10, random_state=42)
-        labels = km.fit_predict(scaled)
-        score = silhouette_score(scaled, labels)
+        cur_labels = km.fit_predict(scaled)
+        score = silhouette_score(scaled, cur_labels)
         if score > best_score:
             best_score = score
             best_k = k
+            best_model = km
 
-    # Refit with best k
-    km = KMeans(n_clusters=best_k, n_init=10, random_state=42)
-    labels = km.fit_predict(scaled)
+    labels = best_model.predict(scaled)
 
     # Compute per-cluster trait means
     cluster_profiles = []
@@ -97,7 +96,7 @@ def cluster_phenotypes(traits: np.ndarray, max_k: int = 5) -> dict:
             "count": int(mask.sum()),
         }
         for i, name in enumerate(trait_names):
-            profile[f"{name}_mean"] = round(float(traits[mask, i].mean()), 4)
+            profile[name] = round(float(traits[mask, i].mean()), 4)
             profile[f"{name}_std"] = round(float(traits[mask, i].std()), 4)
         cluster_profiles.append(profile)
 
@@ -105,7 +104,7 @@ def cluster_phenotypes(traits: np.ndarray, max_k: int = 5) -> dict:
         "n_clusters": best_k,
         "silhouette_score": round(float(best_score), 4),
         "cluster_profiles": cluster_profiles,
-        "labels": [int(l) for l in labels],
+        "labels": [int(label) for label in labels],
         "trait_names": trait_names,
         "traits": [[round(float(v), 4) for v in row] for row in traits],
     }
@@ -138,8 +137,8 @@ def main():
 
     for cp in analysis.get("cluster_profiles", []):
         log(f"  Cluster {cp['cluster_id']}: n={cp['count']}, "
-            f"energy={cp['energy_mean_mean']:.3f}, "
-            f"boundary={cp['boundary_mean_mean']:.3f}")
+            f"energy={cp['energy_mean']:.3f}, "
+            f"boundary={cp['boundary_mean']:.3f}")
 
     output = {
         "analysis": "phenotype_clustering",
