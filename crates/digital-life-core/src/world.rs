@@ -99,7 +99,6 @@ pub struct SnapshotFrame {
     pub organisms: Vec<OrganismSnapshot>,
 }
 
-
 fn default_schema_version() -> u32 {
     1
 }
@@ -156,7 +155,6 @@ pub struct World {
     /// config at runtime during environment shifts.
     current_resource_rate: f32,
 }
-
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum WorldInitError {
@@ -1632,7 +1630,10 @@ mod tests {
         let mut cfg = world.config().clone();
         cfg.dt = -0.1;
         let result = world.set_config(cfg);
-        assert!(matches!(result, Err(WorldInitError::Config(SimConfigError::InvalidDt))));
+        assert!(matches!(
+            result,
+            Err(WorldInitError::Config(SimConfigError::InvalidDt))
+        ));
     }
 
     #[test]
@@ -1738,7 +1739,9 @@ mod tests {
         let result = World::try_new(agents, vec![nn], cfg);
         assert!(matches!(
             result,
-            Err(WorldInitError::Config(SimConfigError::InvalidBoundaryDecayBaseRate))
+            Err(WorldInitError::Config(
+                SimConfigError::InvalidBoundaryDecayBaseRate
+            ))
         ));
     }
 
@@ -1757,7 +1760,9 @@ mod tests {
         let result = World::try_new(agents, vec![nn], cfg);
         assert!(matches!(
             result,
-            Err(WorldInitError::Config(SimConfigError::InvalidMutationProbabilityBudget))
+            Err(WorldInitError::Config(
+                SimConfigError::InvalidMutationProbabilityBudget
+            ))
         ));
     }
 
@@ -1775,7 +1780,9 @@ mod tests {
         let result = World::try_new(agents, vec![nn], cfg);
         assert!(matches!(
             result,
-            Err(WorldInitError::Config(SimConfigError::InvalidReproductionEnergyBalance))
+            Err(WorldInitError::Config(
+                SimConfigError::InvalidReproductionEnergyBalance
+            ))
         ));
     }
 
@@ -2951,7 +2958,9 @@ mod tests {
         let result = world.set_config(world.config.clone());
         assert!(matches!(
             result,
-            Err(WorldInitError::Config(SimConfigError::ConflictingEnvironmentFeatures))
+            Err(WorldInitError::Config(
+                SimConfigError::ConflictingEnvironmentFeatures
+            ))
         ));
     }
 }
