@@ -11,6 +11,7 @@ Usage:
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 from collections import defaultdict
@@ -37,6 +38,23 @@ TE_PERMUTATION_SETTINGS = [200, 400, 800]
 TE_PHASE_SURROGATE_SAMPLES = 100
 MAX_DROPPED_SEED_FRACTION = 0.10
 INCLUDE_SEED_DETAILS = True
+
+ROBUSTNESS_PROFILES = {
+    "full": {
+        "bin_settings": TE_BIN_SETTINGS,
+        "permutation_settings": TE_PERMUTATION_SETTINGS,
+        "phase_surrogate_samples": TE_PHASE_SURROGATE_SAMPLES,
+        "surrogate_permutation_floor": 50,
+        "surrogate_permutation_divisor": 4,
+    },
+    "fast": {
+        "bin_settings": [3, 5],
+        "permutation_settings": [200, 400],
+        "phase_surrogate_samples": 50,
+        "surrogate_permutation_floor": 25,
+        "surrogate_permutation_divisor": 8,
+    },
+}
 
 
 def holm_bonferroni(p_values: list[float]) -> list[float]:
@@ -353,6 +371,9 @@ def te_robustness_summary(
     bin_settings: list[int],
     permutation_settings: list[int],
     rng_seed: int,
+    phase_surrogate_samples: int,
+    surrogate_permutation_floor: int,
+    surrogate_permutation_divisor: int,
 ) -> list[dict]:
     """Compute TE sensitivity and phase-surrogate robustness grid for one pair."""
     rows: list[dict] = []
@@ -368,22 +389,25 @@ def te_robustness_summary(
 
             phase_seed = np.random.SeedSequence([rng_seed, bins, permutations, 2])
             phase_rng = np.random.default_rng(phase_seed)
-            surrogate_te = np.empty(TE_PHASE_SURROGATE_SAMPLES, dtype=float)
-            for i in range(TE_PHASE_SURROGATE_SAMPLES):
+            surrogate_te = np.empty(phase_surrogate_samples, dtype=float)
+            for i in range(phase_surrogate_samples):
                 x_surrogate = phase_randomize(x, phase_rng)
                 y_surrogate = phase_randomize(y, phase_rng)
                 te_surrogate = transfer_entropy_lag1(
                     x_surrogate,
                     y_surrogate,
                     bins=bins,
-                    permutations=max(50, permutations // 4),
+                    permutations=max(
+                        surrogate_permutation_floor,
+                        permutations // surrogate_permutation_divisor,
+                    ),
                     rng=phase_rng,
                 )
                 surrogate_te[i] = te_surrogate["te"] if te_surrogate is not None else 0.0
 
             phase_p = float(
                 (np.sum(surrogate_te >= float(te["te"])) + 1)
-                / (TE_PHASE_SURROGATE_SAMPLES + 1)
+                / (phase_surrogate_samples + 1)
             )
             rows.append(
                 {
@@ -414,10 +438,16 @@ def bootstrap_ci(
     return lo, hi
 
 
-def main() -> None:
+def main(*, robustness_profile: str = "full") -> None:
     if not DATA_PATH.exists():
         print(f"ERROR: {DATA_PATH} not found")
         return
+    profile = ROBUSTNESS_PROFILES[robustness_profile]
+    bin_settings = profile["bin_settings"]
+    permutation_settings = profile["permutation_settings"]
+    phase_surrogate_samples = int(profile["phase_surrogate_samples"])
+    surrogate_permutation_floor = int(profile["surrogate_permutation_floor"])
+    surrogate_permutation_divisor = int(profile["surrogate_permutation_divisor"])
 
     steps, seed_series, quality = load_seed_timeseries(DATA_PATH)
     if not seed_series:
@@ -449,9 +479,12 @@ def main() -> None:
             "max_lag": MAX_LAG,
             "te_bins": TE_BINS,
             "te_permutations": TE_PERMUTATIONS,
-            "te_robustness_bin_settings": TE_BIN_SETTINGS,
-            "te_robustness_permutation_settings": TE_PERMUTATION_SETTINGS,
-            "te_phase_surrogate_samples": TE_PHASE_SURROGATE_SAMPLES,
+            "te_robustness_profile": robustness_profile,
+            "te_robustness_bin_settings": bin_settings,
+            "te_robustness_permutation_settings": permutation_settings,
+            "te_phase_surrogate_samples": phase_surrogate_samples,
+            "te_surrogate_permutation_floor": surrogate_permutation_floor,
+            "te_surrogate_permutation_divisor": surrogate_permutation_divisor,
             "te_robustness_on_mean": True,
             "pair_level_correction": "holm_bonferroni",
             "seed_level_p_combination": "fisher",
@@ -547,9 +580,12 @@ def main() -> None:
                 "robustness": te_robustness_summary(
                     mean_a,
                     mean_b,
-                    bin_settings=TE_BIN_SETTINGS,
-                    permutation_settings=TE_PERMUTATION_SETTINGS,
+                    bin_settings=bin_settings,
+                    permutation_settings=permutation_settings,
                     rng_seed=2026 + len(pair_rows),
+                    phase_surrogate_samples=phase_surrogate_samples,
+                    surrogate_permutation_floor=surrogate_permutation_floor,
+                    surrogate_permutation_divisor=surrogate_permutation_divisor,
                 ),
             },
         }
@@ -646,4 +682,12 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--robustness-profile",
+        choices=sorted(ROBUSTNESS_PROFILES.keys()),
+        default="full",
+        help="Runtime/precision profile for TE robustness computations.",
+    )
+    args = parser.parse_args()
+    main(robustness_profile=args.robustness_profile)

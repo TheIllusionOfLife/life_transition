@@ -5,7 +5,7 @@ from pathlib import Path
 
 import numpy as np
 
-from scripts.analyze_coupling import te_robustness_summary
+from scripts.analyze_coupling import phase_randomize, te_robustness_summary
 from scripts.experiment_manifest import load_manifest, write_manifest
 
 
@@ -48,13 +48,42 @@ def test_te_robustness_summary_shape() -> None:
     rng = np.random.default_rng(0)
     x = rng.normal(size=120)
     y = 0.2 * np.roll(x, 1) + rng.normal(size=120)
-    rows = te_robustness_summary(x, y, bin_settings=[3], permutation_settings=[20], rng_seed=7)
+    rows = te_robustness_summary(
+        x,
+        y,
+        bin_settings=[3],
+        permutation_settings=[20],
+        rng_seed=7,
+        phase_surrogate_samples=8,
+        surrogate_permutation_floor=8,
+        surrogate_permutation_divisor=2,
+    )
 
     assert len(rows) == 1
     assert rows[0]["bins"] == 3
     assert rows[0]["permutations"] == 20
     assert "te" in rows[0]
     assert "p_value" in rows[0]
+
+
+def test_phase_randomize_even_keeps_nyquist_bin_real_and_fixed() -> None:
+    rng = np.random.default_rng(123)
+    series = np.random.default_rng(9).normal(size=8)
+    before = np.fft.rfft(series)
+    after = np.fft.rfft(phase_randomize(series, rng))
+
+    assert np.isclose(after[0].imag, 0.0, atol=1e-10)
+    assert np.isclose(after[-1], before[-1], atol=1e-8)
+
+
+def test_phase_randomize_odd_randomizes_last_complex_bin_phase() -> None:
+    rng = np.random.default_rng(456)
+    series = np.random.default_rng(10).normal(size=9)
+    before = np.fft.rfft(series)
+    after = np.fft.rfft(phase_randomize(series, rng))
+
+    assert np.isclose(abs(after[-1]), abs(before[-1]), atol=1e-8)
+    assert not np.isclose(after[-1], before[-1], atol=1e-8)
 
 
 def test_manuscript_consistency_check_detects_mismatch(tmp_path: Path) -> None:
@@ -159,3 +188,75 @@ def test_manuscript_consistency_reports_all_missing_inputs(tmp_path: Path) -> No
     )
     assert report["ok"] is False
     assert len(report["issues"]) == 3
+
+
+def test_manuscript_consistency_checks_script_paper_refs(tmp_path: Path) -> None:
+    from scripts.check_manuscript_consistency import run_checks
+
+    paper = tmp_path / "main.tex"
+    manifest = tmp_path / "final_graph_manifest_reference.json"
+    registry = tmp_path / "result_manifest_bindings.json"
+    paper.write_text(
+        """
+Each simulation runs for 2000 timesteps with population sampled every 50
+steps.
+\\label{tab:ablation}
+\\label{fig:coupling}
+\\label{fig:evolution}
+\\label{fig:persistent_clusters}
+\\label{tab:intervention}
+""".strip()
+    )
+    manifest.write_text(
+        json.dumps(
+            {
+                "schema_version": 2,
+                "source_git_commit": "abc1234",
+                "source_generated_at_utc": "2026-02-17T00:00:00Z",
+                "steps": 2000,
+                "sample_every": 50,
+                "base_config": {"mutation_point_rate": 0.02, "mutation_scale": 0.15},
+            }
+        )
+    )
+    registry.write_text(
+        json.dumps(
+            {
+                "bindings": [
+                    {
+                        "result_id": "ablation_primary",
+                        "paper_ref": "tab:ablation",
+                        "manifest": "experiments/final_graph_manifest.json",
+                        "source_files": ["experiments/final_graph_statistics.json"],
+                    },
+                    {
+                        "result_id": "coupling_main",
+                        "paper_ref": "fig:coupling",
+                        "manifest": "experiments/final_graph_manifest.json",
+                        "source_files": ["experiments/coupling_analysis.json"],
+                    },
+                    {
+                        "result_id": "evolution_evidence",
+                        "paper_ref": "fig:evolution",
+                        "manifest": "experiments/evolution_long_manifest.json",
+                        "source_files": ["experiments/evolution_evidence.json"],
+                    },
+                    {
+                        "result_id": "phenotype_persistence",
+                        "paper_ref": "fig:persistent_clusters",
+                        "manifest": "experiments/evolution_long_manifest.json",
+                        "source_files": ["experiments/phenotype_analysis.json"],
+                    },
+                    {
+                        "result_id": "pairwise_interaction",
+                        "paper_ref": "tab:intervention",
+                        "manifest": "experiments/pairwise_graph_manifest.json",
+                        "source_files": ["experiments/pairwise_graph_statistics.json"],
+                    },
+                ]
+            }
+        )
+    )
+
+    report = run_checks(paper, manifest, registry)
+    assert report["ok"] is True

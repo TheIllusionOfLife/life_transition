@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from pathlib import Path
@@ -10,11 +11,25 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_PAPER = PROJECT_ROOT / "paper" / "main.tex"
 DEFAULT_MANIFEST = PROJECT_ROOT / "docs" / "research" / "final_graph_manifest_reference.json"
 DEFAULT_BINDINGS = PROJECT_ROOT / "docs" / "research" / "result_manifest_bindings.json"
+EXPERIMENT_SCRIPTS = [
+    PROJECT_ROOT / "scripts" / "experiment_final_graph.py",
+    PROJECT_ROOT / "scripts" / "experiment_pairwise.py",
+    PROJECT_ROOT / "scripts" / "experiment_cyclic.py",
+    PROJECT_ROOT / "scripts" / "experiment_evolution.py",
+]
 
 
 def _read_json(path: Path) -> dict:
     with open(path) as f:
         return json.load(f)
+
+
+def _sorted_json(data: dict) -> str:
+    return json.dumps(data, sort_keys=True, separators=(",", ":"))
+
+
+def _config_digest(config: dict) -> str:
+    return hashlib.sha256(_sorted_json(config).encode("utf-8")).hexdigest()
 
 
 def _extract_reported_timing(tex: str) -> tuple[int | None, int | None]:
@@ -26,6 +41,17 @@ def _extract_reported_timing(tex: str) -> tuple[int | None, int | None]:
     if not m:
         return None, None
     return int(m.group(1)), int(m.group(2))
+
+
+def _extract_script_paper_refs(paths: list[Path]) -> set[str]:
+    refs: set[str] = set()
+    pattern = re.compile(r'"paper_ref"\s*:\s*"([^"]+)"')
+    for path in paths:
+        if not path.exists():
+            continue
+        text = path.read_text()
+        refs.update(pattern.findall(text))
+    return refs
 
 
 def run_checks(paper_path: Path, manifest_path: Path, registry_path: Path) -> dict:
@@ -47,6 +73,7 @@ def run_checks(paper_path: Path, manifest_path: Path, registry_path: Path) -> di
     tex = paper_path.read_text()
     manifest = _read_json(manifest_path)
     registry = _read_json(registry_path)
+    generated_manifest_path = PROJECT_ROOT / "experiments" / "final_graph_manifest.json"
 
     reported_steps, reported_sample_every = _extract_reported_timing(tex)
     if reported_steps is not None:
@@ -87,12 +114,19 @@ def run_checks(paper_path: Path, manifest_path: Path, registry_path: Path) -> di
         else:
             issues.append(f"manifest missing base_config.{key}")
 
+    for key in ["source_git_commit", "source_generated_at_utc"]:
+        if manifest.get(key):
+            checks.append(f"reference manifest {key}")
+        else:
+            issues.append(f"reference manifest missing {key}")
+
     bindings = registry.get("bindings")
     if not isinstance(bindings, list) or len(bindings) == 0:
         issues.append("bindings registry is empty")
     else:
         checks.append("bindings registry non-empty")
         paper_labels = set(re.findall(r"\\label\{([^}]+)\}", tex))
+        registry_refs: set[str] = set()
         for idx, binding in enumerate(bindings):
             paper_ref = binding.get("paper_ref")
             manifest_ref = binding.get("manifest")
@@ -100,8 +134,38 @@ def run_checks(paper_path: Path, manifest_path: Path, registry_path: Path) -> di
                 issues.append(f"binding[{idx}] missing paper_ref")
             elif paper_ref not in paper_labels:
                 issues.append(f"binding[{idx}] paper_ref not found in paper labels: {paper_ref}")
+            else:
+                registry_refs.add(str(paper_ref))
             if not manifest_ref:
                 issues.append(f"binding[{idx}] missing manifest")
+
+        script_refs = _extract_script_paper_refs(EXPERIMENT_SCRIPTS)
+        checks.append("experiment script paper_ref labels parsed")
+        for ref in sorted(script_refs):
+            if ref not in paper_labels:
+                issues.append(f"experiment script paper_ref not found in paper labels: {ref}")
+            if ref not in registry_refs:
+                issues.append(f"experiment script paper_ref missing from registry: {ref}")
+
+    if generated_manifest_path.exists():
+        generated_manifest = _read_json(generated_manifest_path)
+        checks.append("generated manifest freshness check")
+        for key in ["steps", "sample_every"]:
+            if generated_manifest.get(key) != manifest.get(key):
+                issues.append(
+                    "reference manifest stale for "
+                    f"{key}: ref={manifest.get(key)} generated={generated_manifest.get(key)}"
+                )
+        generated_base_cfg = generated_manifest.get("base_config", {})
+        if generated_base_cfg and base_cfg:
+            generated_digest = _config_digest(generated_base_cfg)
+            reference_digest = _config_digest(base_cfg)
+            if generated_digest != reference_digest:
+                issues.append(
+                    "reference manifest base_config differs from generated manifest"
+                )
+    else:
+        checks.append("generated manifest not present (freshness check skipped)")
 
     return {"ok": len(issues) == 0, "issues": issues, "checks": checks}
 

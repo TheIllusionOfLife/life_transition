@@ -41,6 +41,16 @@
         "experiments/niche_normal.json"
       ],
       "notes": "Ecological persistence and ARI-based claim gating."
+    },
+    {
+      "result_id": "pairwise_interaction",
+      "paper_ref": "tab:intervention",
+      "manifest": "experiments/pairwise_graph_manifest.json",
+      "source_files": [
+        "experiments/pairwise_graph_data.tsv",
+        "experiments/pairwise_graph_statistics.json"
+      ],
+      "notes": "Pairwise intervention interaction summary."
     }
   ]
 }
