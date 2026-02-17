@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import importlib
 import json
+import sys
+import types
 from pathlib import Path
 
 import numpy as np
@@ -351,3 +354,47 @@ steps.
     report = run_checks(paper, manifest, registry)
     assert report["ok"] is False
     assert any("invalid JSON in" in issue for issue in report["issues"])
+
+
+def test_experiment_niche_defaults_and_long_horizon_output(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    fake = types.SimpleNamespace()
+    calls: list[tuple[int, int]] = []
+
+    def fake_version() -> str:
+        return "test"
+
+    def fake_run_niche(
+        config_json: str, steps: int, sample_every: int, snapshot_steps_json: str
+    ) -> str:
+        _ = (config_json, sample_every, snapshot_steps_json)
+        calls.append((steps, sample_every))
+        payload = {"final_alive_count": 1, "organism_snapshots": [{"organisms": [{"id": 1}]}]}
+        return json.dumps(payload)
+
+    fake.version = fake_version
+    fake.run_niche_experiment_json = fake_run_niche
+    monkeypatch.setitem(sys.modules, "digital_life", fake)
+    monkeypatch.syspath_prepend(str(Path("scripts").resolve()))
+
+    mod = importlib.import_module("scripts.experiment_niche")
+    mod = importlib.reload(mod)
+
+    assert mod.SEEDS == list(range(100, 130))
+
+    monkeypatch.setattr(mod, "SEEDS", [100])
+    monkeypatch.setattr(mod, "make_config", lambda seed, overrides: "{}")
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["experiment_niche.py", "--long-horizon", "--output", str(tmp_path / "custom_long.json")],
+    )
+    mod.main()
+    assert calls[-1] == (mod.LONG_HORIZON_STEPS, mod.SAMPLE_EVERY)
+    assert (tmp_path / "custom_long.json").exists()
+
+
+def test_experiment_regimes_seed_count_is_n30() -> None:
+    text = Path("scripts/experiment_regimes.py").read_text()
+    assert "SEEDS = list(range(100, 130))" in text
