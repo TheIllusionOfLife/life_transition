@@ -119,6 +119,17 @@ def test_phase_randomize_odd_randomizes_last_complex_bin_phase() -> None:
     assert not np.isclose(after[-1], before[-1], atol=1e-8)
 
 
+def test_phase_randomize_small_n_returns_copy() -> None:
+    rng = np.random.default_rng(777)
+    series = np.array([0.1, -0.2, 0.3], dtype=float)
+    out = phase_randomize(series, rng)
+
+    assert out.dtype == float
+    assert len(out) == len(series)
+    assert np.allclose(out, series)
+    assert out is not series
+
+
 def test_main_rejects_unknown_robustness_profile() -> None:
     with pytest.raises(ValueError):
         analyze_coupling.main(robustness_profile="unknown")
@@ -237,6 +248,11 @@ def test_manuscript_consistency_reports_all_missing_inputs(tmp_path: Path) -> No
 def test_manuscript_consistency_checks_script_paper_refs(tmp_path: Path) -> None:
     # run_checks parses hardcoded EXPERIMENT_SCRIPTS; if scripts add new paper_ref
     # labels, this fixture must include matching paper labels/bindings.
+    # Current expected mapping:
+    # experiment_final_graph.py -> tab:ablation, fig:coupling
+    # experiment_pairwise.py -> tab:intervention
+    # experiment_cyclic.py -> fig:evolution
+    # experiment_evolution.py -> fig:evolution, fig:persistent_clusters
     # Imported inline to keep this module focused on checker behavior.
     from scripts.check_manuscript_consistency import run_checks
 
