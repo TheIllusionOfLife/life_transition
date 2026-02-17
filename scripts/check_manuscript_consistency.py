@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import re
 from pathlib import Path
+
+try:
+    from .experiment_manifest import config_digest as _config_digest
+except ImportError:
+    from experiment_manifest import config_digest as _config_digest
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_PAPER = PROJECT_ROOT / "paper" / "main.tex"
@@ -20,16 +24,13 @@ EXPERIMENT_SCRIPTS = [
 
 
 def _read_json(path: Path) -> dict:
-    with open(path) as f:
-        return json.load(f)
-
-
-def _sorted_json(data: dict) -> str:
-    return json.dumps(data, sort_keys=True, separators=(",", ":"))
-
-
-def _config_digest(config: dict) -> str:
-    return hashlib.sha256(_sorted_json(config).encode("utf-8")).hexdigest()
+    try:
+        with open(path) as f:
+            return json.load(f)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"invalid JSON in {path}: {exc}") from exc
+    except OSError as exc:
+        raise ValueError(f"failed to read {path}: {exc}") from exc
 
 
 def _extract_reported_timing(tex: str) -> tuple[int | None, int | None]:
@@ -70,10 +71,20 @@ def run_checks(paper_path: Path, manifest_path: Path, registry_path: Path) -> di
     if issues:
         return {"ok": False, "issues": issues, "checks": checks}
 
-    tex = paper_path.read_text()
-    manifest = _read_json(manifest_path)
-    registry = _read_json(registry_path)
+    try:
+        tex = paper_path.read_text()
+    except OSError as exc:
+        issues.append(f"failed to read paper file {paper_path}: {exc}")
+        return {"ok": False, "issues": issues, "checks": checks}
+
+    try:
+        manifest = _read_json(manifest_path)
+        registry = _read_json(registry_path)
+    except ValueError as exc:
+        issues.append(str(exc))
+        return {"ok": False, "issues": issues, "checks": checks}
     generated_manifest_path = PROJECT_ROOT / "experiments" / "final_graph_manifest.json"
+    should_check_freshness = manifest_path.resolve() == DEFAULT_MANIFEST.resolve()
 
     reported_steps, reported_sample_every = _extract_reported_timing(tex)
     if reported_steps is not None:
@@ -147,8 +158,12 @@ def run_checks(paper_path: Path, manifest_path: Path, registry_path: Path) -> di
             if ref not in registry_refs:
                 issues.append(f"experiment script paper_ref missing from registry: {ref}")
 
-    if generated_manifest_path.exists():
-        generated_manifest = _read_json(generated_manifest_path)
+    if should_check_freshness and generated_manifest_path.exists():
+        try:
+            generated_manifest = _read_json(generated_manifest_path)
+        except ValueError as exc:
+            issues.append(str(exc))
+            return {"ok": False, "issues": issues, "checks": checks}
         checks.append("generated manifest freshness check")
         for key in ["steps", "sample_every"]:
             if generated_manifest.get(key) != manifest.get(key):
@@ -157,14 +172,18 @@ def run_checks(paper_path: Path, manifest_path: Path, registry_path: Path) -> di
                     f"{key}: ref={manifest.get(key)} generated={generated_manifest.get(key)}"
                 )
         generated_base_cfg = generated_manifest.get("base_config", {})
+        if not generated_base_cfg:
+            issues.append("generated manifest missing or empty base_config")
+        if not base_cfg:
+            issues.append("reference manifest missing or empty base_config")
         if generated_base_cfg and base_cfg:
             generated_digest = _config_digest(generated_base_cfg)
             reference_digest = _config_digest(base_cfg)
             if generated_digest != reference_digest:
                 issues.append(
-                    "reference manifest base_config differs from generated manifest"
+                    "reference manifest base_config differs from generated manifest digest"
                 )
-    else:
+    elif should_check_freshness:
         checks.append("generated manifest not present (freshness check skipped)")
 
     return {"ok": len(issues) == 0, "issues": issues, "checks": checks}

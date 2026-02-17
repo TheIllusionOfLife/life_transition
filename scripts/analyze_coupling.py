@@ -390,6 +390,7 @@ def te_robustness_summary(
             phase_seed = np.random.SeedSequence([rng_seed, bins, permutations, 2])
             phase_rng = np.random.default_rng(phase_seed)
             surrogate_te = np.empty(phase_surrogate_samples, dtype=float)
+            surrogate_te.fill(np.nan)
             for i in range(phase_surrogate_samples):
                 x_surrogate = phase_randomize(x, phase_rng)
                 y_surrogate = phase_randomize(y, phase_rng)
@@ -403,11 +404,13 @@ def te_robustness_summary(
                     ),
                     rng=phase_rng,
                 )
-                surrogate_te[i] = te_surrogate["te"] if te_surrogate is not None else 0.0
+                if te_surrogate is not None:
+                    surrogate_te[i] = te_surrogate["te"]
 
+            valid_surrogates = surrogate_te[~np.isnan(surrogate_te)]
             phase_p = float(
-                (np.sum(surrogate_te >= float(te["te"])) + 1)
-                / (phase_surrogate_samples + 1)
+                (np.sum(valid_surrogates >= float(te["te"])) + 1)
+                / (len(valid_surrogates) + 1)
             )
             rows.append(
                 {
@@ -416,7 +419,10 @@ def te_robustness_summary(
                     "te": round(float(te["te"]), 6),
                     "p_value": float(te["p_value"]),
                     "phase_surrogate_p_value": phase_p,
-                    "phase_surrogate_te_mean": round(float(np.mean(surrogate_te)), 6),
+                    "phase_surrogate_te_mean": round(float(np.nanmean(surrogate_te)), 6)
+                    if len(valid_surrogates) > 0
+                    else None,
+                    "phase_surrogate_valid_n": int(len(valid_surrogates)),
                 }
             )
     return rows
@@ -442,6 +448,12 @@ def main(*, robustness_profile: str = "full") -> None:
     if not DATA_PATH.exists():
         print(f"ERROR: {DATA_PATH} not found")
         return
+    if robustness_profile not in ROBUSTNESS_PROFILES:
+        valid_profiles = ", ".join(sorted(ROBUSTNESS_PROFILES.keys()))
+        raise ValueError(
+            f"Unknown robustness_profile '{robustness_profile}'. "
+            f"Expected one of: {valid_profiles}."
+        )
     profile = ROBUSTNESS_PROFILES[robustness_profile]
     bin_settings = profile["bin_settings"]
     permutation_settings = profile["permutation_settings"]
