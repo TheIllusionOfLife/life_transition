@@ -11,6 +11,7 @@ Usage:
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 from collections import defaultdict
@@ -32,8 +33,28 @@ PAIRS = [
 MAX_LAG = 5
 TE_BINS = 5
 TE_PERMUTATIONS = 400
+TE_BIN_SETTINGS = [3, 5, 7]
+TE_PERMUTATION_SETTINGS = [200, 400, 800]
+TE_PHASE_SURROGATE_SAMPLES = 100
 MAX_DROPPED_SEED_FRACTION = 0.10
 INCLUDE_SEED_DETAILS = True
+
+ROBUSTNESS_PROFILES = {
+    "full": {
+        "bin_settings": TE_BIN_SETTINGS,
+        "permutation_settings": TE_PERMUTATION_SETTINGS,
+        "phase_surrogate_samples": TE_PHASE_SURROGATE_SAMPLES,
+        "surrogate_permutation_floor": 50,
+        "surrogate_permutation_divisor": 4,
+    },
+    "fast": {
+        "bin_settings": [3, 5],
+        "permutation_settings": [200, 400],
+        "phase_surrogate_samples": 50,
+        "surrogate_permutation_floor": 25,
+        "surrogate_permutation_divisor": 8,
+    },
+}
 
 
 def holm_bonferroni(p_values: list[float]) -> list[float]:
@@ -326,6 +347,87 @@ def transfer_entropy_lag1(
     }
 
 
+def phase_randomize(series: np.ndarray, rng: np.random.Generator) -> np.ndarray:
+    """Return a phase-randomized surrogate preserving power spectrum."""
+    n = len(series)
+    if n < 4:
+        return series.copy()
+    spectrum = np.fft.rfft(series)
+    randomized = spectrum.copy()
+    if n % 2 == 0:
+        phases = rng.uniform(0.0, 2.0 * np.pi, size=len(spectrum) - 2)
+        randomized[1:-1] = np.abs(randomized[1:-1]) * np.exp(1j * phases)
+    else:
+        phases = rng.uniform(0.0, 2.0 * np.pi, size=len(spectrum) - 1)
+        randomized[1:] = np.abs(randomized[1:]) * np.exp(1j * phases)
+    surrogate = np.fft.irfft(randomized, n=n)
+    return np.asarray(surrogate, dtype=float)
+
+
+def te_robustness_summary(
+    x: np.ndarray,
+    y: np.ndarray,
+    *,
+    bin_settings: list[int],
+    permutation_settings: list[int],
+    rng_seed: int,
+    phase_surrogate_samples: int,
+    surrogate_permutation_floor: int,
+    surrogate_permutation_divisor: int,
+) -> list[dict]:
+    """Compute TE sensitivity and phase-surrogate robustness grid for one pair."""
+    rows: list[dict] = []
+    for bins in bin_settings:
+        for permutations in permutation_settings:
+            te_seed = np.random.SeedSequence([rng_seed, bins, permutations, 1])
+            te_rng = np.random.default_rng(te_seed)
+            te = transfer_entropy_lag1(
+                x, y, bins=bins, permutations=permutations, rng=te_rng
+            )
+            if te is None:
+                continue
+
+            phase_seed = np.random.SeedSequence([rng_seed, bins, permutations, 2])
+            phase_rng = np.random.default_rng(phase_seed)
+            surrogate_te = np.empty(phase_surrogate_samples, dtype=float)
+            surrogate_te.fill(np.nan)
+            for i in range(phase_surrogate_samples):
+                x_surrogate = phase_randomize(x, phase_rng)
+                y_surrogate = phase_randomize(y, phase_rng)
+                te_surrogate = transfer_entropy_lag1(
+                    x_surrogate,
+                    y_surrogate,
+                    bins=bins,
+                    permutations=max(
+                        surrogate_permutation_floor,
+                        permutations // surrogate_permutation_divisor,
+                    ),
+                    rng=phase_rng,
+                )
+                if te_surrogate is not None:
+                    surrogate_te[i] = te_surrogate["te"]
+
+            valid_surrogates = surrogate_te[~np.isnan(surrogate_te)]
+            phase_p = float(
+                (np.sum(valid_surrogates >= float(te["te"])) + 1)
+                / (len(valid_surrogates) + 1)
+            )
+            rows.append(
+                {
+                    "bins": bins,
+                    "permutations": permutations,
+                    "te": round(float(te["te"]), 6),
+                    "p_value": float(te["p_value"]),
+                    "phase_surrogate_p_value": phase_p,
+                    "phase_surrogate_te_mean": round(float(np.nanmean(surrogate_te)), 6)
+                    if len(valid_surrogates) > 0
+                    else None,
+                    "phase_surrogate_valid_n": int(len(valid_surrogates)),
+                }
+            )
+    return rows
+
+
 def bootstrap_ci(
     values: np.ndarray, n_boot: int = 2000, alpha: float = 0.05
 ) -> tuple[float, float]:
@@ -342,10 +444,22 @@ def bootstrap_ci(
     return lo, hi
 
 
-def main() -> None:
+def main(*, robustness_profile: str = "full") -> None:
+    if robustness_profile not in ROBUSTNESS_PROFILES:
+        valid_profiles = ", ".join(sorted(ROBUSTNESS_PROFILES.keys()))
+        raise ValueError(
+            f"Unknown robustness_profile '{robustness_profile}'. "
+            f"Expected one of: {valid_profiles}."
+        )
     if not DATA_PATH.exists():
         print(f"ERROR: {DATA_PATH} not found")
         return
+    profile = ROBUSTNESS_PROFILES[robustness_profile]
+    bin_settings = profile["bin_settings"]
+    permutation_settings = profile["permutation_settings"]
+    phase_surrogate_samples = int(profile["phase_surrogate_samples"])
+    surrogate_permutation_floor = int(profile["surrogate_permutation_floor"])
+    surrogate_permutation_divisor = int(profile["surrogate_permutation_divisor"])
 
     steps, seed_series, quality = load_seed_timeseries(DATA_PATH)
     if not seed_series:
@@ -377,6 +491,13 @@ def main() -> None:
             "max_lag": MAX_LAG,
             "te_bins": TE_BINS,
             "te_permutations": TE_PERMUTATIONS,
+            "te_robustness_profile": robustness_profile,
+            "te_robustness_bin_settings": bin_settings,
+            "te_robustness_permutation_settings": permutation_settings,
+            "te_phase_surrogate_samples": phase_surrogate_samples,
+            "te_surrogate_permutation_floor": surrogate_permutation_floor,
+            "te_surrogate_permutation_divisor": surrogate_permutation_divisor,
+            "te_robustness_on_mean": True,
             "pair_level_correction": "holm_bonferroni",
             "seed_level_p_combination": "fisher",
             "include_seed_details": INCLUDE_SEED_DETAILS,
@@ -466,6 +587,18 @@ def main() -> None:
                 )
                 if seed_te_p
                 else 0.0,
+                "robustness_on_mean": True,
+                # Robustness is computed on population means to keep this pass tractable.
+                "robustness": te_robustness_summary(
+                    mean_a,
+                    mean_b,
+                    bin_settings=bin_settings,
+                    permutation_settings=permutation_settings,
+                    rng_seed=2026 + len(pair_rows),
+                    phase_surrogate_samples=phase_surrogate_samples,
+                    surrogate_permutation_floor=surrogate_permutation_floor,
+                    surrogate_permutation_divisor=surrogate_permutation_divisor,
+                ),
             },
         }
         if INCLUDE_SEED_DETAILS:
@@ -561,4 +694,12 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--robustness-profile",
+        choices=sorted(ROBUSTNESS_PROFILES.keys()),
+        default="full",
+        help="Runtime/precision profile for TE robustness computations.",
+    )
+    args = parser.parse_args()
+    main(robustness_profile=args.robustness_profile)

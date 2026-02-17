@@ -1,0 +1,357 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import numpy as np
+import pytest
+
+import scripts.analyze_coupling as analyze_coupling
+from scripts.analyze_coupling import phase_randomize, te_robustness_summary
+from scripts.experiment_manifest import load_manifest, write_manifest
+
+
+def test_manifest_schema_v2_supports_report_bindings(tmp_path: Path) -> None:
+    path = tmp_path / "manifest.json"
+    write_manifest(
+        path,
+        experiment_name="final_graph_ablation",
+        steps=2000,
+        sample_every=50,
+        seeds=[100, 101],
+        base_config={"seed": 100, "mutation_point_rate": 0.02},
+        condition_overrides={"normal": {}},
+        report_bindings=[
+            {
+                "result_id": "coupling_main",
+                "paper_ref": "fig:coupling",
+                "source_files": [
+                    "experiments/final_graph_normal.json",
+                    "experiments/coupling_analysis.json",
+                ],
+                "notes": "Primary coupling claim source",
+            }
+        ],
+    )
+
+    payload = load_manifest(path)
+    assert payload["schema_version"] == 2
+    assert payload["report_bindings"][0]["paper_ref"] == "fig:coupling"
+
+
+def test_persistence_claim_gate_threshold() -> None:
+    # Imported inline to keep this module decoupled from analyze_phenotype load-time deps.
+    from scripts.analyze_phenotype import persistence_claim_gate
+
+    assert persistence_claim_gate(0.2999, threshold=0.30) is False
+    assert persistence_claim_gate(0.3000, threshold=0.30) is True
+
+
+def test_te_robustness_summary_shape() -> None:
+    rng = np.random.default_rng(0)
+    x = rng.normal(size=120)
+    y = 0.2 * np.roll(x, 1) + rng.normal(size=120)
+    rows = te_robustness_summary(
+        x,
+        y,
+        bin_settings=[3],
+        permutation_settings=[20],
+        rng_seed=7,
+        phase_surrogate_samples=8,
+        surrogate_permutation_floor=8,
+        surrogate_permutation_divisor=2,
+    )
+
+    assert len(rows) == 1
+    assert rows[0]["bins"] == 3
+    assert rows[0]["permutations"] == 20
+    assert "te" in rows[0]
+    assert "p_value" in rows[0]
+
+
+def test_te_robustness_summary_excludes_none_surrogates(monkeypatch: pytest.MonkeyPatch) -> None:
+    call_count = {"n": 0}
+
+    def fake_te(*args, **kwargs):  # type: ignore[no-untyped-def]
+        call_count["n"] += 1
+        if call_count["n"] == 1:
+            return {"te": 0.4, "p_value": 0.2, "null_mean": 0.0, "null_std": 0.0}
+        if call_count["n"] in (3, 5):
+            return None
+        return {"te": 0.1, "p_value": 0.3, "null_mean": 0.0, "null_std": 0.0}
+
+    monkeypatch.setattr(analyze_coupling, "transfer_entropy_lag1", fake_te)
+
+    x = np.array([1, 2, 3, 4, 5, 6], dtype=float)
+    y = np.array([2, 3, 4, 5, 6, 7], dtype=float)
+    rows = te_robustness_summary(
+        x,
+        y,
+        bin_settings=[3],
+        permutation_settings=[20],
+        rng_seed=7,
+        phase_surrogate_samples=4,
+        surrogate_permutation_floor=8,
+        surrogate_permutation_divisor=2,
+    )
+    assert len(rows) == 1
+    assert rows[0]["phase_surrogate_valid_n"] == 2
+    assert rows[0]["phase_surrogate_te_mean"] == 0.1
+
+
+def test_phase_randomize_even_keeps_nyquist_bin_real_and_fixed() -> None:
+    rng = np.random.default_rng(123)
+    series = np.random.default_rng(9).normal(size=8)
+    before = np.fft.rfft(series)
+    after = np.fft.rfft(phase_randomize(series, rng))
+
+    assert np.isclose(after[0].imag, 0.0, atol=1e-10)
+    assert np.isclose(after[-1], before[-1], atol=1e-8)
+
+
+def test_phase_randomize_odd_randomizes_last_complex_bin_phase() -> None:
+    rng = np.random.default_rng(456)
+    series = np.random.default_rng(10).normal(size=9)
+    before = np.fft.rfft(series)
+    after = np.fft.rfft(phase_randomize(series, rng))
+
+    assert np.isclose(abs(after[-1]), abs(before[-1]), atol=1e-8)
+    assert not np.isclose(after[-1], before[-1], atol=1e-8)
+
+
+def test_phase_randomize_small_n_returns_copy() -> None:
+    rng = np.random.default_rng(777)
+    series = np.array([0.1, -0.2, 0.3], dtype=float)
+    out = phase_randomize(series, rng)
+
+    assert out.dtype == float
+    assert len(out) == len(series)
+    assert np.allclose(out, series)
+    assert out is not series
+
+
+def test_main_rejects_unknown_robustness_profile() -> None:
+    with pytest.raises(ValueError):
+        analyze_coupling.main(robustness_profile="unknown")
+
+
+def test_manuscript_consistency_check_detects_mismatch(tmp_path: Path) -> None:
+    # Imported inline to keep this module focused on checker behavior.
+    from scripts.check_manuscript_consistency import run_checks
+
+    paper = tmp_path / "main.tex"
+    manifest = tmp_path / "final_graph_manifest.json"
+    registry = tmp_path / "result_manifest_bindings.json"
+
+    paper.write_text(
+        """
+Each simulation runs for 2000 timesteps with population sampled every 50
+steps.
+\\label{tab:ablation}
+""".strip()
+    )
+    manifest.write_text(
+        json.dumps(
+            {
+                "schema_version": 2,
+                "source_git_commit": "abc1234",
+                "source_generated_at_utc": "2026-02-17T00:00:00Z",
+                "steps": 1000,
+                "sample_every": 50,
+                "base_config": {"mutation_point_rate": 0.02, "mutation_scale": 0.15},
+            }
+        )
+    )
+    registry.write_text(
+        json.dumps(
+            {
+                "bindings": [
+                    {
+                        "result_id": "ablation_primary",
+                        "paper_ref": "tab:ablation",
+                        "manifest": "experiments/final_graph_manifest.json",
+                        "source_files": ["experiments/final_graph_statistics.json"],
+                    }
+                ]
+            }
+        )
+    )
+
+    report = run_checks(paper, manifest, registry)
+    assert report["ok"] is False
+    assert any("steps mismatch:" in issue for issue in report["issues"])
+
+
+def test_manuscript_consistency_handles_non_numeric_manifest_values(tmp_path: Path) -> None:
+    # Imported inline to keep this module focused on checker behavior.
+    from scripts.check_manuscript_consistency import run_checks
+
+    paper = tmp_path / "main.tex"
+    manifest = tmp_path / "final_graph_manifest.json"
+    registry = tmp_path / "result_manifest_bindings.json"
+
+    paper.write_text(
+        """
+Each simulation runs for 2000 timesteps with population sampled every 50
+steps.
+\\label{tab:ablation}
+""".strip()
+    )
+    manifest.write_text(
+        json.dumps(
+            {
+                "schema_version": 2,
+                "steps": None,
+                "sample_every": "not-a-number",
+                "base_config": {"mutation_point_rate": 0.02, "mutation_scale": 0.15},
+            }
+        )
+    )
+    registry.write_text(
+        json.dumps(
+            {
+                "bindings": [
+                    {
+                        "result_id": "ablation_primary",
+                        "paper_ref": "tab:ablation",
+                        "manifest": "experiments/final_graph_manifest.json",
+                        "source_files": ["experiments/final_graph_statistics.json"],
+                    }
+                ]
+            }
+        )
+    )
+
+    report = run_checks(paper, manifest, registry)
+    assert report["ok"] is False
+    assert any("steps invalid in manifest" in issue for issue in report["issues"])
+    assert any("sample_every invalid in manifest" in issue for issue in report["issues"])
+    assert not any(
+        "steps mismatch:" in issue or "sample_every mismatch:" in issue
+        for issue in report["issues"]
+    )
+
+
+def test_manuscript_consistency_reports_all_missing_inputs(tmp_path: Path) -> None:
+    # Imported inline to keep this module focused on checker behavior.
+    from scripts.check_manuscript_consistency import run_checks
+
+    report = run_checks(
+        tmp_path / "missing_main.tex",
+        tmp_path / "missing_manifest.json",
+        tmp_path / "missing_registry.json",
+    )
+    assert report["ok"] is False
+    assert len(report["issues"]) == 3
+
+
+def test_manuscript_consistency_checks_script_paper_refs(tmp_path: Path) -> None:
+    # run_checks parses hardcoded EXPERIMENT_SCRIPTS; if scripts add new paper_ref
+    # labels, this fixture must include matching paper labels/bindings.
+    # Current expected mapping:
+    # experiment_final_graph.py -> tab:ablation, fig:coupling
+    # experiment_pairwise.py -> tab:intervention
+    # experiment_cyclic.py -> fig:evolution
+    # experiment_evolution.py -> fig:evolution, fig:persistent_clusters
+    # Imported inline to keep this module focused on checker behavior.
+    from scripts.check_manuscript_consistency import run_checks
+
+    paper = tmp_path / "main.tex"
+    manifest = tmp_path / "final_graph_manifest_reference.json"
+    registry = tmp_path / "result_manifest_bindings.json"
+    paper.write_text(
+        """
+Each simulation runs for 2000 timesteps with population sampled every 50
+steps.
+\\label{tab:ablation}
+\\label{fig:coupling}
+\\label{fig:evolution}
+\\label{fig:persistent_clusters}
+\\label{tab:intervention}
+""".strip()
+    )
+    manifest.write_text(
+        json.dumps(
+            {
+                "schema_version": 2,
+                "source_git_commit": "abc1234",
+                "source_generated_at_utc": "2026-02-17T00:00:00Z",
+                "steps": 2000,
+                "sample_every": 50,
+                "base_config": {"mutation_point_rate": 0.02, "mutation_scale": 0.15},
+            }
+        )
+    )
+    registry.write_text(
+        json.dumps(
+            {
+                "bindings": [
+                    {
+                        "result_id": "ablation_primary",
+                        "paper_ref": "tab:ablation",
+                        "manifest": "experiments/final_graph_manifest.json",
+                        "source_files": ["experiments/final_graph_statistics.json"],
+                    },
+                    {
+                        "result_id": "coupling_main",
+                        "paper_ref": "fig:coupling",
+                        "manifest": "experiments/final_graph_manifest.json",
+                        "source_files": ["experiments/coupling_analysis.json"],
+                    },
+                    {
+                        "result_id": "evolution_evidence",
+                        "paper_ref": "fig:evolution",
+                        "manifest": "experiments/evolution_long_manifest.json",
+                        "source_files": ["experiments/evolution_evidence.json"],
+                    },
+                    {
+                        "result_id": "phenotype_persistence",
+                        "paper_ref": "fig:persistent_clusters",
+                        "manifest": "experiments/evolution_long_manifest.json",
+                        "source_files": ["experiments/phenotype_analysis.json"],
+                    },
+                    {
+                        "result_id": "pairwise_interaction",
+                        "paper_ref": "tab:intervention",
+                        "manifest": "experiments/pairwise_graph_manifest.json",
+                        "source_files": ["experiments/pairwise_graph_statistics.json"],
+                    },
+                ]
+            }
+        )
+    )
+
+    report = run_checks(paper, manifest, registry)
+    assert report["ok"] is True
+
+
+def test_manuscript_consistency_reports_invalid_registry_json(tmp_path: Path) -> None:
+    # Imported inline to keep this module focused on checker behavior.
+    from scripts.check_manuscript_consistency import run_checks
+
+    paper = tmp_path / "main.tex"
+    manifest = tmp_path / "manifest.json"
+    registry = tmp_path / "registry.json"
+    paper.write_text(
+        """
+Each simulation runs for 2000 timesteps with population sampled every 50
+steps.
+""".strip()
+    )
+    manifest.write_text(
+        json.dumps(
+            {
+                "schema_version": 2,
+                "source_git_commit": "abc1234",
+                "source_generated_at_utc": "2026-02-17T00:00:00Z",
+                "steps": 2000,
+                "sample_every": 50,
+                "base_config": {"mutation_point_rate": 0.02, "mutation_scale": 0.15},
+            }
+        )
+    )
+    registry.write_text("{invalid json")
+
+    report = run_checks(paper, manifest, registry)
+    assert report["ok"] is False
+    assert any("invalid JSON in" in issue for issue in report["issues"])
