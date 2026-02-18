@@ -377,7 +377,8 @@ def test_experiment_niche_defaults_and_long_horizon_output(
     fake.version = fake_version
     fake.run_niche_experiment_json = fake_run_niche
     monkeypatch.setitem(sys.modules, "digital_life", fake)
-    monkeypatch.syspath_prepend(str(Path("scripts").resolve()))
+    script_dir = Path(__file__).resolve().parents[1] / "scripts"
+    monkeypatch.syspath_prepend(str(script_dir))
 
     mod = importlib.import_module("scripts.experiment_niche")
     mod = importlib.reload(mod)

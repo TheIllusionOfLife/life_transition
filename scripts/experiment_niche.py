@@ -63,7 +63,8 @@ def main():
     log("")
 
     out_dir = Path(__file__).resolve().parent.parent / "experiments"
-    out_dir.mkdir(exist_ok=True)
+    if args.output is None:
+        out_dir.mkdir(parents=True, exist_ok=True)
 
     snapshot_steps_json = json.dumps(snapshot_steps)
     results = []
