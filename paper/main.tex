@@ -750,25 +750,28 @@ Lines: mean across 30 seeds; bands: $\pm$1 SEM.}
 \label{fig:evolution}
 \end{figure}
 
-\paragraph{Selection differential.}
-To test whether evolution drives directed trait change rather than neutral
-drift, we track organism-level physiology across lineage generations
-($n$=15 seeds, 10,000 steps; Figure~\ref{fig:trait_evolution}).
-Organisms are stratified by generation quartile at the final step:
-high-generation organisms have undergone more reproductive selection events
-than low-generation organisms in the same population.
-In evolved populations, high-generation organisms show significantly higher
-energy than low-generation organisms
-(Cliff's $\delta$=\textbf{[X]}, $p$=\textbf{[Y]}),
-whereas no-evolution controls show no such stratification
-($\delta{\approx}$\textbf{[Z]}, $p$$\approx$1)---generation count in
-no-evolution populations reflects demographic structure, not accumulated
-selection.
-Mean energy also diverges monotonically between evolved and no-evolution
-populations across all snapshot steps.
-These results confirm that evolution in this system produces measurable
-directional adaptation rather than genetic drift alone, even within the
-10,000-step window.
+\paragraph{Generation-stratified physiology.}
+To further characterize evolutionary dynamics, we track organism-level
+energy across lineage generations ($n$=15 seeds, 10,000 steps;
+Figure~\ref{fig:trait_evolution}).
+Organisms are stratified by generation quartile at the final step (step~10,000).
+In both evolved and no-evolution populations, high-generation organisms have
+significantly \emph{lower} energy than low-generation organisms
+(evolved: Cliff's $\delta$=$-1.00$, $p$=$3{\times}10^{-6}$;
+no-evolution: $\delta$=$-0.93$, $p$=$1.5{\times}10^{-5}$), with similar
+effect sizes across conditions.
+This result reflects a demographic property of the system: reproduction
+imposes an energy cost ($c_r=0.3$), so high-generation offspring are
+recently born and energy-depleted, while low-generation survivors have
+had time to accumulate resources.
+The generation proxy therefore captures birth-order structure rather than
+accumulated selective advantage; mean energy trajectories are indistinguishable
+between conditions over 10,000 steps
+(evolved: $\bar{e}_{10k}=0.885$; no-evolution: $\bar{e}_{10k}=0.890$;
+Figure~\ref{fig:trait_evolution}A).
+The primary evidence for directional adaptation in this system remains
+genome-drift divergence (Figure~\ref{fig:evo_evidence}A;
+$\delta$=1.00, $p<0.001$).
 
 \begin{figure}[t]
 \centering
@@ -776,12 +779,13 @@ directional adaptation rather than genetic drift alone, even within the
   {\includegraphics[width=\columnwidth]{figures/fig_trait_evolution.pdf}}%
   {\fbox{\parbox{\dimexpr\columnwidth-2\fboxsep-2\fboxrule}{%
     \centering\vspace{2em}[fig\_trait\_evolution.pdf]\vspace{2em}}}}
-\caption{Selection differential evidence ($n$=15 seeds, 10,000 steps).
+\caption{Generation-stratified physiology ($n$=15 seeds, 10,000 steps).
 (A)~Mean energy trajectory for evolved (solid) and no-evolution (dashed)
-conditions, $\pm$1 SEM (seed-level).
+conditions, $\pm$1 SEM (seed-level); trajectories are indistinguishable.
 (B)~Per-seed high-generation vs.\ low-generation organism energy at
-step 10,000, for evolved and no-evolution populations.
-High-generation organisms accumulate energy advantage only under selection.}
+step 10,000: high-generation (recently born) organisms have lower energy
+in both conditions, reflecting reproduction cost rather than
+accumulated selective advantage.}
 \label{fig:trait_evolution}
 \end{figure}
 

@@ -1756,7 +1756,7 @@ def generate_invariance() -> None:
         ax.axhline(y=0, color="#888888", linewidth=0.8, linestyle="--")
 
         if direction_consistent:
-            ax.text(0.5, 0.95, "✓ Direction consistent",
+            ax.text(0.5, 0.95, "[+] Direction consistent",
                     transform=ax.transAxes, ha="center", va="top",
                     fontsize=7, color="#009E73",
                     bbox=dict(boxstyle="round,pad=0.2", facecolor="white",
