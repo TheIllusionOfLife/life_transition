@@ -12,7 +12,7 @@ import time
 from pathlib import Path
 
 import digital_life
-from experiment_utils import log, run_single, safe_path
+from experiment_common import log, run_single, safe_path
 
 STEPS = 2000
 SAMPLE_EVERY = 50
@@ -64,7 +64,7 @@ def main():
 
         for seed in SEEDS:
             ts = time.perf_counter()
-            result = run_single(seed, STEPS, SAMPLE_EVERY, overrides)
+            result = run_single(seed, overrides, steps=STEPS, sample_every=SAMPLE_EVERY)
             elapsed = time.perf_counter() - ts
             results.append(result)
             log(f"  seed={seed:3d}  alive={result['final_alive_count']:4d}  {elapsed:.2f}s")
