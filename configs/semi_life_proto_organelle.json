@@ -46,7 +46,7 @@
     39
   ],
   "_resource_rate": 0.01,
-  "_target": "survival_rate >= 0.8, median_alive >= 5 at step 500 (genomic); 100% survival (ProtoOrganelle)",
+  "_target": "100% survival at step 500 (ProtoOrganelle has no V0 replication; all 10 initial entities must survive)",
   "num_per_archetype": 10,
   "initial_energy": 0.5,
   "energy_capacity": 1.0,
@@ -62,6 +62,7 @@
   "internal_pool_init_fraction": 0.5,
   "internal_pool_capacity": 1.0,
   "internal_pool_uptake_rate": 0.01,
+  "_prion_fields_note": "Required by SemiLifeConfig schema but unused for non-Prion archetypes. prion_dilution_death_energy=0.0 intentionally disables the prion dilution kill path.",
   "prion_contact_radius": 5.0,
   "prion_conversion_prob": 0.05,
   "prion_fragmentation_loss": 0.01,

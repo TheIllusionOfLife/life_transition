@@ -44,8 +44,10 @@ N_REEVAL = 3
 
 # Rich resource environment for stable baseline calibration
 RICH_RESOURCE_RATE = 0.01
-# Minimum survival rate required before any config is accepted as "best"
-MIN_SURVIVAL_RATE = 0.5
+# Minimum survival rate required before any config is accepted as "best".
+# Matches the docstring target (≥ 0.8 for genomic, 1.0 for ProtoOrganelle).
+# WARNING is emitted when the best combo falls below this floor.
+MIN_SURVIVAL_RATE = 0.8
 
 _CONFIGS_DIR = Path(__file__).resolve().parent.parent / "configs"
 
@@ -130,7 +132,16 @@ def _eval_combo(archetype: str, overrides: dict, seeds: list[int]) -> dict:
 
     Returns a stats dict with keys:
         survival_rate, median_alive, mean_alive, median_final_energy, n_seeds
+
+    Note: median_final_energy is computed only over seeds where alive > 0
+    (survivorship bias by design — energy of extinct populations is undefined).
+    Two configs with equal survival_rate and median_alive but different extinction
+    patterns can be separated by this tiebreaker, favouring configs with higher
+    energy among survivors.
     """
+    if not seeds:
+        raise ValueError("seeds must be non-empty")
+
     counts = []
     energies = []
     for seed in seeds:
@@ -296,7 +307,11 @@ def _sweep_archetype(
             f"  e={stats['median_final_energy']:.3f}"
         )
 
-    # Sort Phase 1 by score descending; pick top N_REEVAL for Phase 2
+    # Sort Phase 1 by score descending; pick top N_REEVAL for Phase 2.
+    # Python sort is stable: ties are broken by original insertion order from
+    # product(...), which follows the parameter grid definition order. This is
+    # deterministic but may exclude statistically equivalent combos. Acceptable
+    # for a coarse screen whose purpose is only to narrow the re-eval candidate set.
     phase1.sort(key=lambda t: _score(t[1]), reverse=True)
     top_combos = phase1[:N_REEVAL]
 

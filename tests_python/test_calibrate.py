@@ -47,7 +47,12 @@ def test_proto_organelle_combos_count():
 
 
 def test_genomic_combo_has_replication_cost_less_than_threshold():
-    """replication_cost must be strictly less than replication_threshold for all combos."""
+    """replication_cost must be strictly less than replication_threshold for genomic combos.
+
+    ProtoOrganelle combos are excluded: they sweep maintenance_cost × internal_conversion_rate
+    and do not include replication_cost / replication_threshold as sweep keys (those fields
+    come from _BASE_SEMI_LIFE_CONFIG defaults and are unused since ProtoOrganelle has no V0).
+    """
     for combo in _genomic_combos("viroid") + _virus_combos():
         rc = combo["replication_cost"]
         rt = combo["replication_threshold"]
@@ -213,3 +218,16 @@ def test_n_reeval_within_phase1_combo_count():
     assert N_REEVAL <= min_combos, (
         f"N_REEVAL={N_REEVAL} exceeds smallest archetype combo count ({min_combos})"
     )
+
+
+# ---------------------------------------------------------------------------
+# _eval_combo guards
+# ---------------------------------------------------------------------------
+
+
+def test_eval_combo_raises_on_empty_seeds():
+    """_eval_combo must raise ValueError when given an empty seed list."""
+    from experiment_semi_life_calibrate import _eval_combo
+
+    with pytest.raises(ValueError, match="non-empty"):
+        _eval_combo("viroid", {}, [])
