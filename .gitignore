@@ -27,6 +27,7 @@ build/
 /experiments/*.json
 /experiments/*.tsv
 /experiments/*.gz
+/experiments/*.txt
 /experiments/logs/
 /experiments/*_part_*.json
 # Keep manifest-bound source artifacts trackable.
