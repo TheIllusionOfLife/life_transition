@@ -1,5 +1,6 @@
 """Shared constants, imports, and helpers for all figure modules."""
 
+import csv
 import json
 from pathlib import Path
 
@@ -149,6 +150,20 @@ def get_coupling_best(pair: dict) -> tuple[float | None, int | None]:
     r = lagged.get("best_pearson_r", pair.get("best_pearson_r"))
     lag = lagged.get("best_lag", pair.get("best_lag"))
     return r, lag
+
+
+def parse_semi_life_tsv(path: Path) -> list[dict]:
+    """Parse a SemiLife experiment TSV file into a list of row dicts.
+
+    Compatible with TSV produced by experiment_semi_life_v1v3.py and
+    experiment_semi_life_shocks.py (stdout redirect, no stderr mixed in).
+    """
+    rows = []
+    with open(path, encoding="utf-8") as f:
+        reader = csv.DictReader(f, delimiter="\t")
+        for row in reader:
+            rows.append(row)
+    return rows
 
 
 def load_json(path: Path) -> list[dict]:

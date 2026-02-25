@@ -32,7 +32,7 @@ from experiment_common import log, make_config_dict
 
 STEPS = 500
 SAMPLE_EVERY = 50
-SEEDS = list(range(50))
+SEEDS = list(range(100, 200))
 
 # Capability bitmask constants (must match crate::semi_life::capability).
 V0 = 0x01
