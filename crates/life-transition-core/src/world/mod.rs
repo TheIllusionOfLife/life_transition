@@ -275,6 +275,7 @@ impl World {
             resource_field: ResourceField::new(
                 world_size,
                 1.0,
+                // resource_initial_value is in [0, 1] range; f32 precision is sufficient.
                 config.resource_initial_value as f32,
             ),
             org_toroidal_sums: vec![[0.0, 0.0, 0.0, 0.0]; org_count],
@@ -345,7 +346,13 @@ impl World {
                 actual: self.agents.len(),
             });
         }
-        if (self.config.world_size - config.world_size).abs() > f64::EPSILON {
+        // Rebuild the resource field if world_size OR resource_initial_value changed.
+        // resource_initial_value controls both the starting pool and the regen ceiling;
+        // silently ignoring a change here would leave stale initial_value in the field.
+        if (self.config.world_size - config.world_size).abs() > f64::EPSILON
+            || (self.config.resource_initial_value - config.resource_initial_value).abs()
+                > f64::EPSILON
+        {
             self.resource_field =
                 ResourceField::new(config.world_size, 1.0, config.resource_initial_value as f32);
         }

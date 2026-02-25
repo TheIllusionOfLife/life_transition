@@ -128,16 +128,25 @@ def _make_config(
 
 
 def _aggregate(snapshots: list[dict], archetype: str) -> dict:
-    """Compute per-archetype aggregate stats from one sample's snapshots."""
+    """Compute per-archetype aggregate stats from one sample's snapshots.
+
+    alive/mean_energy/mean_ii: alive entities only.
+    total_replications/total_failed: all entities (alive + dead) — cumulative totals.
+    capability_bits: bitwise OR of active_capabilities across alive entities (uniform
+        within a single-archetype isolation run; OR makes this deterministic).
+    """
     entities = [s for s in snapshots if s["archetype"] == archetype]
     alive = [e for e in entities if e["alive"]]
+    caps = 0
+    for e in alive:
+        caps |= e["active_capabilities"]
     return {
         "alive": len(alive),
         "mean_energy": (sum(e["maintenance_energy"] for e in alive) / len(alive) if alive else 0.0),
         "mean_ii": (sum(e["internalization_index"] for e in alive) / len(alive) if alive else 0.0),
         "total_replications": sum(e["replications"] for e in entities),
         "total_failed": sum(e["failed_replications"] for e in entities),
-        "capability_bits": alive[0]["active_capabilities"] if alive else 0,
+        "capability_bits": caps,
     }
 
 
@@ -177,7 +186,7 @@ def run_one(
             str(agg["total_failed"]),
             str(world_rep),
         ]
-        print("\t".join(row))
+        print("\t".join(row), flush=True)
 
 
 def main() -> None:

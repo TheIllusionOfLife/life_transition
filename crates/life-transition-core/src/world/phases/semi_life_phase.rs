@@ -357,6 +357,9 @@ impl World {
             cfg.internal_pool_init_fraction * cfg.internal_pool_capacity,
         );
         // Inherit the same capability override as the parent so all generations are consistent.
+        // Invariant: capabilities are fixed at spawn and do not mutate during an entity's
+        // lifetime (V0–V3 only). If V4–V5 PRs introduce runtime capability mutation, this
+        // call site must also update optional fields on each step rather than once at spawn.
         child.active_capabilities = resolve_capabilities(parent_archetype, cfg);
         apply_capability_fields(&mut child, cfg);
         child.agent_ids.push(agent_id);
@@ -483,6 +486,9 @@ impl World {
                     cfg.internal_pool_init_fraction * cfg.internal_pool_capacity,
                 );
                 // Apply capability override (if any) and re-gate optional fields.
+                // Invariant: capabilities are fixed at spawn (V0–V3 only). If V4–V5 PRs
+                // introduce runtime capability mutation, optional fields must also be
+                // updated on each step rather than once at spawn.
                 sl.active_capabilities = resolve_capabilities(archetype, &cfg);
                 apply_capability_fields(&mut sl, &cfg);
                 sl.agent_ids.push(agent_id);

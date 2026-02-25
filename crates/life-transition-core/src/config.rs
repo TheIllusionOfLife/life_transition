@@ -717,6 +717,11 @@ impl SimConfig {
         if !(self.resource_initial_value.is_finite() && self.resource_initial_value >= 0.0) {
             return Err(SimConfigError::InvalidResourceInitialValue);
         }
+        // Note: resource_initial_value=0.0 with resource_regeneration_rate>0 is technically
+        // valid (resource field initialises empty, regen caps at 0 → regen is a no-op).
+        // This is a "dead world" scenario and intentional for extinction baseline experiments.
+        // Callers combining regen>0 with initial_value=0.0 should be aware the regen has no
+        // effect; no hard error is raised because the field is safe, just unusual.
         if !(self.environment_shift_resource_rate.is_finite()
             && self.environment_shift_resource_rate >= 0.0)
         {

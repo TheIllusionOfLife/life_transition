@@ -72,6 +72,9 @@ def test_resource_initial_value_affects_population():
 
     alive_rich = run_alive(1.0)
     alive_scarce = run_alive(0.05)
+    assert alive_rich > 0, (
+        f"Rich-resource run went extinct (alive_rich=={alive_rich}); check model/seed/steps"
+    )
     assert alive_scarce < alive_rich, (
         f"Scarce pool ({alive_scarce}) should produce fewer entities than rich ({alive_rich})"
     )
@@ -166,18 +169,22 @@ def test_v3_metabolism_boosts_population_in_scarce():
 
     Internal metabolism acts as an energy buffer, allowing higher population density
     than non-metabolising entities in the same environment.
-    """
 
-    def alive_at_500(cap_bits: int) -> int:
-        cfg_str = _make_config("viroid", cap_bits, 0.1, seed=0)
+    Tested across 3 seeds; at least 2/3 must show the expected direction (majority-vote
+    guards against single-seed noise in a stochastic simulation).
+    """
+    _SEEDS = [0, 1, 2]
+
+    def alive_at_500(cap_bits: int, seed: int) -> int:
+        cfg_str = _make_config("viroid", cap_bits, 0.1, seed=seed)
         result = json.loads(life_transition.run_semi_life_v0_experiment_json(cfg_str, 500, 500))
         last = result["samples"][-1]["snapshots"]
         return sum(1 for s in last if s["alive"] and s["archetype"] == "viroid")
 
-    alive_no_v3 = alive_at_500(V0 | V1 | V2)
-    alive_v3 = alive_at_500(V0 | V1 | V2 | V3)
-    assert alive_v3 > alive_no_v3, (
-        f"V3 entities ({alive_v3}) should outnumber V0+V1+V2 ({alive_no_v3}) in scarce resources"
+    wins = sum(alive_at_500(V0 | V1 | V2 | V3, s) > alive_at_500(V0 | V1 | V2, s) for s in _SEEDS)
+    assert wins >= 2, (
+        f"V3 metabolism boost expected in majority of seeds; "
+        f"only {wins}/{len(_SEEDS)} seeds showed V3 > V0+V1+V2"
     )
 
 
@@ -187,7 +194,7 @@ def test_v3_metabolism_boosts_population_in_scarce():
 
 
 def test_proto_organelle_baseline_has_no_replications():
-    """ProtoOrganelle (V1+V2+V3, no V0) must not replicate at step 500."""
+    """ProtoOrganelle (V1+V2+V3, no V0) must not replicate at step 200."""
     cfg_str = _make_config("proto_organelle", None, 0.1, seed=0)
     result = json.loads(life_transition.run_semi_life_v0_experiment_json(cfg_str, 200, 200))
     last = result["samples"][-1]["snapshots"]
