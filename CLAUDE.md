@@ -4,69 +4,100 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Digital Life** is an artificial life (ALife) research project aiming to build a computational system where autonomous digital organisms satisfy all seven biological criteria for life through genuine functional analogy — not simplified proxies.
+**Life Transition** is an artificial life (ALife) research project studying the **Virus → Semi-Life → Life** transition: can a virus-like replicator become life-like by internalizing the biological functions it originally outsourced?
 
 **Target venue**: ALIFE 2026 Full Paper (8p), deadline ~April 1, 2026.
 
-**Stance**: Weak ALife — the system is a functional model of life, not a claim of life itself.
+**Stance**: Weak ALife — the system is a functional model, not a claim of literal life.
 
-## Document Structure (3-document pipeline)
+## Document Structure
 
 | Document | Role |
 |----------|------|
-| `docs/research/digital-life-project-overview.md` | Initial proposition: 7 criteria specs, risk assessment, prototyping roadmap |
-| `docs/research/unified-review.md` | Peer review (Japanese): critical gaps, risks, prioritized recommendations |
-| `docs/research/action-plan.md` | **Authoritative plan**: 7.5-week schedule, architectural decisions, pivot strategies, statistical design |
+| `docs/research/research-plan.md` | **Authoritative plan**: research thesis, capability ladder V0–V5, experimental program, measurement framework |
+| `docs/archive/action-plan.md` | Archived: prior 7-criteria project schedule (historical reference only) |
+| `docs/archive/digital-life-project-overview.md` | Archived: initial 7-criteria project overview |
+| `docs/archive/unified-review.md` | Archived: peer review of prior project (Japanese) |
 
-When documents conflict, `docs/research/action-plan.md` takes precedence — it incorporates all review feedback and researcher decisions.
+When documents conflict, `docs/research/research-plan.md` takes precedence.
 
 ## Architecture Decisions
 
 - **Hybrid two-layer**: Swarm agents (10-50 per organism) form organism-level structures; organisms (10-50) inhabit a continuous 2D environment
 - **Language**: Rust (core simulation) + Python (experiment management, analysis). Bound via PyO3/maturin
 - **LaTeX**: Use `tectonic` for paper compilation (not pdflatex/latexmk)
-- **Neural controllers**: Evolutionary NN (main). LLM (Ollama) only for a single ablation study experiment
+- **Neural controllers**: Evolutionary NN (main). LLM (Ollama) only for ablation study
 - **Compute**: Mac Mini M2 Pro. Target: >100 timesteps/sec for 2,500 agents
 - **Metabolism**: Graph-based metabolic networks, genetically encoded and evolvable
-- **Genotype**: Variable-length encoding covering metabolic network + developmental program + NN architecture. Designed for all 7 criteria upfront; initially only 2-3 active
+- **Module names**: `life_transition` (Python), `life_transition_core` (Rust)
 
-## Seven Biological Criteria
+## Background Platform (Seven Biological Criteria)
 
-1. **Cellular Organization** — Active boundary maintenance (swarm coordination), degrades without energy
-2. **Metabolism** — Graph-based multi-step transformation network (highest risk, test first)
-3. **Homeostasis** — NN controller regulates internal state vector within viable ranges
-4. **Growth/Development** — Minimal seed → mature organism via genetically encoded developmental program
-5. **Reproduction** — Organism-initiated division when metabolically ready; offspring develop from seed
-6. **Response to Stimuli** — Local sensory field + NN processing → emergent behavioral repertoire
-7. **Evolution** — Heritable genomes, mutation/recombination, differential survival (Level A target; Level B is stretch)
+The existing simulation implements all seven textbook criteria as interdependent processes. This serves as the **baseline world** into which virus-like entities are introduced:
 
-## Core Experimental Design
+1. **Cellular Organization** — Active boundary maintenance (swarm coordination)
+2. **Metabolism** — Graph-based multi-step transformation network
+3. **Homeostasis** — NN controller regulates internal state vector
+4. **Growth/Development** — Seed → mature organism via developmental program
+5. **Reproduction** — Organism-initiated division when metabolically ready
+6. **Response to Stimuli** — Local sensory field + NN processing → behavior
+7. **Evolution** — Heritable genomes, mutation/recombination, differential survival
 
-**Criterion-ablation** is the central experiment: each criterion is individually disabled to measure system degradation, proving functional necessity and interdependence.
+## Core Experiment: Capability Ladder
 
-**Data separation protocol**:
-- Calibration set: seeds 0-99 (Phase 1-2, threshold tuning)
-- Final test set: seeds 100-199 (Phase 4, evaluation with fixed thresholds)
-- Statistics: Mann-Whitney U, Holm-Bonferroni correction (7 simultaneous tests), Cohen's d
+**New entity type**: `Virus` — a replicator that starts with minimal internal function and gains capabilities one step at a time:
 
-## Key Concept: Functional Analogy
+| Level | Added function |
+|-------|---------------|
+| V0 | Base replicator: reproduction only, minimal internal state |
+| V1 | Boundary / cellular organization (capsid-like integrity) |
+| V2 | Homeostasis (replication throttling, internal regulation) |
+| V3 | Metabolism (internal resource conversion) |
+| V4 | Response to stimuli (sensing + action selection) |
+| V5 | Growth/development (staged lifecycle: dormant → active → dispersal) |
+
+**Key principle**: each added function must be a dynamic process (resource-consuming every timestep) — matching the functional analogy condition from the prior paper.
+
+## Signature Result: Phase Diagrams
+
+For each virus archetype × capability level V0–V5 × environment harshness:
+- **Survival phase diagram**: where the population persists
+- **Recovery phase diagram**: rebound rate after shocks
+- **Tradeoff plots**: replication rate vs persistence
+
+**Virus archetypes** (3–5 families, same world, different parameterizations):
+- Fast/fragile, Slow/persistent, Aggressive parasite, Stealth, High-mutation vs Low-mutation
+
+## New Metric: Internalization Index
+
+Fraction of energy/regulation obtained internally vs externally. This becomes the continuous "semi-life → life" axis.
+
+## Statistical Design
+
+Carry forward from prior paper:
+- Mann-Whitney U, Holm-Bonferroni correction, Cliff's δ (effect size)
+- Data separation: calibration seeds 0–99, final test seeds 100–199
+- Negative controls: sham capability (compute but no state effect), proxy controls
+
+## Functional Analogy Framework (Evaluation, Carried Forward)
 
 A computational process is a functional analogy of a biological criterion iff:
 - (a) It is a **dynamic process** requiring sustained resource consumption
 - (b) Its removal causes **measurable degradation** of organism self-maintenance
 - (c) It forms a **feedback loop** with at least one other criterion
 
-This distinguishes the project from "simplified proxy" approaches. Verify at every Go/No-Go checkpoint.
+Apply to each added V-level capability via ablation test.
 
 ## Pivot Strategy
 
 | Trigger | Pivot |
 |---------|-------|
-| Metabolic network unsustainable | Graph-based → ODE-based metabolism |
-| Hybrid two-layer unstable | Drop swarm, simplify to agent-based |
-| 7-criteria integration infeasible by deadline | Narrow paper to 3-5 working criteria |
+| Virus mechanics unstable | Simplify to a single archetype; drop the family library |
+| Phase transitions absent | Focus on tradeoff emergence instead; reframe as "cost-benefit" paper |
+| V0–V5 integration infeasible by deadline | Report V0–V3 only; frame as "partial internalization ladder" |
 | Full paper infeasible by Week 4 | Switch to Extended Abstract (2-4p) |
+| Metabolic network unsustainable | Graph-based → ODE-based metabolism |
 
 ## Language Notes
 
-Research documents are bilingual (Japanese + English). `docs/research/unified-review.md` is primarily in Japanese. `docs/research/action-plan.md` uses Japanese headers with English technical terms. When generating research content, match the language of the target document.
+Research documents are bilingual (Japanese + English). `docs/archive/unified-review.md` is primarily Japanese. When generating research content, match the language of the target document.

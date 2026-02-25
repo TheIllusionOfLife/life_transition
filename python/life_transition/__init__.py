@@ -1,4 +1,4 @@
-"""Digital Life: Artificial life simulation framework."""
+"""Life Transition: Virus → Semi-Life → Life simulation framework."""
 
 from ._core import (
     default_config_json,

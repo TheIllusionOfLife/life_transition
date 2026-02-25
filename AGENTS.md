@@ -4,14 +4,14 @@ This file provides repository-specific instructions for coding agents and contri
 
 ## Mission
 
-Build and evolve the Digital Life simulation with reproducible, testable changes aligned with the seven-criteria research goals.
+Build and evolve the Life Transition simulation with reproducible, testable changes aligned with the Virus → Semi-Life → Life research goals.
 
 ## High-Confidence Commands
 
 - Build workspace: `cargo build --workspace`
 - Run full checks: `./scripts/check.sh`
-- Run spike benchmark: `cargo run -p digital-life-spike --release`
-- Build Python extension: `uv run maturin develop --manifest-path crates/digital-life-py/Cargo.toml`
+- Run spike benchmark: `cargo run -p life-transition-cli --release -- benchmark`
+- Build Python extension: `maturin develop --release`
 - Compile paper: `cd paper && tectonic main.tex`
 
 ## Code Style and Quality Rules
@@ -24,7 +24,7 @@ Build and evolve the Digital Life simulation with reproducible, testable changes
 ## Testing Instructions
 
 - Baseline gate for all changes: `./scripts/check.sh`
-- For Python-binding changes, always run Rust tests in `crates/digital-life-py/src/lib.rs` through the full test command.
+- For Python-binding changes, always run Rust tests in `crates/life-transition-py/src/lib.rs` through the full test command.
 
 ## Repository Etiquette
 
@@ -44,7 +44,7 @@ Build and evolve the Digital Life simulation with reproducible, testable changes
 
 - Use `uv` for Python-related tooling; avoid ad-hoc global package installs.
 - Use `tectonic` for LaTeX compilation (not `latexmk` or `pdflatex`). Run `cd paper && tectonic main.tex` to produce the PDF.
-- Running `cargo run -p digital-life-spike` without `--release` yields non-representative performance.
+- Running `cargo run -p life-transition-cli` without `--release` yields non-representative performance.
 - Local build artifacts (`target/`, extension binaries) should remain untracked.
 
 ## Paper (LaTeX) Guidelines
