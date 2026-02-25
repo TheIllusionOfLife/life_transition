@@ -899,6 +899,44 @@ mod tests {
     }
 
     #[test]
+    fn validate_rejects_invalid_resource_initial_value() {
+        let config = SimConfig {
+            resource_initial_value: -0.1,
+            ..SimConfig::default()
+        };
+        assert_eq!(
+            config.validate(),
+            Err(SimConfigError::InvalidResourceInitialValue)
+        );
+
+        let config = SimConfig {
+            resource_initial_value: f64::NAN,
+            ..SimConfig::default()
+        };
+        assert_eq!(
+            config.validate(),
+            Err(SimConfigError::InvalidResourceInitialValue)
+        );
+    }
+
+    #[test]
+    fn validate_rejects_invalid_semi_life_capability_override() {
+        let mut semi_life_config = SemiLifeConfig::default();
+        semi_life_config
+            .capability_overrides
+            .insert("viroid".to_string(), 0x7F); // bits above V5 (0x3F) are reserved
+        let config = SimConfig {
+            enable_semi_life: true,
+            semi_life_config,
+            ..SimConfig::default()
+        };
+        assert_eq!(
+            config.validate(),
+            Err(SimConfigError::InvalidSemiLifeCapabilityOverride)
+        );
+    }
+
+    #[test]
     fn error_display_messages_are_preserved() {
         let cases = vec![
             (

@@ -20,7 +20,7 @@ from experiment_semi_life_v1v3 import (
     V1,
     V2,
     V3,
-    _make_config,
+    make_config,
 )
 
 # ---------------------------------------------------------------------------
@@ -43,7 +43,7 @@ def test_capability_bitmask_values():
 
 def test_resource_initial_value_default_is_one():
     """Default config must have resource_initial_value == 1.0."""
-    cfg_str = _make_config("viroid", V0, 1.0, seed=0)
+    cfg_str = make_config("viroid", V0, 1.0, seed=0)
     cfg = json.loads(cfg_str)
     assert cfg["resource_initial_value"] == pytest.approx(1.0)
 
@@ -51,13 +51,13 @@ def test_resource_initial_value_default_is_one():
 def test_resource_initial_value_passes_validation():
     """Various resource_initial_value values must pass Rust validation."""
     for val in [1.0, 0.5, 0.1, 0.05, 0.0]:
-        cfg_str = _make_config("viroid", V0, val, seed=0)
+        cfg_str = make_config("viroid", V0, val, seed=0)
         assert life_transition.validate_config_json(cfg_str) is True, f"Failed for val={val}"
 
 
 def test_resource_initial_value_zero_is_valid():
     """resource_initial_value=0.0 is valid (empty world on start)."""
-    cfg_str = _make_config("viroid", V0, 0.0, seed=0)
+    cfg_str = make_config("viroid", V0, 0.0, seed=0)
     assert life_transition.validate_config_json(cfg_str) is True
 
 
@@ -65,7 +65,7 @@ def test_resource_initial_value_affects_population():
     """Low resource_initial_value must produce a smaller population at step 500."""
 
     def run_alive(resource_init: float) -> int:
-        cfg_str = _make_config("viroid", V0, resource_init, seed=0)
+        cfg_str = make_config("viroid", V0, resource_init, seed=0)
         result = json.loads(life_transition.run_semi_life_v0_experiment_json(cfg_str, 500, 500))
         last = result["samples"][-1]["snapshots"]
         return sum(1 for s in last if s["alive"] and s["archetype"] == "viroid")
@@ -87,14 +87,14 @@ def test_resource_initial_value_affects_population():
 
 def test_capability_overrides_empty_is_default():
     """No overrides → enabled viroid uses V0 baseline (active_capabilities=1)."""
-    cfg_str = _make_config("viroid", None, 0.1, seed=0)
+    cfg_str = make_config("viroid", None, 0.1, seed=0)
     cfg = json.loads(cfg_str)
     assert cfg["semi_life_config"].get("capability_overrides", {}) == {}
 
 
 def test_capability_overrides_appears_in_config():
     """cap_bits override must appear in semi_life_config.capability_overrides."""
-    cfg_str = _make_config("viroid", V0 | V1, 0.1, seed=0)
+    cfg_str = make_config("viroid", V0 | V1, 0.1, seed=0)
     cfg = json.loads(cfg_str)
     overrides = cfg["semi_life_config"]["capability_overrides"]
     assert overrides == {"viroid": V0 | V1}
@@ -103,13 +103,13 @@ def test_capability_overrides_appears_in_config():
 def test_capability_overrides_passes_rust_validation():
     """All valid V0–V3 capability combinations must pass Rust validation."""
     for bits in [V0, V0 | V1, V0 | V1 | V2, V0 | V1 | V2 | V3]:
-        cfg_str = _make_config("viroid", bits, 0.1, seed=0)
+        cfg_str = make_config("viroid", bits, 0.1, seed=0)
         assert life_transition.validate_config_json(cfg_str) is True, f"Failed for bits={bits}"
 
 
 def test_capability_overrides_active_capabilities_in_snapshot():
     """Entities in a V0+V1 run must report active_capabilities == 3."""
-    cfg_str = _make_config("viroid", V0 | V1, 0.1, seed=0)
+    cfg_str = make_config("viroid", V0 | V1, 0.1, seed=0)
     result = json.loads(life_transition.run_semi_life_v0_experiment_json(cfg_str, 100, 100))
     last = result["samples"][-1]["snapshots"]
     alive = [s for s in last if s["alive"] and s["archetype"] == "viroid"]
@@ -122,7 +122,7 @@ def test_capability_overrides_active_capabilities_in_snapshot():
 
 def test_v0_only_has_zero_internalization_index():
     """V0-only viroid entities must report II == 0.0 (no internal metabolism)."""
-    cfg_str = _make_config("viroid", V0, 0.1, seed=0)
+    cfg_str = make_config("viroid", V0, 0.1, seed=0)
     result = json.loads(life_transition.run_semi_life_v0_experiment_json(cfg_str, 100, 100))
     last = result["samples"][-1]["snapshots"]
     alive = [s for s in last if s["alive"] and s["archetype"] == "viroid"]
@@ -134,7 +134,7 @@ def test_v0_only_has_zero_internalization_index():
 
 def test_v3_produces_positive_internalization_index():
     """Entities with V3 metabolism must show II > 0 at steady state."""
-    cfg_str = _make_config("viroid", V0 | V1 | V2 | V3, 0.1, seed=0)
+    cfg_str = make_config("viroid", V0 | V1 | V2 | V3, 0.1, seed=0)
     result = json.loads(life_transition.run_semi_life_v0_experiment_json(cfg_str, 200, 200))
     last = result["samples"][-1]["snapshots"]
     alive = [s for s in last if s["alive"] and s["archetype"] == "viroid"]
@@ -151,7 +151,7 @@ def test_v1_boundary_reduces_population_in_scarce():
     """
 
     def alive_at_500(cap_bits: int) -> int:
-        cfg_str = _make_config("viroid", cap_bits, 0.1, seed=0)
+        cfg_str = make_config("viroid", cap_bits, 0.1, seed=0)
         result = json.loads(life_transition.run_semi_life_v0_experiment_json(cfg_str, 500, 500))
         last = result["samples"][-1]["snapshots"]
         return sum(1 for s in last if s["alive"] and s["archetype"] == "viroid")
@@ -176,7 +176,7 @@ def test_v3_metabolism_boosts_population_in_scarce():
     _SEEDS = [0, 1, 2]
 
     def alive_at_500(cap_bits: int, seed: int) -> int:
-        cfg_str = _make_config("viroid", cap_bits, 0.1, seed=seed)
+        cfg_str = make_config("viroid", cap_bits, 0.1, seed=seed)
         result = json.loads(life_transition.run_semi_life_v0_experiment_json(cfg_str, 500, 500))
         last = result["samples"][-1]["snapshots"]
         return sum(1 for s in last if s["alive"] and s["archetype"] == "viroid")
@@ -195,7 +195,7 @@ def test_v3_metabolism_boosts_population_in_scarce():
 
 def test_proto_organelle_baseline_has_no_replications():
     """ProtoOrganelle (V1+V2+V3, no V0) must not replicate at step 200."""
-    cfg_str = _make_config("proto_organelle", None, 0.1, seed=0)
+    cfg_str = make_config("proto_organelle", None, 0.1, seed=0)
     result = json.loads(life_transition.run_semi_life_v0_experiment_json(cfg_str, 200, 200))
     last = result["samples"][-1]["snapshots"]
     proto = [s for s in last if s["archetype"] == "proto_organelle"]
@@ -211,7 +211,7 @@ def test_proto_organelle_liberation_replicates():
     adding V0 replication capability ENABLES replication — not that it works at
     all resource levels (resource sensitivity is measured by the experiment script).
     """
-    cfg_str = _make_config("proto_organelle", V0 | V1 | V2 | V3, 0.3, seed=0)
+    cfg_str = make_config("proto_organelle", V0 | V1 | V2 | V3, 0.3, seed=0)
     result = json.loads(life_transition.run_semi_life_v0_experiment_json(cfg_str, 200, 200))
     last = result["samples"][-1]["snapshots"]
     proto = [s for s in last if s["archetype"] == "proto_organelle"]
@@ -245,17 +245,17 @@ def test_archetype_conditions_has_liberation_pair():
     assert any("liberat" in lbl for lbl in labels)
 
 
-def test_make_config_single_archetype_isolation():
-    """_make_config must only list the target archetype in enabled_archetypes."""
+def testmake_config_single_archetype_isolation():
+    """make_config must only list the target archetype in enabled_archetypes."""
     for _, archetype, cap_bits in ARCHETYPE_CONDITIONS:
-        cfg = json.loads(_make_config(archetype, cap_bits, 0.1, seed=0))
+        cfg = json.loads(make_config(archetype, cap_bits, 0.1, seed=0))
         assert cfg["semi_life_config"]["enabled_archetypes"] == [archetype], (
             f"Isolation mode violated for archetype={archetype}"
         )
 
 
-def test_make_config_uses_correct_resource_initial():
-    """_make_config must pass resource_initial_value to the top-level config."""
+def testmake_config_uses_correct_resource_initial():
+    """make_config must pass resource_initial_value to the top-level config."""
     for val in RESOURCE_INITIAL_VALUES.values():
-        cfg = json.loads(_make_config("viroid", V0, val, seed=0))
+        cfg = json.loads(make_config("viroid", V0, val, seed=0))
         assert cfg["resource_initial_value"] == pytest.approx(val)

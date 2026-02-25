@@ -275,7 +275,8 @@ impl World {
             resource_field: ResourceField::new(
                 world_size,
                 1.0,
-                // resource_initial_value is in [0, 1] range; f32 precision is sufficient.
+                // resource_initial_value is validated as finite and >= 0.0; cast to f32
+                // is safe for the typical [0, 1] research range (6–7 sig. digits in f32).
                 config.resource_initial_value as f32,
             ),
             org_toroidal_sums: vec![[0.0, 0.0, 0.0, 0.0]; org_count],

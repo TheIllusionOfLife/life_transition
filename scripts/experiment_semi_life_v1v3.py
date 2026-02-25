@@ -97,14 +97,14 @@ def _load_archetype_config(archetype: str) -> dict:
     """
     path = _CONFIGS_DIR / f"semi_life_{archetype}.json"
     if path.exists():
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             data = json.load(f)
         return {k: v for k, v in data.items() if not k.startswith("_")}
     log(f"  WARNING: no calibrated config for {archetype}; using defaults")
     return {}
 
 
-def _make_config(
+def make_config(
     archetype: str,
     cap_bits: int | None,
     resource_initial: float,
@@ -159,14 +159,13 @@ def run_one(
     seed: int,
 ) -> None:
     """Run one condition/seed pair and print TSV rows."""
-    config_json = _make_config(archetype, cap_bits, resource_initial, seed)
+    config_json = make_config(archetype, cap_bits, resource_initial, seed)
     result = json.loads(
         life_transition.run_semi_life_v0_experiment_json(config_json, STEPS, SAMPLE_EVERY)
     )
 
-    _EXPERIMENTS_DIR.mkdir(exist_ok=True)
     sidecar = _EXPERIMENTS_DIR / f"semi_life_v1v3_{condition}_{harshness}_{seed}.json"
-    sidecar.write_text(json.dumps(result))
+    sidecar.write_text(json.dumps(result), encoding="utf-8")
 
     for sample in result["samples"]:
         step = sample["step"]
@@ -203,6 +202,7 @@ def main() -> None:
 
     print("\t".join(TSV_COLUMNS))
 
+    _EXPERIMENTS_DIR.mkdir(exist_ok=True)
     done = 0
     for condition, archetype, cap_bits in ARCHETYPE_CONDITIONS:
         for harshness, resource_initial in RESOURCE_INITIAL_VALUES.items():
