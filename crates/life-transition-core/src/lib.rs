@@ -8,10 +8,12 @@ pub mod nn;
 pub mod organism;
 pub mod resource;
 pub mod rng;
+pub mod semi_life;
 pub mod spatial;
 pub mod world;
 
 pub use constants::MAX_WORLD_SIZE;
 pub use metrics::{
-    LineageEvent, OrganismSnapshot, PopulationStats, RunSummary, SnapshotFrame, StepMetrics,
+    LineageEvent, OrganismSnapshot, PopulationStats, RunSummary, SemiLifeSnapshot, SnapshotFrame,
+    StepMetrics,
 };

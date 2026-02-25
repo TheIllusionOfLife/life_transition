@@ -1,3 +1,4 @@
+use crate::agent::OwnerType;
 use crate::spatial;
 use crate::spatial::AgentLocation;
 use rstar::RTree;
@@ -26,6 +27,12 @@ impl World {
         neighbor_counts.fill(0);
 
         for agent in agents {
+            // SemiLife agents have no NN — push zero delta so deltas_buffer stays
+            // aligned with agents (agent_state.rs zips both vecs by index).
+            if agent.owner_type != OwnerType::Organism {
+                deltas.push([0.0; 4]);
+                continue;
+            }
             let org_idx = agent.organism_id as usize;
             // Manual lookup to avoid borrowing self methods
             if !organisms.get(org_idx).map(|o| o.alive).unwrap_or(false) {

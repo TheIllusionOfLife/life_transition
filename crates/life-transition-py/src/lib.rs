@@ -96,6 +96,16 @@ fn run_experiment_json_impl(
 }
 
 #[pyfunction]
+fn run_semi_life_v0_experiment_json(
+    config_json: &str,
+    steps: usize,
+    sample_every: usize,
+) -> PyResult<String> {
+    run_semi_life_v0_experiment_json_impl(config_json, steps, sample_every)
+        .map_err(PyValueError::new_err)
+}
+
+#[pyfunction]
 fn run_niche_experiment_json(
     config_json: &str,
     steps: usize,
@@ -177,6 +187,46 @@ fn run_evolution_experiment_json_impl(
     });
     serde_json::to_string(&payload)
         .map_err(|e| format!("failed to serialize evolution experiment summary: {e}"))
+}
+
+fn run_semi_life_v0_experiment_json_impl(
+    config_json: &str,
+    steps: usize,
+    sample_every: usize,
+) -> Result<String, String> {
+    if sample_every == 0 {
+        return Err("sample_every must be > 0".to_string());
+    }
+    if steps > World::MAX_EXPERIMENT_STEPS {
+        return Err(format!(
+            "steps ({steps}) exceeds supported maximum ({})",
+            World::MAX_EXPERIMENT_STEPS
+        ));
+    }
+    let mut world = world_from_config_json(config_json)?;
+    let mut samples: Vec<serde_json::Value> = Vec::with_capacity(steps / sample_every + 1);
+
+    for step in 1..=steps {
+        world.step();
+        if step % sample_every == 0 {
+            let snapshots = world.semi_life_snapshots();
+            let alive = world.semi_life_alive_count();
+            samples.push(json!({
+                "step": step,
+                "semi_life_alive": alive,
+                "snapshots": snapshots,
+            }));
+        }
+    }
+
+    let payload = json!({
+        "kind": "semi_life_v0",
+        "steps": steps,
+        "sample_every": sample_every,
+        "samples": samples,
+    });
+    serde_json::to_string(&payload)
+        .map_err(|e| format!("failed to serialize semi_life experiment: {e}"))
 }
 
 fn world_from_config_json(config_json: &str) -> Result<World, String> {
@@ -262,6 +312,7 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(run_experiment_json, m)?)?;
     m.add_function(wrap_pyfunction!(run_evolution_experiment_json, m)?)?;
     m.add_function(wrap_pyfunction!(run_niche_experiment_json, m)?)?;
+    m.add_function(wrap_pyfunction!(run_semi_life_v0_experiment_json, m)?)?;
     Ok(())
 }
 

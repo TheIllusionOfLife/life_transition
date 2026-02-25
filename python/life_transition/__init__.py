@@ -5,6 +5,7 @@ from ._core import (
     run_evolution_experiment_json,
     run_experiment_json,
     run_niche_experiment_json,
+    run_semi_life_v0_experiment_json,
     step_once,
     validate_config_json,
     version,
@@ -18,4 +19,5 @@ __all__ = [
     "run_experiment_json",
     "run_evolution_experiment_json",
     "run_niche_experiment_json",
+    "run_semi_life_v0_experiment_json",
 ]

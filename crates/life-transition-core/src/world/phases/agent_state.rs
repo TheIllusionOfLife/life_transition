@@ -1,4 +1,5 @@
 use super::super::World;
+use crate::agent::OwnerType;
 use crate::config::HomeostasisMode;
 use std::f64::consts::PI;
 
@@ -30,6 +31,11 @@ impl World {
         let org_counts = &mut self.org_counts;
 
         for (agent, delta) in agents.iter_mut().zip(deltas.iter()) {
+            // SemiLife agents are not managed by organism physics — skip them.
+            // The zero delta pushed in nn_query keeps the zip aligned.
+            if agent.owner_type != OwnerType::Organism {
+                continue;
+            }
             let org_idx = agent.organism_id as usize;
             if !organisms[org_idx].alive {
                 agent.velocity = [0.0, 0.0];

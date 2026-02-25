@@ -1,5 +1,6 @@
-use crate::agent::Agent;
+use crate::agent::{Agent, OwnerType};
 use crate::organism::OrganismRuntime;
+use crate::semi_life::SemiLifeRuntime;
 use rand::Rng;
 use rand::SeedableRng;
 use rand_chacha::ChaCha12Rng;
@@ -59,6 +60,45 @@ pub struct OrganismSnapshot {
 pub struct SnapshotFrame {
     pub step: usize,
     pub organisms: Vec<OrganismSnapshot>,
+}
+
+/// Per-step snapshot of a single SemiLife entity.
+///
+/// Collected each sampling interval alongside [`StepMetrics`].
+/// The `internalization_index` is computed from per-step energy flow accumulators
+/// and is structurally independent of survival metrics (lifespan, persistence),
+/// which are measured from agent counts — avoiding circular II ⟹ life-likeness claims.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SemiLifeSnapshot {
+    pub id: u16,
+    pub stable_id: u64,
+    pub archetype: String,
+    /// Bitmask of currently active capabilities (use `capability::V*` flags to decode).
+    pub active_capabilities: u8,
+    pub maintenance_energy: f32,
+    pub replications: u32,
+    pub failed_replications: u32,
+    pub age_steps: usize,
+    pub alive: bool,
+    /// Fraction of energy obtained internally this step. 0.0 for V0-only entities.
+    pub internalization_index: f32,
+}
+
+impl SemiLifeSnapshot {
+    pub fn from_runtime(sl: &SemiLifeRuntime) -> Self {
+        Self {
+            id: sl.id,
+            stable_id: sl.stable_id,
+            archetype: sl.archetype.as_str().to_owned(),
+            active_capabilities: sl.active_capabilities.0,
+            maintenance_energy: sl.maintenance_energy,
+            replications: sl.replications,
+            failed_replications: sl.failed_replications,
+            age_steps: sl.age_steps,
+            alive: sl.alive,
+            internalization_index: sl.internalization_index(),
+        }
+    }
 }
 
 fn default_schema_version() -> u32 {
@@ -260,10 +300,11 @@ pub fn collect_step_metrics(
     let alive_states: Vec<[f32; 4]> = agents
         .iter()
         .filter(|a| {
-            organisms
-                .get(a.organism_id as usize)
-                .map(|o| o.alive)
-                .unwrap_or(false)
+            a.owner_type == OwnerType::Organism
+                && organisms
+                    .get(a.organism_id as usize)
+                    .map(|o| o.alive)
+                    .unwrap_or(false)
         })
         .map(|a| a.internal_state)
         .collect();

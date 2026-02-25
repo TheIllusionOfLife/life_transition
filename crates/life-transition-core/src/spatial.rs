@@ -1,4 +1,4 @@
-use crate::agent::Agent;
+use crate::agent::{Agent, OwnerType};
 use rstar::{RTree, RTreeObject, AABB};
 use std::collections::HashSet;
 
@@ -29,15 +29,20 @@ pub fn build_index(agents: &[Agent]) -> RTree<AgentLocation> {
     RTree::bulk_load(locations)
 }
 
-/// Build an R*-tree from only active organisms.
+/// Build an R*-tree from only active Organism agents.
+///
+/// SemiLife agents (`owner_type == OwnerType::SemiLife`) are always excluded so
+/// they never contaminate organism-level neighbor sensing or boundary phases.
+/// Prion contact propagation queries this same tree to find nearby organism hosts.
 pub fn build_index_active(agents: &[Agent], organism_alive: &[bool]) -> RTree<AgentLocation> {
     let locations: Vec<AgentLocation> = agents
         .iter()
         .filter(|a| {
-            organism_alive
-                .get(a.organism_id as usize)
-                .copied()
-                .unwrap_or(false)
+            a.owner_type == OwnerType::Organism
+                && organism_alive
+                    .get(a.organism_id as usize)
+                    .copied()
+                    .unwrap_or(false)
         })
         .map(|a| AgentLocation {
             id: a.id,
