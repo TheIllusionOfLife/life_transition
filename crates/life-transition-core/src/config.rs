@@ -1,5 +1,6 @@
 use crate::semi_life::SemiLifeArchetype;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Clone, Copy, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
@@ -100,6 +101,18 @@ pub struct SemiLifeConfig {
     pub prion_dilution_death_energy: f32,
     /// Energy gained per successful contact conversion event (Prion entities).
     pub prion_contact_gain: f32,
+    /// Per-archetype active capability overrides (bitmask).
+    ///
+    /// Key: archetype name in snake_case (e.g. `"viroid"`, `"virus"`).
+    /// Value: u8 bitmask using [`crate::semi_life::capability`] constants
+    /// (V0=0x01, V1=0x02, V2=0x04, V3=0x08, V4=0x10, V5=0x20).
+    ///
+    /// When present, overrides the archetype's [`SemiLifeArchetype::baseline_capabilities`]
+    /// for both initial spawn and child replication. Absent entries use the archetype default.
+    /// This enables capability-ladder experiments (e.g. Viroid at V0+V1 without using the
+    /// Virus archetype) and ablation studies (e.g. Virus with V1 cleared).
+    #[serde(default)]
+    pub capability_overrides: HashMap<String, u8>,
 }
 
 impl Default for SemiLifeConfig {
@@ -131,6 +144,7 @@ impl Default for SemiLifeConfig {
             prion_fragmentation_loss: 0.01,
             prion_dilution_death_energy: 0.0,
             prion_contact_gain: 0.01,
+            capability_overrides: HashMap::new(),
         }
     }
 }
@@ -253,6 +267,10 @@ pub struct SimConfig {
     pub growth_immature_metabolic_efficiency: f32,
     /// Per-step resource regeneration rate per cell.
     pub resource_regeneration_rate: f32,
+    /// Initial resource value per cell at world initialization (0.0–1.0 typical).
+    /// Scales the total resource pool; lower values create immediate scarcity
+    /// without requiring long ramp-down periods to deplete the initial pool.
+    pub resource_initial_value: f64,
     /// Step at which to apply environment shift (0 = no shift).
     pub environment_shift_step: usize,
     /// Resource regeneration rate to apply after the environment shift step.
@@ -333,6 +351,7 @@ impl Default for SimConfig {
             growth_maturation_steps: 200,
             growth_immature_metabolic_efficiency: 0.3,
             resource_regeneration_rate: 0.01,
+            resource_initial_value: 1.0,
             environment_shift_step: 0,
             environment_shift_resource_rate: 0.01,
             metabolism_efficiency_multiplier: 1.0,
@@ -430,6 +449,8 @@ define_sim_config_error! {
     InvalidSemiLifeReplicationBalance => "semi_life_config.replication_cost must be less than replication_threshold";
     InvalidSemiLifeResourceUptakeRate => "semi_life_config.resource_uptake_rate must be finite and non-negative";
     InvalidSemiLifePrionContactRadius => "semi_life_config.prion_contact_radius must be finite and non-negative";
+    InvalidResourceInitialValue => "resource_initial_value must be finite and non-negative";
+    InvalidSemiLifeCapabilityOverride => "semi_life_config.capability_overrides: bitmask bits above V5 (0x3F) are reserved";
 }
 
 impl std::error::Error for SimConfigError {}
@@ -693,6 +714,9 @@ impl SimConfig {
         {
             return Err(SimConfigError::InvalidResourceRegenerationRate);
         }
+        if !(self.resource_initial_value.is_finite() && self.resource_initial_value >= 0.0) {
+            return Err(SimConfigError::InvalidResourceInitialValue);
+        }
         if !(self.environment_shift_resource_rate.is_finite()
             && self.environment_shift_resource_rate >= 0.0)
         {
@@ -733,6 +757,12 @@ impl SimConfig {
         }
         if !(cfg.prion_contact_radius.is_finite() && cfg.prion_contact_radius >= 0.0) {
             return Err(SimConfigError::InvalidSemiLifePrionContactRadius);
+        }
+        // Capability bitmasks must only use V0–V5 bits (0x01–0x20 → all fit in 0x3F).
+        for bits in cfg.capability_overrides.values() {
+            if *bits > 0x3F {
+                return Err(SimConfigError::InvalidSemiLifeCapabilityOverride);
+            }
         }
         Ok(())
     }

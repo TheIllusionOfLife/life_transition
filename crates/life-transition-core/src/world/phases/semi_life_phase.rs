@@ -1,12 +1,46 @@
 use super::super::World;
 use crate::agent::{Agent, OwnerType};
 use crate::config::{SemiLifeConfig, SimConfig};
-use crate::semi_life::{capability, DependencyMode, SemiLifeRuntime};
+use crate::semi_life::{
+    capability, CapabilitySet, DependencyMode, SemiLifeArchetype, SemiLifeRuntime,
+};
 use crate::spatial;
 use crate::spatial::AgentLocation;
 use rand::Rng;
 use rstar::RTree;
 use std::f64::consts::PI;
+
+/// Resolve active capabilities for an archetype, applying any config override.
+///
+/// Falls back to `archetype.baseline_capabilities()` when no override is present,
+/// preserving the biological default for runs that do not need capability ladder experiments.
+fn resolve_capabilities(archetype: SemiLifeArchetype, cfg: &SemiLifeConfig) -> CapabilitySet {
+    if let Some(&bits) = cfg.capability_overrides.get(archetype.as_str()) {
+        CapabilitySet(bits)
+    } else {
+        archetype.baseline_capabilities()
+    }
+}
+
+/// Initialise optional runtime fields based on an active CapabilitySet.
+///
+/// Must be called after overriding `active_capabilities` on a [`SemiLifeRuntime`] to ensure
+/// the capability-gated optional fields (`boundary_integrity`, `regulator_state`,
+/// `internal_pool`) reflect the actual active set rather than the archetype baseline.
+fn apply_capability_fields(sl: &mut SemiLifeRuntime, cfg: &SemiLifeConfig) {
+    sl.boundary_integrity = sl
+        .active_capabilities
+        .has(capability::V1_BOUNDARY)
+        .then_some(1.0f32);
+    sl.regulator_state = sl
+        .active_capabilities
+        .has(capability::V2_HOMEOSTASIS)
+        .then_some(cfg.regulator_init);
+    sl.internal_pool = sl
+        .active_capabilities
+        .has(capability::V3_METABOLISM)
+        .then_some(cfg.internal_pool_init_fraction * cfg.internal_pool_capacity);
+}
 
 impl World {
     /// Step all SemiLife entities through one simulation timestep.
@@ -322,6 +356,9 @@ impl World {
             cfg.regulator_init,
             cfg.internal_pool_init_fraction * cfg.internal_pool_capacity,
         );
+        // Inherit the same capability override as the parent so all generations are consistent.
+        child.active_capabilities = resolve_capabilities(parent_archetype, cfg);
+        apply_capability_fields(&mut child, cfg);
         child.agent_ids.push(agent_id);
         self.semi_lives.push(child);
 
@@ -445,6 +482,9 @@ impl World {
                     cfg.regulator_init,
                     cfg.internal_pool_init_fraction * cfg.internal_pool_capacity,
                 );
+                // Apply capability override (if any) and re-gate optional fields.
+                sl.active_capabilities = resolve_capabilities(archetype, &cfg);
+                apply_capability_fields(&mut sl, &cfg);
                 sl.agent_ids.push(agent_id);
 
                 let agent = Agent::for_semi_life(agent_id, sl_id, [pos_x, pos_y]);

@@ -272,7 +272,11 @@ impl World {
             organisms,
             config: config.clone(),
             metabolism,
-            resource_field: ResourceField::new(world_size, 1.0, 1.0),
+            resource_field: ResourceField::new(
+                world_size,
+                1.0,
+                config.resource_initial_value as f32,
+            ),
             org_toroidal_sums: vec![[0.0, 0.0, 0.0, 0.0]; org_count],
             org_counts: vec![0; org_count],
             rng: ChaCha12Rng::seed_from_u64(config.seed),
@@ -342,7 +346,8 @@ impl World {
             });
         }
         if (self.config.world_size - config.world_size).abs() > f64::EPSILON {
-            self.resource_field = ResourceField::new(config.world_size, 1.0, 1.0);
+            self.resource_field =
+                ResourceField::new(config.world_size, 1.0, config.resource_initial_value as f32);
         }
         self.current_resource_rate = config.resource_regeneration_rate;
         self.config = config;
