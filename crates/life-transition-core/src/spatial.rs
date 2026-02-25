@@ -1,4 +1,4 @@
-use crate::agent::Agent;
+use crate::agent::{Agent, OwnerType};
 use rstar::{RTree, RTreeObject, AABB};
 use std::collections::HashSet;
 
@@ -29,15 +29,20 @@ pub fn build_index(agents: &[Agent]) -> RTree<AgentLocation> {
     RTree::bulk_load(locations)
 }
 
-/// Build an R*-tree from only active organisms.
+/// Build an R*-tree from only active Organism agents.
+///
+/// SemiLife agents (`owner_type == OwnerType::SemiLife`) are always excluded so
+/// they never contaminate organism-level neighbor sensing or boundary phases.
+/// Prion contact propagation queries this same tree to find nearby organism hosts.
 pub fn build_index_active(agents: &[Agent], organism_alive: &[bool]) -> RTree<AgentLocation> {
     let locations: Vec<AgentLocation> = agents
         .iter()
         .filter(|a| {
-            organism_alive
-                .get(a.organism_id as usize)
-                .copied()
-                .unwrap_or(false)
+            a.owner_type == OwnerType::Organism
+                && organism_alive
+                    .get(a.organism_id as usize)
+                    .copied()
+                    .unwrap_or(false)
         })
         .map(|a| AgentLocation {
             id: a.id,
@@ -280,6 +285,25 @@ mod tests {
         let tree = build_index_active(&agents, &[true, false]);
         let result = query_neighbors(&tree, [1.0, 1.0], 1.0, u32::MAX, 100.0);
         assert_eq!(result, vec![0]);
+    }
+
+    #[test]
+    fn build_index_active_excludes_semi_life_agents() {
+        use crate::agent::OwnerType;
+        // One active organism agent + one SemiLife agent at the same position.
+        let org_agent = Agent::new(10, 0, [5.0, 5.0]);
+        let sl_agent = Agent::for_semi_life(20, 0, [5.0, 5.0]);
+        // Confirm OwnerType is correct before the real assertion.
+        assert_eq!(sl_agent.owner_type, OwnerType::SemiLife);
+        let agents = vec![org_agent, sl_agent];
+        let tree = build_index_active(&agents, &[true]);
+        // Only the organism agent (id=10) should appear; SemiLife agent (id=20) must be absent.
+        let result = query_neighbors(&tree, [5.0, 5.0], 1.0, u32::MAX, 100.0);
+        assert_eq!(
+            result,
+            vec![10],
+            "SemiLife agent must not appear in organism spatial tree"
+        );
     }
 
     #[test]

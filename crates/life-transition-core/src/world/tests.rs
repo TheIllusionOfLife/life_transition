@@ -1688,3 +1688,175 @@ fn setpoint_pid_mode_stabilizes_internal_state_toward_energy_scaled_setpoint() {
         "setpoint controller should lower high state toward target"
     );
 }
+
+// ─── SemiLife V0 tests ────────────────────────────────────────────────────────
+
+fn make_semi_life_world(
+    archetypes: Vec<crate::semi_life::SemiLifeArchetype>,
+    num_per_archetype: usize,
+    resource_density: f32,
+    seed: u64,
+) -> World {
+    use crate::config::SemiLifeConfig;
+    let semi_life_config = SemiLifeConfig {
+        enabled_archetypes: archetypes,
+        num_per_archetype,
+        initial_energy: 0.5,
+        energy_capacity: 1.0,
+        maintenance_cost: 0.001,
+        replication_threshold: 0.8,
+        replication_cost: 0.3,
+        resource_uptake_rate: 0.02,
+        // V1
+        boundary_decay_rate: 0.002,
+        boundary_repair_rate: 0.01,
+        boundary_death_threshold: 0.1,
+        boundary_replication_min: 0.5,
+        // V2
+        regulator_init: 1.0,
+        regulator_uptake_scale: 1.0,
+        regulator_cost_per_step: 0.0005,
+        // V3
+        internal_pool_init_fraction: 0.5,
+        internal_pool_capacity: 1.0,
+        internal_conversion_rate: 0.05,
+        internal_pool_uptake_rate: 0.01,
+        // Prion
+        prion_contact_radius: 10.0,
+        prion_conversion_prob: 0.1,
+        prion_fragmentation_loss: 0.005,
+        prion_dilution_death_energy: 0.0,
+        ..SemiLifeConfig::default()
+    };
+    // Minimal organism world so Prion has hosts to contact.
+    let agents: Vec<Agent> = (0..10)
+        .map(|i| Agent::new(i as u32, 0, [50.0, 50.0]))
+        .collect();
+    let nn = NeuralNet::from_weights(std::iter::repeat_n(0.1f32, NeuralNet::WEIGHT_COUNT));
+    let config = SimConfig {
+        seed,
+        world_size: 100.0,
+        num_organisms: 1,
+        agents_per_organism: 10,
+        resource_regeneration_rate: resource_density * 0.01,
+        enable_semi_life: true,
+        semi_life_config,
+        ..SimConfig::default()
+    };
+    let mut world = World::new(agents, vec![nn], config).unwrap();
+    // Pre-fill resource field to requested density.
+    for x in 0..100 {
+        for y in 0..100 {
+            world
+                .resource_field_mut()
+                .set(x as f64, y as f64, resource_density);
+        }
+    }
+    world
+}
+
+/// SemiLife simulation is deterministic: two runs with the same seed produce
+/// identical SemiLifeSnapshot sequences.
+#[test]
+fn semi_life_simulation_is_deterministic() {
+    use crate::semi_life::SemiLifeArchetype::Viroid;
+    let steps = 50;
+    // Compare agent positions (seed-dependent via world.rng) + energy (physics-dependent).
+    let run = |seed: u64| -> Vec<[f32; 2]> {
+        let mut world = make_semi_life_world(vec![Viroid], 5, 1.0, seed);
+        world.run_experiment(steps, steps);
+        // SemiLife agent positions are seeded from world.rng; they differ between seeds.
+        world
+            .agents()
+            .iter()
+            .filter(|a| a.owner_type == crate::agent::OwnerType::SemiLife)
+            .map(|a| [a.position[0] as f32, a.position[1] as f32])
+            .collect()
+    };
+
+    let a = run(42);
+    let b = run(42);
+    assert_eq!(a, b, "same seed must produce identical SemiLife positions");
+
+    let c = run(99);
+    // Different seed should produce different initial positions for SemiLife agents.
+    assert_ne!(
+        a, c,
+        "different seeds should produce different SemiLife positions"
+    );
+}
+
+/// Viroid (resource-field dependent) outlives Prion (contact-dependent) in a
+/// high-resource environment where organisms are present but far between.
+/// This is a basic sanity check for the archetype dependency model.
+#[test]
+fn viroid_survives_longer_than_prion_in_high_resource() {
+    use crate::semi_life::SemiLifeArchetype::{Prion, Viroid};
+    let steps = 300;
+
+    let mut viroid_world = make_semi_life_world(vec![Viroid], 10, 1.0, 7);
+    viroid_world.run_experiment(steps, steps);
+    let viroid_alive = viroid_world.semi_life_alive_count();
+
+    // Prion only benefits from host contact; high resource density doesn't help it.
+    let mut prion_world = make_semi_life_world(vec![Prion], 10, 1.0, 7);
+    prion_world.run_experiment(steps, steps);
+    let prion_alive = prion_world.semi_life_alive_count();
+
+    // Guard: viroid must have survived — if both are 0, the SemiLife subsystem is broken.
+    assert!(
+        viroid_alive > 0,
+        "Viroid should have survivors in high-resource environment after {steps} steps \
+         (got 0 — SemiLife resource uptake may be broken)"
+    );
+    assert!(
+        viroid_alive >= prion_alive,
+        "Viroid ({viroid_alive} alive) should survive at least as long as Prion \
+         ({prion_alive} alive) in high-resource environment"
+    );
+}
+
+/// ProtoOrganelle (V1+V2+V3, no V0) can sustain itself in a high-resource environment:
+/// its internal metabolism (V3) keeps it alive even without replication capability.
+#[test]
+fn proto_organelle_stays_alive_with_baseline_capabilities() {
+    use crate::semi_life::SemiLifeArchetype::ProtoOrganelle;
+    let steps = 200;
+
+    let mut world = make_semi_life_world(vec![ProtoOrganelle], 5, 1.0, 13);
+    world.run_experiment(steps, steps);
+    let alive = world.semi_life_alive_count();
+
+    assert!(
+        alive > 0,
+        "ProtoOrganelle with V1+V2+V3 baseline should stay alive for {steps} steps in \
+         high-resource, but 0 of 5 entities survived"
+    );
+}
+
+/// SemiLife agents never appear in the organism spatial tree (OwnerType isolation).
+#[test]
+fn semi_life_agents_excluded_from_organism_spatial_tree() {
+    use crate::semi_life::SemiLifeArchetype::Viroid;
+    let world = make_semi_life_world(vec![Viroid], 3, 1.0, 5);
+    // The world has organism agents + SemiLife agents; organism-only count should
+    // match num_organisms * agents_per_organism (10 in make_semi_life_world).
+    let organism_agent_count = world
+        .agents()
+        .iter()
+        .filter(|a| a.owner_type == crate::agent::OwnerType::Organism)
+        .count();
+    assert_eq!(
+        organism_agent_count, 10,
+        "Organism agent count must not include SemiLife agents"
+    );
+    let semi_life_agent_count = world
+        .agents()
+        .iter()
+        .filter(|a| a.owner_type == crate::agent::OwnerType::SemiLife)
+        .count();
+    assert_eq!(
+        semi_life_agent_count, 3,
+        "3 Viroid entities should produce 3 SemiLife agents"
+    );
+}

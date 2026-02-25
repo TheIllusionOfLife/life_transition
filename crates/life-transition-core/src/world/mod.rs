@@ -1,14 +1,16 @@
-use crate::agent::Agent;
+use crate::agent::{Agent, OwnerType};
 use crate::config::{AblationTarget, MetabolismMode, SimConfig, SimConfigError};
 use crate::genome::{Genome, MutationRates};
 use crate::metabolism::{MetabolicState, MetabolismEngine};
 use crate::nn::NeuralNet;
 use crate::organism::{DevelopmentalProgram, OrganismRuntime};
 use crate::resource::ResourceField;
+use crate::semi_life::SemiLifeRuntime;
 use crate::spatial;
 use rand::Rng;
 use rand::SeedableRng;
 use rand_chacha::ChaCha12Rng;
+use rstar::RTree;
 use std::collections::HashSet;
 use std::f64::consts::PI;
 use std::time::Instant;
@@ -63,6 +65,15 @@ pub struct World {
     /// Runtime resource regeneration rate, separate from config to avoid mutating
     /// config at runtime during environment shifts.
     current_resource_rate: f32,
+
+    /// All SemiLife entities (alive and recently dead, compacted periodically).
+    semi_lives: Vec<SemiLifeRuntime>,
+    /// Monotonically increasing stable ID counter for SemiLife entities.
+    next_semi_life_stable_id: u64,
+    semi_life_births_last_step: usize,
+    semi_life_deaths_last_step: usize,
+    /// Monotonically increasing total replication count (never decremented by pruning).
+    semi_life_replications_total: u64,
 
     // Buffers for avoiding allocation in simulation steps
     deltas_buffer: Vec<[f32; 4]>,
@@ -256,7 +267,7 @@ impl World {
         let org_count = organisms.len();
         let agent_count = agents.len();
         let next_organism_stable_id = org_count as u64;
-        Ok(Self {
+        let mut world = Self {
             agents,
             organisms,
             config: config.clone(),
@@ -280,12 +291,19 @@ impl World {
             lifespans: Vec::new(),
             lineage_events: Vec::new(),
             current_resource_rate: config.resource_regeneration_rate,
+            semi_lives: Vec::new(),
+            next_semi_life_stable_id: 0,
+            semi_life_births_last_step: 0,
+            semi_life_deaths_last_step: 0,
+            semi_life_replications_total: 0,
             deltas_buffer: Vec::with_capacity(agent_count),
             neighbor_sums_buffer: Vec::with_capacity(org_count),
             neighbor_counts_buffer: Vec::with_capacity(org_count),
             homeostasis_sums_buffer: Vec::with_capacity(org_count),
             homeostasis_counts_buffer: Vec::with_capacity(org_count),
-        })
+        };
+        world.init_semi_lives();
+        Ok(world)
     }
 
     fn mutation_rates_from_config(config: &SimConfig) -> MutationRates {
@@ -478,21 +496,31 @@ impl World {
         let old_agents = std::mem::take(&mut self.agents);
         let mut new_agents = Vec::with_capacity(old_agents.len());
         for mut agent in old_agents {
-            if let Some(new_org_id) = remap
-                .get(agent.organism_id as usize)
-                .and_then(|mapped| *mapped)
-            {
-                agent.organism_id = new_org_id;
-                new_agents.push(agent);
+            match agent.owner_type {
+                OwnerType::SemiLife => {
+                    // SemiLife agents are remapped in prune_dead_semi_lives; preserve them here.
+                    new_agents.push(agent);
+                }
+                OwnerType::Organism => {
+                    if let Some(new_org_id) = remap
+                        .get(agent.organism_id as usize)
+                        .and_then(|mapped| *mapped)
+                    {
+                        agent.organism_id = new_org_id;
+                        new_agents.push(agent);
+                    }
+                }
             }
         }
 
         self.organisms = new_organisms;
         self.agents = new_agents;
         for agent in &self.agents {
-            self.organisms[agent.organism_id as usize]
-                .agent_ids
-                .push(agent.id);
+            if agent.owner_type == OwnerType::Organism {
+                self.organisms[agent.organism_id as usize]
+                    .agent_ids
+                    .push(agent.id);
+            }
         }
         self.org_toroidal_sums
             .resize(self.organisms.len(), [0.0, 0.0, 0.0, 0.0]);
@@ -879,6 +907,8 @@ impl World {
         self.births_last_step = 0;
         self.deaths_last_step = 0;
         self.agent_id_exhaustions_last_step = 0;
+        self.semi_life_births_last_step = 0;
+        self.semi_life_deaths_last_step = 0;
         let boundary_terminal_threshold = self.terminal_boundary_threshold();
 
         let t0 = Instant::now();
@@ -908,6 +938,28 @@ impl World {
                 || dead_count * 4 >= self.organisms.len().max(1))
         {
             self.prune_dead_entities();
+        }
+
+        // SemiLife phase: rebuild the spatial tree after organism reproduction + pruning so
+        // Prion contact detection sees current organism positions including new births.
+        let semi_life_tree = if self.config.enable_semi_life {
+            let live_flags = self.live_flags();
+            spatial::build_index_active(&self.agents, &live_flags)
+        } else {
+            // Avoid rebuild cost when SemiLife is disabled; step_semi_life_phase is a no-op.
+            RTree::new()
+        };
+        self.step_semi_life_phase(&semi_life_tree);
+
+        let sl_dead_count = self.semi_lives.iter().filter(|sl| !sl.alive).count();
+        if sl_dead_count > 0
+            && (self
+                .step_index
+                .checked_rem(self.config.compaction_interval_steps)
+                .is_some_and(|r| r == 0)
+                || sl_dead_count * 4 >= self.semi_lives.len().max(1))
+        {
+            self.prune_dead_semi_lives();
         }
 
         self.step_environment_phase(&tree);

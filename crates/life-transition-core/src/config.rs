@@ -1,3 +1,4 @@
+use crate::semi_life::SemiLifeArchetype;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
@@ -36,6 +37,102 @@ pub enum AblationTarget {
     Reproduction,
     Evolution,
     Growth,
+}
+
+/// Configuration for the SemiLife entity system (V0–V5 capability ladder experiments).
+///
+/// Gated behind [`SimConfig::enable_semi_life`]; has no effect when that flag is `false`.
+/// All energy parameters use the same scale as the organism system (0.0–1.0 typical range).
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(default)]
+pub struct SemiLifeConfig {
+    /// Archetypes to spawn at world initialization.
+    pub enabled_archetypes: Vec<SemiLifeArchetype>,
+    /// Number of entities to spawn per enabled archetype.
+    pub num_per_archetype: usize,
+    /// Initial energy for each spawned entity.
+    pub initial_energy: f32,
+    /// Maximum energy storage (caps uptake).
+    pub energy_capacity: f32,
+    /// Per-step energy maintenance cost (universal across all archetypes).
+    pub maintenance_cost: f32,
+    /// Energy threshold required to attempt V0 replication.
+    pub replication_threshold: f32,
+    /// Energy deducted from parent and seeded into child upon replication.
+    pub replication_cost: f32,
+    /// Maximum radius around parent center when spawning a child (world units).
+    pub replication_spawn_radius: f64,
+    /// Per-step resource uptake rate drawn from the resource field.
+    pub resource_uptake_rate: f32,
+    // V1 — Boundary
+    /// Per-step boundary decay rate (V1 entities).
+    pub boundary_decay_rate: f32,
+    /// Per-step boundary repair rate (V1 entities; costs energy).
+    pub boundary_repair_rate: f32,
+    /// Boundary level at or below which the entity dies (V1 entities).
+    pub boundary_death_threshold: f32,
+    /// Minimum boundary required for V0 replication (V1 entities).
+    pub boundary_replication_min: f32,
+    // V2 — Homeostasis
+    /// Initial regulator state (V2 entities).
+    pub regulator_init: f32,
+    /// Multiplier: regulator_state scales resource uptake (V2 entities).
+    pub regulator_uptake_scale: f32,
+    /// Per-step energy cost of running the regulator (V2 entities).
+    pub regulator_cost_per_step: f32,
+    // V3 — Metabolism
+    /// Initial internal pool fill level as fraction of capacity (V3 entities).
+    pub internal_pool_init_fraction: f32,
+    /// Maximum internal pool capacity (V3 entities).
+    pub internal_pool_capacity: f32,
+    /// Per-step fraction of internal pool converted to energy (V3 entities).
+    pub internal_conversion_rate: f32,
+    /// Per-step resource uptake rate into the internal pool (V3 entities).
+    pub internal_pool_uptake_rate: f32,
+    // Prion
+    /// Contact radius for conformational propagation (Prion entities, world units).
+    pub prion_contact_radius: f64,
+    /// Per-contact per-step conversion probability (Prion entities).
+    pub prion_conversion_prob: f32,
+    /// Per-step fragmentation loss fraction (Prion bounded-runaway guard).
+    pub prion_fragmentation_loss: f32,
+    /// Energy below which a Prion entity is considered diluted to death.
+    pub prion_dilution_death_energy: f32,
+    /// Energy gained per successful contact conversion event (Prion entities).
+    pub prion_contact_gain: f32,
+}
+
+impl Default for SemiLifeConfig {
+    fn default() -> Self {
+        use SemiLifeArchetype::*;
+        Self {
+            enabled_archetypes: vec![Viroid, Virus, ProtoOrganelle],
+            num_per_archetype: 10,
+            initial_energy: 0.5,
+            energy_capacity: 1.0,
+            maintenance_cost: 0.001,
+            replication_threshold: 0.8,
+            replication_cost: 0.3,
+            replication_spawn_radius: 3.0,
+            resource_uptake_rate: 0.02,
+            boundary_decay_rate: 0.002,
+            boundary_repair_rate: 0.01,
+            boundary_death_threshold: 0.1,
+            boundary_replication_min: 0.5,
+            regulator_init: 1.0,
+            regulator_uptake_scale: 1.0,
+            regulator_cost_per_step: 0.0005,
+            internal_pool_init_fraction: 0.5,
+            internal_pool_capacity: 1.0,
+            internal_conversion_rate: 0.05,
+            internal_pool_uptake_rate: 0.01,
+            prion_contact_radius: 5.0,
+            prion_conversion_prob: 0.05,
+            prion_fragmentation_loss: 0.01,
+            prion_dilution_death_energy: 0.0,
+            prion_contact_gain: 0.01,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -169,6 +266,11 @@ pub struct SimConfig {
     pub environment_cycle_low_rate: f32,
     /// Toggle for sham (no-op) computational process control.
     pub enable_sham_process: bool,
+    /// Master toggle for the SemiLife entity system. When false, no SemiLife
+    /// entities are spawned and `semi_life_config` is ignored.
+    pub enable_semi_life: bool,
+    /// Parameters for SemiLife entities. Only used when `enable_semi_life` is true.
+    pub semi_life_config: SemiLifeConfig,
 }
 
 impl Default for SimConfig {
@@ -237,6 +339,8 @@ impl Default for SimConfig {
             environment_cycle_period: 0,
             environment_cycle_low_rate: 0.005,
             enable_sham_process: false,
+            enable_semi_life: false,
+            semi_life_config: SemiLifeConfig::default(),
         }
     }
 }
@@ -319,6 +423,13 @@ define_sim_config_error! {
     InvalidEnvironmentCycleLowRate => "environment_cycle_low_rate must be finite and non-negative";
     ConflictingEnvironmentFeatures => "environment_shift_step and environment_cycle_period are mutually exclusive";
     WorldSizeTooLarge { max: f64, actual: f64 } => "world_size ({actual}) exceeds supported maximum ({max})";
+    InvalidSemiLifeEnergyCapacity => "semi_life_config.energy_capacity must be finite and positive";
+    InvalidSemiLifeMaintenanceCost => "semi_life_config.maintenance_cost must be finite and non-negative";
+    InvalidSemiLifeReplicationCost => "semi_life_config.replication_cost must be finite and positive";
+    InvalidSemiLifeReplicationThreshold => "semi_life_config.replication_threshold must be finite and within (0, 1]";
+    InvalidSemiLifeReplicationBalance => "semi_life_config.replication_cost must be less than replication_threshold";
+    InvalidSemiLifeResourceUptakeRate => "semi_life_config.resource_uptake_rate must be finite and non-negative";
+    InvalidSemiLifePrionContactRadius => "semi_life_config.prion_contact_radius must be finite and non-negative";
 }
 
 impl std::error::Error for SimConfigError {}
@@ -341,6 +452,9 @@ impl SimConfig {
         self.validate_homeostasis()?;
         self.validate_growth()?;
         self.validate_environment()?;
+        if self.enable_semi_life {
+            self.validate_semi_life()?;
+        }
         Ok(())
     }
 
@@ -590,6 +704,35 @@ impl SimConfig {
         }
         if self.environment_shift_step > 0 && self.environment_cycle_period > 0 {
             return Err(SimConfigError::ConflictingEnvironmentFeatures);
+        }
+        Ok(())
+    }
+
+    fn validate_semi_life(&self) -> Result<(), SimConfigError> {
+        let cfg = &self.semi_life_config;
+        if !(cfg.energy_capacity.is_finite() && cfg.energy_capacity > 0.0) {
+            return Err(SimConfigError::InvalidSemiLifeEnergyCapacity);
+        }
+        if !(cfg.maintenance_cost.is_finite() && cfg.maintenance_cost >= 0.0) {
+            return Err(SimConfigError::InvalidSemiLifeMaintenanceCost);
+        }
+        if !(cfg.replication_cost.is_finite() && cfg.replication_cost > 0.0) {
+            return Err(SimConfigError::InvalidSemiLifeReplicationCost);
+        }
+        if !(cfg.replication_threshold.is_finite()
+            && cfg.replication_threshold > 0.0
+            && cfg.replication_threshold <= 1.0)
+        {
+            return Err(SimConfigError::InvalidSemiLifeReplicationThreshold);
+        }
+        if cfg.replication_cost >= cfg.replication_threshold {
+            return Err(SimConfigError::InvalidSemiLifeReplicationBalance);
+        }
+        if !(cfg.resource_uptake_rate.is_finite() && cfg.resource_uptake_rate >= 0.0) {
+            return Err(SimConfigError::InvalidSemiLifeResourceUptakeRate);
+        }
+        if !(cfg.prion_contact_radius.is_finite() && cfg.prion_contact_radius >= 0.0) {
+            return Err(SimConfigError::InvalidSemiLifePrionContactRadius);
         }
         Ok(())
     }
