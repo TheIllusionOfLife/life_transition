@@ -181,21 +181,30 @@ pub struct SemiLifeRuntime {
 
 impl SemiLifeRuntime {
     /// Construct a new SemiLifeRuntime with the given archetype's baseline capabilities.
+    ///
+    /// `regulator_init` and `internal_pool_init` must come from [`SemiLifeConfig`] so that
+    /// config parameter sweeps over those fields produce distinct simulation outcomes.
     pub fn new(
         id: u16,
         stable_id: u64,
         archetype: SemiLifeArchetype,
         initial_energy: f32,
         world_seed: u64,
+        regulator_init: f32,
+        internal_pool_init: f32,
     ) -> Self {
         let baseline = archetype.baseline_capabilities();
         let active = baseline;
         let dependency_mode = archetype.default_dependency_mode();
 
-        // Gate optional fields on active capabilities
+        // Gate optional fields on active capabilities; use config-supplied init values.
         let boundary_integrity = active.has(capability::V1_BOUNDARY).then_some(1.0f32);
-        let regulator_state = active.has(capability::V2_HOMEOSTASIS).then_some(1.0f32);
-        let internal_pool = active.has(capability::V3_METABOLISM).then_some(0.5f32);
+        let regulator_state = active
+            .has(capability::V2_HOMEOSTASIS)
+            .then_some(regulator_init);
+        let internal_pool = active
+            .has(capability::V3_METABOLISM)
+            .then_some(internal_pool_init);
 
         Self {
             id,

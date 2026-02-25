@@ -1803,6 +1803,12 @@ fn viroid_survives_longer_than_prion_in_high_resource() {
     prion_world.run_experiment(steps, steps);
     let prion_alive = prion_world.semi_life_alive_count();
 
+    // Guard: viroid must have survived — if both are 0, the SemiLife subsystem is broken.
+    assert!(
+        viroid_alive > 0,
+        "Viroid should have survivors in high-resource environment after {steps} steps \
+         (got 0 — SemiLife resource uptake may be broken)"
+    );
     assert!(
         viroid_alive >= prion_alive,
         "Viroid ({viroid_alive} alive) should survive at least as long as Prion \
@@ -1824,7 +1830,7 @@ fn proto_organelle_stays_alive_with_baseline_capabilities() {
     assert!(
         alive > 0,
         "ProtoOrganelle with V1+V2+V3 baseline should stay alive for {steps} steps in \
-         high-resource, but all {alive} entities died"
+         high-resource, but 0 of 5 entities survived"
     );
 }
 

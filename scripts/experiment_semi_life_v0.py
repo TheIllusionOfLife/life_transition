@@ -43,8 +43,9 @@ TSV_COLUMNS = [
     "alive",
     "mean_energy",
     "mean_ii",
-    "total_replications",
+    "snapshot_replications",  # per-archetype sum from current snapshots (may miss pruned)
     "total_failed",
+    "world_replications_total",  # monotonic world-level cumulative count (never decrements)
 ]
 
 
@@ -123,6 +124,7 @@ def run_condition(condition: str, resource_rate: float, seed: int) -> None:
 
     for sample in result["samples"]:
         step = sample["step"]
+        world_replications_total = sample.get("replications_total", 0)
         agg = aggregate_by_archetype(sample["snapshots"])
         for arch in ARCHETYPES:
             stats = agg.get(
@@ -145,6 +147,7 @@ def run_condition(condition: str, resource_rate: float, seed: int) -> None:
                 f"{stats['mean_ii']:.4f}",
                 str(stats["total_replications"]),
                 str(stats["total_failed"]),
+                str(world_replications_total),
             ]
             print("\t".join(row))
 

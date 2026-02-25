@@ -203,17 +203,29 @@ fn run_semi_life_v0_experiment_json_impl(
             World::MAX_EXPERIMENT_STEPS
         ));
     }
+    let estimated_samples = steps / sample_every + 1;
+    if estimated_samples > World::MAX_EXPERIMENT_SAMPLES {
+        return Err(format!(
+            "estimated sample count ({estimated_samples}) exceeds supported maximum ({})",
+            World::MAX_EXPERIMENT_SAMPLES
+        ));
+    }
+    let config: serde_json::Value =
+        serde_json::from_str(config_json).map_err(|e| format!("invalid config json: {e}"))?;
+    let seed = config.get("seed").and_then(|v| v.as_u64()).unwrap_or(0);
     let mut world = world_from_config_json(config_json)?;
-    let mut samples: Vec<serde_json::Value> = Vec::with_capacity(steps / sample_every + 1);
+    let mut samples: Vec<serde_json::Value> = Vec::with_capacity(estimated_samples);
 
     for step in 1..=steps {
         world.step();
-        if step % sample_every == 0 {
+        if step % sample_every == 0 || step == steps {
             let snapshots = world.semi_life_snapshots();
             let alive = world.semi_life_alive_count();
+            let replications_total = world.semi_life_replications_total();
             samples.push(json!({
                 "step": step,
                 "semi_life_alive": alive,
+                "replications_total": replications_total,
                 "snapshots": snapshots,
             }));
         }
@@ -221,6 +233,7 @@ fn run_semi_life_v0_experiment_json_impl(
 
     let payload = json!({
         "kind": "semi_life_v0",
+        "seed": seed,
         "steps": steps,
         "sample_every": sample_every,
         "samples": samples,
@@ -527,5 +540,61 @@ mod tests {
 
         let result = run_niche_experiment_json_impl(&config_json, 10, 5, &snapshot_steps_json);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn run_semi_life_v0_experiment_json_impl_returns_expected_shape() {
+        use life_transition_core::config::SemiLifeConfig;
+        use life_transition_core::semi_life::SemiLifeArchetype;
+        let config = SimConfig {
+            num_organisms: 1,
+            agents_per_organism: 5,
+            enable_semi_life: true,
+            semi_life_config: SemiLifeConfig {
+                enabled_archetypes: vec![SemiLifeArchetype::Viroid],
+                num_per_archetype: 3,
+                ..SemiLifeConfig::default()
+            },
+            ..SimConfig::default()
+        };
+        let config_json = serde_json::to_string(&config).expect("config should serialize");
+        let output = run_semi_life_v0_experiment_json_impl(&config_json, 10, 5)
+            .expect("semi_life experiment should run");
+        let payload: serde_json::Value =
+            serde_json::from_str(&output).expect("output should be valid json");
+        assert_eq!(payload["kind"].as_str(), Some("semi_life_v0"));
+        assert!(payload["seed"].is_number());
+        assert_eq!(payload["steps"].as_u64(), Some(10));
+        assert!(payload["samples"].is_array());
+        let samples = payload["samples"].as_array().unwrap();
+        // Steps 5 and 10 emit samples; step 10 == steps also emits (terminal).
+        assert!(!samples.is_empty());
+        let first = &samples[0];
+        assert!(first["semi_life_alive"].is_number());
+        assert!(first["replications_total"].is_number());
+        assert!(first["snapshots"].is_array());
+    }
+
+    #[test]
+    fn run_semi_life_v0_experiment_json_impl_rejects_zero_sample_every() {
+        let config_json =
+            serde_json::to_string(&SimConfig::default()).expect("config should serialize");
+        let result = run_semi_life_v0_experiment_json_impl(&config_json, 10, 0);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("sample_every"));
+    }
+
+    #[test]
+    fn run_semi_life_v0_experiment_json_impl_rejects_excessive_samples() {
+        let config_json =
+            serde_json::to_string(&SimConfig::default()).expect("config should serialize");
+        // sample_every=1 for 1_000_000 steps → 1_000_001 samples >> MAX_EXPERIMENT_SAMPLES
+        let result = run_semi_life_v0_experiment_json_impl(
+            &config_json,
+            World::MAX_EXPERIMENT_SAMPLES + 1,
+            1,
+        );
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("sample count"));
     }
 }

@@ -288,6 +288,25 @@ mod tests {
     }
 
     #[test]
+    fn build_index_active_excludes_semi_life_agents() {
+        use crate::agent::OwnerType;
+        // One active organism agent + one SemiLife agent at the same position.
+        let org_agent = Agent::new(10, 0, [5.0, 5.0]);
+        let sl_agent = Agent::for_semi_life(20, 0, [5.0, 5.0]);
+        // Confirm OwnerType is correct before the real assertion.
+        assert_eq!(sl_agent.owner_type, OwnerType::SemiLife);
+        let agents = vec![org_agent, sl_agent];
+        let tree = build_index_active(&agents, &[true]);
+        // Only the organism agent (id=10) should appear; SemiLife agent (id=20) must be absent.
+        let result = query_neighbors(&tree, [5.0, 5.0], 1.0, u32::MAX, 100.0);
+        assert_eq!(
+            result,
+            vec![10],
+            "SemiLife agent must not appear in organism spatial tree"
+        );
+    }
+
+    #[test]
     fn bench_count_neighbors_near_boundary() {
         use std::time::Instant;
         let n_agents = 100_000;

@@ -98,6 +98,8 @@ pub struct SemiLifeConfig {
     pub prion_fragmentation_loss: f32,
     /// Energy below which a Prion entity is considered diluted to death.
     pub prion_dilution_death_energy: f32,
+    /// Energy gained per successful contact conversion event (Prion entities).
+    pub prion_contact_gain: f32,
 }
 
 impl Default for SemiLifeConfig {
@@ -128,6 +130,7 @@ impl Default for SemiLifeConfig {
             prion_conversion_prob: 0.05,
             prion_fragmentation_loss: 0.01,
             prion_dilution_death_energy: 0.0,
+            prion_contact_gain: 0.01,
         }
     }
 }
@@ -420,6 +423,13 @@ define_sim_config_error! {
     InvalidEnvironmentCycleLowRate => "environment_cycle_low_rate must be finite and non-negative";
     ConflictingEnvironmentFeatures => "environment_shift_step and environment_cycle_period are mutually exclusive";
     WorldSizeTooLarge { max: f64, actual: f64 } => "world_size ({actual}) exceeds supported maximum ({max})";
+    InvalidSemiLifeEnergyCapacity => "semi_life_config.energy_capacity must be finite and positive";
+    InvalidSemiLifeMaintenanceCost => "semi_life_config.maintenance_cost must be finite and non-negative";
+    InvalidSemiLifeReplicationCost => "semi_life_config.replication_cost must be finite and positive";
+    InvalidSemiLifeReplicationThreshold => "semi_life_config.replication_threshold must be finite and within (0, 1]";
+    InvalidSemiLifeReplicationBalance => "semi_life_config.replication_cost must be less than replication_threshold";
+    InvalidSemiLifeResourceUptakeRate => "semi_life_config.resource_uptake_rate must be finite and non-negative";
+    InvalidSemiLifePrionContactRadius => "semi_life_config.prion_contact_radius must be finite and non-negative";
 }
 
 impl std::error::Error for SimConfigError {}
@@ -442,6 +452,9 @@ impl SimConfig {
         self.validate_homeostasis()?;
         self.validate_growth()?;
         self.validate_environment()?;
+        if self.enable_semi_life {
+            self.validate_semi_life()?;
+        }
         Ok(())
     }
 
@@ -691,6 +704,35 @@ impl SimConfig {
         }
         if self.environment_shift_step > 0 && self.environment_cycle_period > 0 {
             return Err(SimConfigError::ConflictingEnvironmentFeatures);
+        }
+        Ok(())
+    }
+
+    fn validate_semi_life(&self) -> Result<(), SimConfigError> {
+        let cfg = &self.semi_life_config;
+        if !(cfg.energy_capacity.is_finite() && cfg.energy_capacity > 0.0) {
+            return Err(SimConfigError::InvalidSemiLifeEnergyCapacity);
+        }
+        if !(cfg.maintenance_cost.is_finite() && cfg.maintenance_cost >= 0.0) {
+            return Err(SimConfigError::InvalidSemiLifeMaintenanceCost);
+        }
+        if !(cfg.replication_cost.is_finite() && cfg.replication_cost > 0.0) {
+            return Err(SimConfigError::InvalidSemiLifeReplicationCost);
+        }
+        if !(cfg.replication_threshold.is_finite()
+            && cfg.replication_threshold > 0.0
+            && cfg.replication_threshold <= 1.0)
+        {
+            return Err(SimConfigError::InvalidSemiLifeReplicationThreshold);
+        }
+        if cfg.replication_cost >= cfg.replication_threshold {
+            return Err(SimConfigError::InvalidSemiLifeReplicationBalance);
+        }
+        if !(cfg.resource_uptake_rate.is_finite() && cfg.resource_uptake_rate >= 0.0) {
+            return Err(SimConfigError::InvalidSemiLifeResourceUptakeRate);
+        }
+        if !(cfg.prion_contact_radius.is_finite() && cfg.prion_contact_radius >= 0.0) {
+            return Err(SimConfigError::InvalidSemiLifePrionContactRadius);
         }
         Ok(())
     }

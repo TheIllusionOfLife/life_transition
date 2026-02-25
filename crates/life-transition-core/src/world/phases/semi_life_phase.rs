@@ -1,7 +1,8 @@
 use super::super::World;
 use crate::agent::{Agent, OwnerType};
-use crate::config::SemiLifeConfig;
+use crate::config::{SemiLifeConfig, SimConfig};
 use crate::semi_life::{capability, DependencyMode, SemiLifeRuntime};
+use crate::spatial;
 use crate::spatial::AgentLocation;
 use rand::Rng;
 use rstar::RTree;
@@ -59,7 +60,14 @@ impl World {
 
             match self.semi_lives[i].dependency_mode {
                 DependencyMode::HostContact => {
-                    Self::step_prion_entity_static(&mut self.semi_lives[i], pos, &cfg, dt, tree);
+                    Self::step_prion_entity_static(
+                        &mut self.semi_lives[i],
+                        pos,
+                        &cfg,
+                        dt,
+                        tree,
+                        world_size,
+                    );
                 }
                 DependencyMode::ResourceField | DependencyMode::Both => {
                     Self::step_genomic_entity_static(
@@ -104,8 +112,11 @@ impl World {
         }
 
         // --- Pass 3: Spawn children ---
+        // parent_pos is always Some here — entities with None positions were skipped in Pass 2.
         for parent_idx in to_replicate {
-            self.spawn_semi_life_child(parent_idx, world_size, &cfg);
+            if let Some(parent_pos) = positions[parent_idx] {
+                self.spawn_semi_life_child(parent_idx, parent_pos, world_size, &cfg);
+            }
         }
     }
 
@@ -216,6 +227,7 @@ impl World {
         cfg: &SemiLifeConfig,
         dt: f32,
         tree: &RTree<AgentLocation>,
+        world_size: f64,
     ) {
         // 1. Fragmentation loss (bounded-runaway guard — prevents exponential takeover).
         sl.maintenance_energy *= 1.0 - cfg.prion_fragmentation_loss * dt;
@@ -227,20 +239,21 @@ impl World {
         }
 
         // 3. Contact propagation: find nearby Organism agents in R-tree.
+        //    Uses spatial::count_neighbors for toroidal-correct circular radius (not AABB square).
         //    build_index_active only contains Organism agents, so all results are hosts.
-        use rstar::AABB;
-        let r = cfg.prion_contact_radius;
-        let aabb = AABB::from_corners([pos[0] - r, pos[1] - r], [pos[0] + r, pos[1] + r]);
-        let contacts: u32 = tree.locate_in_envelope(&aabb).count() as u32;
+        //    u32::MAX is used as self_id since Prion agents are SemiLife type, never in this tree.
+        let contacts =
+            spatial::count_neighbors(tree, pos, cfg.prion_contact_radius, u32::MAX, world_size)
+                as u32;
 
         if contacts > 0 {
             // Aggregate conversion: p(at least one conversion) ≈ 1 - (1-p)^contacts.
             // Simplified: uniform probability * contacts, capped at 1.0.
             let p = (cfg.prion_conversion_prob * contacts as f32 * dt).min(1.0);
             if sl.rng.random::<f32>() < p {
-                let gain = 0.01f32;
-                sl.maintenance_energy = (sl.maintenance_energy + gain).min(cfg.energy_capacity);
-                sl.energy_from_external += gain;
+                sl.maintenance_energy =
+                    (sl.maintenance_energy + cfg.prion_contact_gain).min(cfg.energy_capacity);
+                sl.energy_from_external += cfg.prion_contact_gain;
             }
         }
 
@@ -249,9 +262,22 @@ impl World {
 
     /// Spawn a child SemiLife entity from the given parent.
     ///
+    /// `parent_pos` is pre-computed in Pass 1 to avoid an O(N_agents) scan per replication.
     /// Deducts `replication_cost` from parent energy, creates a new runtime and agent.
-    fn spawn_semi_life_child(&mut self, parent_idx: usize, world_size: f64, cfg: &SemiLifeConfig) {
+    fn spawn_semi_life_child(
+        &mut self,
+        parent_idx: usize,
+        parent_pos: [f64; 2],
+        world_size: f64,
+        cfg: &SemiLifeConfig,
+    ) {
         if self.semi_lives[parent_idx].maintenance_energy < cfg.replication_cost {
+            self.semi_lives[parent_idx].failed_replications += 1;
+            return;
+        }
+
+        // Guard global agent cap before any allocation.
+        if self.agents.len() >= SimConfig::MAX_TOTAL_AGENTS {
             self.semi_lives[parent_idx].failed_replications += 1;
             return;
         }
@@ -260,21 +286,6 @@ impl World {
         let child_id = match u16::try_from(self.semi_lives.len()) {
             Ok(id) => id,
             Err(_) => {
-                self.semi_lives[parent_idx].failed_replications += 1;
-                return;
-            }
-        };
-
-        // Find parent agent position.
-        let parent_sl_id = self.semi_lives[parent_idx].id;
-        let parent_pos = match self
-            .agents
-            .iter()
-            .find(|a| a.owner_type == OwnerType::SemiLife && a.organism_id == parent_sl_id)
-            .map(|a| a.position)
-        {
-            Some(p) => p,
-            None => {
                 self.semi_lives[parent_idx].failed_replications += 1;
                 return;
             }
@@ -308,6 +319,8 @@ impl World {
             parent_archetype,
             cfg.replication_cost,
             self.config.seed,
+            cfg.regulator_init,
+            cfg.internal_pool_init_fraction * cfg.internal_pool_capacity,
         );
         child.agent_ids.push(agent_id);
         self.semi_lives.push(child);
@@ -317,6 +330,7 @@ impl World {
         self.semi_lives[parent_idx].replications += 1;
         self.semi_lives[parent_idx].steps_without_replication = 0;
         self.semi_life_births_last_step += 1;
+        self.semi_life_replications_total += 1;
     }
 
     /// Prune dead SemiLife entities and remap their agents.
@@ -336,7 +350,10 @@ impl World {
             if !sl.alive {
                 continue;
             }
-            let new_id = new_semi_lives.len() as u16;
+            let new_id = match u16::try_from(new_semi_lives.len()) {
+                Ok(id) => id,
+                Err(_) => break, // ID space exhausted — leave remaining entities dropped.
+            };
             remap[old_idx] = Some(new_id);
             sl.id = new_id;
             sl.agent_ids.clear();
@@ -377,6 +394,14 @@ impl World {
         self.semi_lives.iter().filter(|sl| sl.alive).count()
     }
 
+    /// Returns the total number of successful SemiLife replications since world creation.
+    ///
+    /// Unlike per-entity `replications` counters, this is never decremented by pruning —
+    /// making it reliable for cumulative time-series analysis in experiment scripts.
+    pub fn semi_life_replications_total(&self) -> u64 {
+        self.semi_life_replications_total
+    }
+
     /// Returns snapshots of all SemiLife entities (alive and recently dead).
     pub fn semi_life_snapshots(&self) -> Vec<crate::metrics::SemiLifeSnapshot> {
         self.semi_lives
@@ -393,8 +418,11 @@ impl World {
         let cfg = self.config.semi_life_config.clone();
         let world_size = self.config.world_size;
 
-        for archetype in &cfg.enabled_archetypes.clone() {
+        for &archetype in &cfg.enabled_archetypes.clone() {
             for _ in 0..cfg.num_per_archetype {
+                if self.agents.len() >= SimConfig::MAX_TOTAL_AGENTS {
+                    break;
+                }
                 let sl_id = match u16::try_from(self.semi_lives.len()) {
                     Ok(id) => id,
                     Err(_) => break,
@@ -411,9 +439,11 @@ impl World {
                 let mut sl = SemiLifeRuntime::new(
                     sl_id,
                     stable_id,
-                    *archetype,
+                    archetype,
                     cfg.initial_energy,
                     self.config.seed,
+                    cfg.regulator_init,
+                    cfg.internal_pool_init_fraction * cfg.internal_pool_capacity,
                 );
                 sl.agent_ids.push(agent_id);
 

@@ -10,6 +10,7 @@ use crate::spatial;
 use rand::Rng;
 use rand::SeedableRng;
 use rand_chacha::ChaCha12Rng;
+use rstar::RTree;
 use std::collections::HashSet;
 use std::f64::consts::PI;
 use std::time::Instant;
@@ -71,6 +72,8 @@ pub struct World {
     next_semi_life_stable_id: u64,
     semi_life_births_last_step: usize,
     semi_life_deaths_last_step: usize,
+    /// Monotonically increasing total replication count (never decremented by pruning).
+    semi_life_replications_total: u64,
 
     // Buffers for avoiding allocation in simulation steps
     deltas_buffer: Vec<[f32; 4]>,
@@ -292,6 +295,7 @@ impl World {
             next_semi_life_stable_id: 0,
             semi_life_births_last_step: 0,
             semi_life_deaths_last_step: 0,
+            semi_life_replications_total: 0,
             deltas_buffer: Vec::with_capacity(agent_count),
             neighbor_sums_buffer: Vec::with_capacity(org_count),
             neighbor_counts_buffer: Vec::with_capacity(org_count),
@@ -936,9 +940,16 @@ impl World {
             self.prune_dead_entities();
         }
 
-        // SemiLife phase: runs after organism reproduction so Prion contact tree is
-        // populated with freshly-spawned organism agents.
-        self.step_semi_life_phase(&tree);
+        // SemiLife phase: rebuild the spatial tree after organism reproduction + pruning so
+        // Prion contact detection sees current organism positions including new births.
+        let semi_life_tree = if self.config.enable_semi_life {
+            let live_flags = self.live_flags();
+            spatial::build_index_active(&self.agents, &live_flags)
+        } else {
+            // Avoid rebuild cost when SemiLife is disabled; step_semi_life_phase is a no-op.
+            RTree::new()
+        };
+        self.step_semi_life_phase(&semi_life_tree);
 
         let sl_dead_count = self.semi_lives.iter().filter(|sl| !sl.alive).count();
         if sl_dead_count > 0
