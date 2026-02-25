@@ -1,8 +1,8 @@
-# Digital Life
+# Life Transition
 
-Digital Life is an artificial life research codebase for building and evaluating computational organisms against seven biological criteria (cellular organization, metabolism, homeostasis, growth/development, reproduction, response to stimuli, and evolution).
+Life Transition is an artificial life research project studying the **Virus → Semi-Life → Life** transition: can a virus-like replicator become life-like by internalizing the biological functions it originally outsourced?
 
-The repository is a Rust workspace with optional Python bindings.
+The repository is a Rust workspace with optional Python bindings, targeting ALIFE 2026.
 
 ## Quick Start
 
@@ -64,20 +64,20 @@ uv run python scripts/prepare_zenodo_metadata.py experiments/niche_normal_long.j
 ### Run the Feasibility Spike
 
 ```bash
-cargo run -p digital-life-spike --release
+cargo run -p life-transition-cli --release -- benchmark
 ```
 
 ### Build Python Extension (local)
 
 ```bash
-uv run maturin develop --manifest-path crates/digital-life-py/Cargo.toml
+maturin develop --release
 ```
 
 Then in Python:
 
 ```python
-import digital_life
-print(digital_life.version())
+import life_transition
+print(life_transition.version())
 ```
 
 ## Repository Docs
@@ -92,10 +92,10 @@ print(digital_life.version())
 
 ## Architecture (High-Level)
 
-- `crates/digital-life-core`: simulation core (world, metabolism, genome, NN, spatial systems)
-- `crates/digital-life-py`: PyO3 bindings exposing core functions to Python
+- `crates/life-transition-core`: simulation core (world, metabolism, genome, NN, spatial systems)
+- `crates/life-transition-py`: PyO3 bindings exposing core functions to Python
 - `crates/spike`: executable benchmark/feasibility experiment runner
-- `python/digital_life`: Python package surface for the extension module
+- `python/life_transition`: Python package surface for the extension module
 
 ## Development Workflow
 
