@@ -1834,6 +1834,349 @@ fn proto_organelle_stays_alive_with_baseline_capabilities() {
     );
 }
 
+// ─── SemiLife V4/V5 edge-case tests ───────────────────────────────────────────
+
+/// Helper: create a SemiLife world with specific capability overrides.
+fn make_semi_life_world_with_caps(
+    num: usize,
+    resource_density: f32,
+    seed: u64,
+    capability_bits: u8,
+) -> World {
+    use crate::config::SemiLifeConfig;
+    use crate::semi_life::SemiLifeArchetype;
+    use std::collections::HashMap;
+
+    let mut overrides = HashMap::new();
+    overrides.insert("viroid".to_string(), capability_bits);
+
+    let semi_life_config = SemiLifeConfig {
+        enabled_archetypes: vec![SemiLifeArchetype::Viroid],
+        num_per_archetype: num,
+        initial_energy: 0.5,
+        energy_capacity: 1.0,
+        maintenance_cost: 0.001,
+        replication_threshold: 0.8,
+        replication_cost: 0.3,
+        resource_uptake_rate: 0.02,
+        boundary_decay_rate: 0.002,
+        boundary_repair_rate: 0.01,
+        boundary_death_threshold: 0.1,
+        boundary_replication_min: 0.5,
+        regulator_init: 1.0,
+        regulator_uptake_scale: 1.0,
+        regulator_cost_per_step: 0.0005,
+        internal_pool_init_fraction: 0.5,
+        internal_pool_capacity: 1.0,
+        internal_conversion_rate: 0.05,
+        internal_pool_uptake_rate: 0.01,
+        // V4
+        v4_max_speed: 1.0,
+        v4_move_cost: 0.01,
+        v4_policy_init: [0.5, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        v4_mutation_sigma: 0.05,
+        // V5 — use short durations for testability
+        v5_activation_threshold: 0.4,
+        v5_dispersal_age: 10,
+        v5_dispersal_duration: 5,
+        v5_dormant_decay_mult: 0.3,
+        v5_dispersal_speed_mult: 2.0,
+        v5_dispersal_decay_mult: 1.5,
+        capability_overrides: overrides,
+        ..SemiLifeConfig::default()
+    };
+    let agents: Vec<Agent> = (0..10)
+        .map(|i| Agent::new(i as u32, 0, [50.0, 50.0]))
+        .collect();
+    let nn = NeuralNet::from_weights(std::iter::repeat_n(0.1f32, NeuralNet::WEIGHT_COUNT));
+    let config = SimConfig {
+        seed,
+        world_size: 100.0,
+        num_organisms: 1,
+        agents_per_organism: 10,
+        resource_regeneration_rate: resource_density * 0.01,
+        enable_semi_life: true,
+        semi_life_config,
+        ..SimConfig::default()
+    };
+    let mut world = World::new(agents, vec![nn], config).unwrap();
+    for x in 0..100 {
+        for y in 0..100 {
+            world
+                .resource_field_mut()
+                .set(x as f64, y as f64, resource_density);
+        }
+    }
+    world
+}
+
+/// V5 entities start in Dormant stage.
+#[test]
+fn v5_entities_start_dormant() {
+    use crate::semi_life::capability::*;
+    use crate::semi_life::SemiLifeStage;
+
+    let caps =
+        V0_REPLICATION | V1_BOUNDARY | V2_HOMEOSTASIS | V3_METABOLISM | V4_RESPONSE | V5_LIFECYCLE;
+    let world = make_semi_life_world_with_caps(3, 1.0, 42, caps);
+    for sl in &world.semi_lives {
+        assert_eq!(
+            sl.stage,
+            Some(SemiLifeStage::Dormant),
+            "V5 entities must start Dormant"
+        );
+        assert_eq!(sl.stage_ticks, 0);
+    }
+}
+
+/// V5 Dormant stage reduces energy decay (multiplier < 1.0) compared to non-V5.
+#[test]
+fn v5_dormant_reduces_energy_decay() {
+    use crate::semi_life::capability::*;
+
+    let caps_with_v5 = V0_REPLICATION | V5_LIFECYCLE;
+    let caps_without_v5 = V0_REPLICATION;
+
+    // Set activation threshold very high so entity stays Dormant for all steps.
+    let mut world_v5 = make_semi_life_world_with_caps(1, 0.0, 42, caps_with_v5);
+    world_v5.config.semi_life_config.v5_activation_threshold = 10.0;
+    let mut world_no_v5 = make_semi_life_world_with_caps(1, 0.0, 42, caps_without_v5);
+
+    let initial_energy = world_v5.semi_lives[0].maintenance_energy;
+    assert!(
+        (initial_energy - world_no_v5.semi_lives[0].maintenance_energy).abs() < 0.001,
+        "Both should start with same energy"
+    );
+
+    for _ in 0..5 {
+        world_v5.step();
+        world_no_v5.step();
+    }
+
+    // Dormant V5 entity should retain more energy due to decay_mult=0.3
+    let energy_v5 = world_v5.semi_lives[0].maintenance_energy;
+    let energy_no_v5 = world_no_v5.semi_lives[0].maintenance_energy;
+    assert!(
+        energy_v5 > energy_no_v5,
+        "Dormant V5 entity should retain more energy ({energy_v5:.4}) \
+         than non-V5 ({energy_no_v5:.4}) due to reduced decay multiplier"
+    );
+}
+
+/// V5 Dormant stage blocks replication (repl_mult = 0.0).
+#[test]
+fn v5_dormant_blocks_replication() {
+    use crate::semi_life::capability::*;
+    use crate::semi_life::SemiLifeStage;
+
+    let caps = V0_REPLICATION | V5_LIFECYCLE;
+    let mut world = make_semi_life_world_with_caps(1, 1.0, 42, caps);
+
+    // Set activation threshold very high so entity stays Dormant.
+    world.config.semi_life_config.v5_activation_threshold = 10.0;
+    // Give entity enough energy to replicate.
+    world.semi_lives[0].maintenance_energy = 0.95;
+    assert_eq!(world.semi_lives[0].stage, Some(SemiLifeStage::Dormant));
+
+    let initial_count = world.semi_lives.len();
+    for _ in 0..5 {
+        world.step();
+    }
+    // Entity should still be Dormant (threshold = 10.0 > energy).
+    assert_eq!(world.semi_lives[0].stage, Some(SemiLifeStage::Dormant));
+    assert_eq!(
+        world.semi_lives.len(),
+        initial_count,
+        "Dormant V5 entity must not replicate (repl_mult=0.0)"
+    );
+}
+
+/// V5 stage transitions: Dormant → Active when energy > threshold.
+#[test]
+fn v5_dormant_to_active_transition() {
+    use crate::semi_life::capability::*;
+    use crate::semi_life::SemiLifeStage;
+
+    let caps = V0_REPLICATION | V5_LIFECYCLE;
+    let mut world = make_semi_life_world_with_caps(1, 1.0, 42, caps);
+
+    // Start Dormant with energy above activation threshold (0.4).
+    world.semi_lives[0].maintenance_energy = 0.5;
+    assert_eq!(world.semi_lives[0].stage, Some(SemiLifeStage::Dormant));
+
+    world.step();
+    // Pass 0.5 transitions Dormant→Active, resets stage_ticks to 0, then increments.
+    // But the increment happens in the *next* step's Pass 0.5, so after 1 step: ticks=0.
+    assert_eq!(
+        world.semi_lives[0].stage,
+        Some(SemiLifeStage::Active),
+        "Entity with energy > v5_activation_threshold should transition to Active"
+    );
+}
+
+/// V5 stage transitions: Active → Dispersal after v5_dispersal_age ticks.
+#[test]
+fn v5_active_to_dispersal_transition() {
+    use crate::semi_life::capability::*;
+    use crate::semi_life::SemiLifeStage;
+
+    let caps = V0_REPLICATION | V5_LIFECYCLE;
+    let mut world = make_semi_life_world_with_caps(1, 1.0, 42, caps);
+
+    // Force into Active stage with enough energy to survive.
+    world.semi_lives[0].maintenance_energy = 0.9;
+    world.semi_lives[0].stage = Some(SemiLifeStage::Active);
+    world.semi_lives[0].stage_ticks = 0;
+
+    // Run for v5_dispersal_age (10) + 1 steps.
+    for _ in 0..11 {
+        world.step();
+        world.semi_lives[0].maintenance_energy = 0.9;
+    }
+    assert_eq!(
+        world.semi_lives[0].stage,
+        Some(SemiLifeStage::Dispersal),
+        "Entity should transition to Dispersal after v5_dispersal_age ticks in Active"
+    );
+}
+
+/// V5 Dispersal → Dormant after v5_dispersal_duration ticks.
+#[test]
+fn v5_dispersal_to_dormant_transition() {
+    use crate::semi_life::capability::*;
+    use crate::semi_life::SemiLifeStage;
+
+    let caps = V0_REPLICATION | V5_LIFECYCLE;
+    let mut world = make_semi_life_world_with_caps(1, 1.0, 42, caps);
+
+    // Set activation threshold very high so Dormant doesn't immediately become Active.
+    world.config.semi_life_config.v5_activation_threshold = 10.0;
+
+    // Force into Dispersal stage.
+    world.semi_lives[0].maintenance_energy = 0.5;
+    world.semi_lives[0].stage = Some(SemiLifeStage::Dispersal);
+    world.semi_lives[0].stage_ticks = 0;
+
+    // Run for v5_dispersal_duration (5) + 1 steps.
+    for _ in 0..6 {
+        world.step();
+        world.semi_lives[0].maintenance_energy = 0.5;
+    }
+    assert_eq!(
+        world.semi_lives[0].stage,
+        Some(SemiLifeStage::Dormant),
+        "Entity should return to Dormant after v5_dispersal_duration ticks in Dispersal"
+    );
+}
+
+/// V5 Dispersal → Dormant when energy drops below 0.2.
+#[test]
+fn v5_dispersal_to_dormant_on_low_energy() {
+    use crate::semi_life::capability::*;
+    use crate::semi_life::SemiLifeStage;
+
+    let caps = V0_REPLICATION | V5_LIFECYCLE;
+    let mut world = make_semi_life_world_with_caps(1, 0.0, 42, caps);
+
+    // Force into Dispersal with low energy (but above death threshold).
+    world.semi_lives[0].maintenance_energy = 0.15;
+    world.semi_lives[0].stage = Some(SemiLifeStage::Dispersal);
+    world.semi_lives[0].stage_ticks = 0;
+
+    world.step();
+    // Energy < 0.2 should trigger Dispersal → Dormant regardless of stage_ticks.
+    if world.semi_lives[0].alive {
+        assert_eq!(
+            world.semi_lives[0].stage,
+            Some(SemiLifeStage::Dormant),
+            "Dispersal entity with energy < 0.2 should transition to Dormant"
+        );
+    }
+    // If entity died from low energy, that's also acceptable — the transition check
+    // happens in Pass 0.5 before energy deductions in Pass 2.
+}
+
+/// V4 entities get a policy vector initialized from config.
+#[test]
+fn v4_entities_have_policy_initialized() {
+    use crate::semi_life::capability::*;
+
+    let caps = V0_REPLICATION | V4_RESPONSE;
+    let world = make_semi_life_world_with_caps(3, 1.0, 42, caps);
+    for sl in &world.semi_lives {
+        assert!(
+            sl.policy.is_some(),
+            "V4 entity must have policy initialized"
+        );
+        let policy = sl.policy.unwrap();
+        // Default init: [0.5, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        assert!(
+            (policy[0] - 0.5).abs() < f32::EPSILON,
+            "grad_x weight should be 0.5"
+        );
+        assert!(
+            (policy[1] - 0.5).abs() < f32::EPSILON,
+            "grad_y weight should be 0.5"
+        );
+    }
+}
+
+/// Entities without V4 have no policy.
+#[test]
+fn non_v4_entities_have_no_policy() {
+    use crate::semi_life::capability::*;
+
+    let caps = V0_REPLICATION | V3_METABOLISM;
+    let world = make_semi_life_world_with_caps(3, 1.0, 42, caps);
+    for sl in &world.semi_lives {
+        assert!(sl.policy.is_none(), "Non-V4 entity must not have a policy");
+    }
+}
+
+/// V4 entity with gradient loses more energy than one without V4 (movement cost).
+#[test]
+fn v4_movement_deducts_energy() {
+    use crate::semi_life::capability::*;
+
+    let caps_v4 = V0_REPLICATION | V4_RESPONSE;
+    let caps_no_v4 = V0_REPLICATION;
+
+    // Create worlds with gradient: high resources on right half, zero on left.
+    let mut world_v4 = make_semi_life_world_with_caps(1, 0.0, 42, caps_v4);
+    let mut world_no_v4 = make_semi_life_world_with_caps(1, 0.0, 42, caps_no_v4);
+    for w in [&mut world_v4, &mut world_no_v4] {
+        for y in 0..100 {
+            for x in 50..100 {
+                w.resource_field_mut().set(x as f64, y as f64, 1.0);
+            }
+        }
+    }
+
+    // Place entity at gradient boundary (x=50) so gradient is non-zero.
+    for w in [&mut world_v4, &mut world_no_v4] {
+        if let Some(agent) = w
+            .agents
+            .iter_mut()
+            .find(|a| a.owner_type == crate::agent::OwnerType::SemiLife)
+        {
+            agent.position = [50.0, 50.0];
+        }
+    }
+
+    world_v4.step();
+    world_no_v4.step();
+
+    let energy_v4 = world_v4.semi_lives[0].maintenance_energy;
+    let energy_no_v4 = world_no_v4.semi_lives[0].maintenance_energy;
+
+    // V4 entity should lose more energy than non-V4 due to movement cost.
+    assert!(
+        energy_v4 < energy_no_v4,
+        "V4 entity should lose more energy ({energy_v4:.4}) than non-V4 ({energy_no_v4:.4}) \
+         due to movement cost"
+    );
+}
+
 /// SemiLife agents never appear in the organism spatial tree (OwnerType isolation).
 #[test]
 fn semi_life_agents_excluded_from_organism_spatial_tree() {

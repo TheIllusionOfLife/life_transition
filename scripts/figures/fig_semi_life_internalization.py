@@ -6,8 +6,15 @@ Shows II rises monotonically V0→V3 (structural result independent of survival 
 import numpy as np
 from figures._shared import *
 
-_VIROID_CONDITIONS = ["viroid_v0", "viroid_v0v1", "viroid_v0v1v2", "viroid_v0v1v2v3"]
-_CAP_LABELS = ["V0", "V0+V1", "V0+V1+V2", "V0+V1+V2+V3"]
+_VIROID_CONDITIONS = [
+    "viroid_v0",
+    "viroid_v0v1",
+    "viroid_v0v1v2",
+    "viroid_v0v1v2v3",
+    "viroid_v0v1v2v3v4",
+    "viroid_v0v1v2v3v4v5",
+]
+_CAP_LABELS = ["V0", "V0+V1", "V0..V2", "V0..V3", "V0..V4", "V0..V5"]
 
 _HARSHNESS_ORDER = ["rich", "medium", "sparse", "scarce"]
 _HARSHNESS_COLORS = {

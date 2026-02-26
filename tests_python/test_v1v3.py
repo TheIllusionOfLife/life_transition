@@ -20,6 +20,8 @@ from experiment_semi_life_v1v3 import (
     V1,
     V2,
     V3,
+    V4,
+    V5,
     make_config,
 )
 
@@ -29,11 +31,13 @@ from experiment_semi_life_v1v3 import (
 
 
 def test_capability_bitmask_values():
-    """V0–V3 constants must match Rust capability bitmasks exactly."""
+    """V0–V5 constants must match Rust capability bitmasks exactly."""
     assert V0 == 0x01
     assert V1 == 0x02
     assert V2 == 0x04
     assert V3 == 0x08
+    assert V4 == 0x10
+    assert V5 == 0x20
 
 
 # ---------------------------------------------------------------------------
@@ -101,8 +105,11 @@ def test_capability_overrides_appears_in_config():
 
 
 def test_capability_overrides_passes_rust_validation():
-    """All valid V0–V3 capability combinations must pass Rust validation."""
-    for bits in [V0, V0 | V1, V0 | V1 | V2, V0 | V1 | V2 | V3]:
+    """All valid V0–V5 capability combinations must pass Rust validation."""
+    for bits in [
+        V0, V0 | V1, V0 | V1 | V2, V0 | V1 | V2 | V3,
+        V0 | V1 | V2 | V3 | V4, V0 | V1 | V2 | V3 | V4 | V5,
+    ]:
         cfg_str = make_config("viroid", bits, 0.1, seed=0)
         assert life_transition.validate_config_json(cfg_str) is True, f"Failed for bits={bits}"
 
@@ -225,12 +232,14 @@ def test_proto_organelle_liberation_replicates():
 
 
 def test_archetype_conditions_has_all_viroid_levels():
-    """ARCHETYPE_CONDITIONS must include all four Viroid capability levels."""
+    """ARCHETYPE_CONDITIONS must include all six Viroid capability levels."""
     viroid_bits = {bits for label, arch, bits in ARCHETYPE_CONDITIONS if arch == "viroid"}
     assert V0 in viroid_bits
     assert V0 | V1 in viroid_bits
     assert V0 | V1 | V2 in viroid_bits
     assert V0 | V1 | V2 | V3 in viroid_bits
+    assert V0 | V1 | V2 | V3 | V4 in viroid_bits
+    assert V0 | V1 | V2 | V3 | V4 | V5 in viroid_bits
 
 
 def test_archetype_conditions_has_liberation_pair():
@@ -259,3 +268,80 @@ def testmake_config_uses_correct_resource_initial():
     for val in RESOURCE_INITIAL_VALUES.values():
         cfg = json.loads(make_config("viroid", V0, val, seed=0))
         assert cfg["resource_initial_value"] == pytest.approx(val)
+
+
+# ---------------------------------------------------------------------------
+# V4 — Response to stimuli
+# ---------------------------------------------------------------------------
+
+
+def test_v4_snapshot_has_policy_magnitude():
+    """V4 entities must have non-zero policy_magnitude in snapshot."""
+    cfg_str = make_config("viroid", V0 | V1 | V2 | V3 | V4, 0.3, seed=0)
+    result = json.loads(life_transition.run_semi_life_v0_experiment_json(cfg_str, 100, 100))
+    last = result["samples"][-1]["snapshots"]
+    alive = [s for s in last if s["alive"] and s["archetype"] == "viroid"]
+    assert alive, "No alive V4 viroid entities"
+    assert all("policy_magnitude" in s for s in alive), "Missing policy_magnitude field"
+    mean_pm = sum(s["policy_magnitude"] for s in alive) / len(alive)
+    assert mean_pm > 0.0, f"V4 entities must have policy_magnitude > 0; got {mean_pm}"
+
+
+def test_v4_active_capabilities_in_snapshot():
+    """V4 entities must report correct active_capabilities bitmask."""
+    bits = V0 | V1 | V2 | V3 | V4
+    cfg_str = make_config("viroid", bits, 0.3, seed=0)
+    result = json.loads(life_transition.run_semi_life_v0_experiment_json(cfg_str, 50, 50))
+    last = result["samples"][-1]["snapshots"]
+    alive = [s for s in last if s["alive"] and s["archetype"] == "viroid"]
+    assert alive, "No alive V4 viroid entities"
+    cap_values = {s["active_capabilities"] for s in alive}
+    assert cap_values == {bits}, f"Expected active_capabilities == {bits}, got {cap_values}"
+
+
+def test_v4_without_v3_has_zero_ii():
+    """V4 without V3 must have II=0 (response adds no internal metabolism)."""
+    cfg_str = make_config("viroid", V0 | V1 | V2 | V4, 0.3, seed=0)
+    result = json.loads(life_transition.run_semi_life_v0_experiment_json(cfg_str, 100, 100))
+    last = result["samples"][-1]["snapshots"]
+    alive = [s for s in last if s["alive"] and s["archetype"] == "viroid"]
+    assert alive, "No alive viroid entities"
+    assert all(s["internalization_index"] == pytest.approx(0.0) for s in alive)
+
+
+# ---------------------------------------------------------------------------
+# V5 — Staged lifecycle
+# ---------------------------------------------------------------------------
+
+
+def test_v5_snapshot_has_stage_field():
+    """V5 entities must have a 'stage' field in snapshot."""
+    cfg_str = make_config("viroid", V0 | V1 | V2 | V3 | V4 | V5, 0.3, seed=0)
+    result = json.loads(life_transition.run_semi_life_v0_experiment_json(cfg_str, 100, 100))
+    last = result["samples"][-1]["snapshots"]
+    alive = [s for s in last if s["alive"] and s["archetype"] == "viroid"]
+    assert alive, "No alive V5 viroid entities"
+    assert all("stage" in s for s in alive), "Missing stage field"
+    stages = {s["stage"] for s in alive}
+    valid_stages = {"dormant", "active", "dispersal"}
+    assert stages.issubset(valid_stages), f"Invalid stages: {stages - valid_stages}"
+
+
+def test_v5_without_v5_has_null_stage():
+    """Entities without V5 must have stage=null in snapshot."""
+    cfg_str = make_config("viroid", V0 | V1 | V2 | V3, 0.3, seed=0)
+    result = json.loads(life_transition.run_semi_life_v0_experiment_json(cfg_str, 50, 50))
+    last = result["samples"][-1]["snapshots"]
+    alive = [s for s in last if s["alive"] and s["archetype"] == "viroid"]
+    assert alive, "No alive viroid entities"
+    assert all(s["stage"] is None for s in alive), "Non-V5 entities must have stage=null"
+
+
+def test_v5_full_ladder_runs_without_crash():
+    """Full V0..V5 ladder must complete 200 steps without errors."""
+    cfg_str = make_config("viroid", V0 | V1 | V2 | V3 | V4 | V5, 0.3, seed=42)
+    result = json.loads(life_transition.run_semi_life_v0_experiment_json(cfg_str, 200, 200))
+    assert result["kind"] == "semi_life_v0"
+    assert result["steps"] == 200
+    last = result["samples"][-1]["snapshots"]
+    assert len(last) > 0, "No entities in final snapshot"

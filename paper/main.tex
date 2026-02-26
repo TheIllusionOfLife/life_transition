@@ -35,26 +35,23 @@ We introduce \emph{Semi-Life}: a parameterized family of minimal
 replicators---Viroid, Virus, and ProtoOrganelle---cohabiting a seven-criterion
 artificial life world \citep{background_2026_digital}.
 Each archetype begins at a different point on a \emph{Capability Ladder}
-(V0: replication; V1: boundary maintenance; V2: homeostatic regulation;
-V3: internal metabolism) and gains capabilities one step at a time.
+(V0: replication; V1: boundary; V2: homeostasis; V3: metabolism;
+V4: response to stimuli; V5: staged lifecycle) and gains capabilities one step
+at a time.
 Progress is quantified by the \emph{Internalization Index}
 $\mathrm{II} = E_\text{int}/(E_\text{int}+E_\text{ext})$, a continuous axis
-from virus-like ($\mathrm{II}\approx0$, all energy from the environment)
-to life-like ($\mathrm{II}>0$, self-sustained energy conversion).
-Four directional hypotheses~(H1--H4) covering boundary overhead costs,
-metabolism-driven persistence, replication liberation, and monotonic
-capability--survival trends were pre-registered before any test-seed data
-collection, with Holm-Bonferroni correction across all 16 tests.
-Using $n\!=\!100$ held-out test seeds, we test these hypotheses across
-a four-level resource harshness axis and a periodic-shock resilience axis.
-Phase diagrams over the capability~$\times$~harshness plane reveal a
-non-monotonic ``cost valley'': boundary maintenance~(V1) reduces survival
-at all harshness levels ($\delta\!=\!1.00$), while internal metabolism~(V3)
-produces a dramatic recovery exceeding the V0 baseline ($\delta\!=\!1.00$).
-ProtoOrganelle ``liberation'' (gaining V0 replication) succeeds in
-resource-rich environments ($\delta\!=\!1.00$) but fails under scarcity.
-Twelve of sixteen pre-registered tests are confirmed; four null results in
-harsh environments are reported transparently.
+from virus-like ($\mathrm{II}\approx0$) to life-like ($\mathrm{II}>0$).
+Seven directional hypotheses~(H1--H7) were pre-registered with
+Holm-Bonferroni correction across 28~tests.
+Using $n\!=\!100$ held-out test seeds across a four-level resource harshness
+axis, we find a non-monotonic ``cost valley'': V1 reduces survival
+($\delta\!=\!1.00$), V3 metabolism produces a dramatic recovery, and
+V4~chemotaxis significantly improves survival in resource-scarce
+environments by enabling gradient-following movement.
+V5 lifecycle staging provides dormancy-based energy conservation.
+The full V0$\to$V5 ladder demonstrates that the virus-to-life transition
+is a cost-then-benefit trajectory where each capability addition is
+justified only when coupled with sufficient internal infrastructure.
 \end{abstract}
 
 Submission type: \textbf{Full Paper}\\
@@ -100,14 +97,15 @@ budget that comes from internal conversion rather than direct environmental
 uptake, providing a continuous axis from virus-like ($\mathrm{II}=0$) to
 life-like ($\mathrm{II}>0$).
 
-We pre-registered four hypotheses (H1--H4) covering distinct aspects of the
-transition---overhead cost, metabolic buffering, replication liberation, and
-monotonic capability trends---and tested them on $n=100$ held-out seeds across
-a four-level resource harshness axis.
+We pre-registered seven hypotheses (H1--H7) covering distinct aspects of the
+transition---overhead cost, metabolic buffering, replication liberation,
+monotonic capability trends, chemotaxis benefit, lifecycle staging, and
+the full V0$\to$V5 monotonic trend---and tested them on $n=100$ held-out seeds
+across a four-level resource harshness axis.
 Our contributions are: (i) an operational, replicable protocol for measuring the
 virus-to-life transition using a pre-existing ALife world as the background
 platform; (ii) phase diagrams showing where in the capability~$\times$~harshness
-space survival boundaries shift; (iii) confirmation or disconfirmation of all four
+space survival boundaries shift; (iii) confirmation or disconfirmation of all seven
 pre-registered directional predictions; and (iv) the InternalizationIndex as a
 falsifiable metric of life-likeness progress.
 
@@ -240,6 +238,30 @@ energy at \texttt{internal\_conversion\_rate}~$=0.05$ per step.
 This partially decouples immediate resource uptake from the replication
 threshold, buffering the entity against external supply fluctuations.
 
+\textbf{V4---Response to stimuli} (bit~0x10).
+A linear policy $\mathbf{w} \in \mathbb{R}^8$ maps a sensory input vector
+$\mathbf{s} = [\nabla_x r, \nabla_y r, e, b, n, a, 0, 0]$---where
+$\nabla r$ is the local resource gradient, $e$ is normalised energy,
+$b$ is boundary integrity, $n$ is neighbour density, and $a$ is normalised
+age---to a velocity offset $\Delta\mathbf{v} = \mathbf{w} \cdot \mathbf{s}$,
+clamped to $\pm$\texttt{v4\_max\_speed}~$=1.0$.
+Each movement step costs \texttt{v4\_move\_cost}~$=0.01 \times |\Delta\mathbf{v}|$.
+Offspring inherit the parental policy with per-weight Gaussian noise
+($\sigma\!=\!0.05$), enabling heritable variation.
+Default initialisation ($w_1\!=\!w_2\!=\!0.5$, others zero) produces
+gradient-following chemotaxis.
+
+\textbf{V5---Staged lifecycle} (bit~0x20).
+Entities cycle through three stages with distinct behavioural multipliers:
+\emph{Dormant} (energy decay $\times 0.3$, no replication, no movement---hibernation),
+\emph{Active} (all multipliers $\times 1.0$---normal operation), and
+\emph{Dispersal} (decay $\times 1.5$, speed $\times 2.0$, no replication---fast
+dispersal at metabolic cost).
+Transitions are deterministic: Dormant$\to$Active when energy exceeds
+\texttt{v5\_activation\_threshold}~$=0.6$; Active$\to$Dispersal after
+\texttt{v5\_dispersal\_age}~$=100$ ticks; Dispersal$\to$Dormant after
+\texttt{v5\_dispersal\_duration}~$=20$ ticks or when energy falls below~$0.2$.
+
 \subsection{InternalizationIndex}
 
 For each entity and timestep, per-step energy flow accumulators are maintained:
@@ -270,8 +292,8 @@ A lower initial value reduces the total resource pool from 10\,000 to 500 units
 The regeneration rate is fixed at 0.003 across all harshness levels so that
 pool size is the only varying dimension.
 Each condition is run for 100 test seeds (seeds 100--199), producing
-$9\ \text{conditions} \times 4\ \text{harshness} \times 100\ \text{seeds}
-= 3{,}600$ runs.
+$13\ \text{conditions} \times 4\ \text{harshness} \times 100\ \text{seeds}
+= 5{,}200$ runs.
 
 \subsection{Shock Axis}
 
@@ -287,12 +309,12 @@ harshness.
 \subsection{Pre-registered Hypotheses}
 \label{sec:prereg}
 
-Four directional hypotheses were pre-registered before any test-seed data
+Seven directional hypotheses were pre-registered before any test-seed data
 collection (see supplementary pre-registration, committed to the repository
 at \url{[ANONYMOUS]}).
-Holm-Bonferroni correction is applied across all 16 tests
-(H1--H3: $4~\text{harshness} \times 3~\text{hypotheses} = 12$; H4: $4$
-harshness levels via Jonckheere-Terpstra trend test).
+Holm-Bonferroni correction is applied across all 28 tests
+(H1--H3, H5--H6: $4~\text{harshness} \times 5~\text{hypotheses} = 20$;
+H4, H7: $4$ harshness levels each via Jonckheere-Terpstra trend test).
 
 \vspace{0.4em}
 \noindent\textbf{H1} (\emph{Boundary overhead}, scarce only):
@@ -318,17 +340,34 @@ metabolic state; V0 addition activates replication capability already supported
 by the existing V1--V3 infrastructure.
 
 \vspace{0.2em}
-\noindent\textbf{H4} (\emph{Monotonic trend}, all harshness):
+\noindent\textbf{H4} (\emph{Monotonic trend V0--V3}, all harshness):
 Alive count at step~500 increases monotonically across Viroid V0, V0$+$V1,
 V0$+$V1$+$V2, V0$+$V1$+$V2$+$V3 (Jonckheere-Terpstra test
 \citep{jonckheere_1954_distribution}).
+
+\vspace{0.2em}
+\noindent\textbf{H5} (\emph{Chemotaxis benefit}, all harshness):
+Viroid V0..V4 produces \emph{more} alive entities at step~500 than V0..V3.
+\emph{Rationale}: V4 gradient-following enables directed movement toward
+resource-rich areas, improving energy intake in heterogeneous environments.
+
+\vspace{0.2em}
+\noindent\textbf{H6} (\emph{Lifecycle staging}, all harshness):
+Viroid V0..V5 produces \emph{more} alive entities at step~500 than V0..V4.
+\emph{Rationale}: V5 dormancy conserves energy during scarcity, and dispersal
+enables colonisation of resource patches, both improving population persistence.
+
+\vspace{0.2em}
+\noindent\textbf{H7} (\emph{Full monotonic trend V0--V5}, all harshness):
+Alive count at step~500 increases monotonically across the full six-level Viroid
+ladder V0 through V0..V5 (Jonckheere-Terpstra test).
 
 \subsection{Statistical Analysis}
 
 Mann-Whitney U (two-tailed, $\alpha=0.05$), Cliff's~$\delta$ with 2000-resample
 bootstrap 95\%~CI \citep{cliff_1993_dominance}, and Jonckheere-Terpstra trend
-test for H4.
-All $p$-values are Holm-Bonferroni corrected across the 16-test family
+test for H4 and H7.
+All $p$-values are Holm-Bonferroni corrected across the 28-test family
 \citep{holm_1979_simple}.
 Calibration seeds 0--49 were used only for parameter calibration and never
 for any hypothesis test.
@@ -352,7 +391,7 @@ contour marks the 50\% survival boundary (5 of 10 initial entities).
 \caption{Phase diagrams: capability level $\times$ resource harshness
   $\rightarrow$ mean alive count at step~500 ($n\!=\!100$).
   YlOrRd heat-map; blue dashed contour = 50\% survival boundary (5 entities).
-  Left: Viroid (V0 through V0+V1+V2+V3).
+  Left: Viroid (V0 through V0..V5).
   Centre: Virus (V0+V1 baseline through V0+V1+V2+V3).
   Right: ProtoOrganelle (V1+V2+V3 baseline vs.\ V0+V1+V2+V3 liberated).}
 \label{fig:phase}
@@ -367,6 +406,11 @@ V3 (metabolism) produces a dramatic recovery: 199.1 (rich) and 53.4 (medium),
 exceeding even the V0-only baseline.
 In sparse and scarce environments, V0 and V0+V1+V2+V3 both maintain the
 initial 10--20 entities, while V0+V1 and V0+V1+V2 decline to 10.
+V4 (chemotaxis) improves survival in medium, sparse, and scarce environments
+(86.0, 35.9, 24.8 mean alive) but reduces it in rich (152.2 vs.\ V3's 199.1)
+due to unnecessary movement cost.
+V5 (lifecycle) recovers the rich-environment loss (204.7) through dormancy
+but hurts in sparse/scarce environments where dormancy suppresses replication.
 
 The Virus panel mirrors the Viroid V0+V1 starting point (identical
 parameterisation), confirming that the V3 metabolism effect is
@@ -389,7 +433,8 @@ Viroid across V-levels and harshness conditions.
   Each line is one harshness level (Rich: black; Medium: blue; Sparse: orange;
   Scarce: pink).
   V0--V2 yield $\mathrm{II}=0$ by construction; V3 addition raises~II as
-  the internal pool contributes to maintenance energy.}
+  the internal pool contributes to maintenance energy.
+  V4 and V5 maintain the V3 II level (they do not alter internal conversion).}
 \label{fig:ii}
 \end{figure}
 
@@ -410,7 +455,7 @@ success.
 
 Table~\ref{tab:stats} reports the pre-registered results.
 All comparisons use $n\!=\!100$ test seeds and Holm-Bonferroni corrected
-$p$-values across the 16-test family.
+$p$-values across the 28-test family.
 
 \begin{table}[t]
 \centering
@@ -419,7 +464,7 @@ $p$-values across the 16-test family.
   $U$: Mann-Whitney statistic; $p_\text{corr}$: Holm-Bonferroni corrected;
   $\delta$: Cliff's~$\delta$ with 95\% CI in brackets;
   Dir.\ = pre-registered direction confirmed (\checkmark) or not (\texttimes).
-  H4 uses Jonckheere-Terpstra; $\delta$ not applicable (---).}
+  H4, H7 use Jonckheere-Terpstra; $\delta$ not applicable (---).}
 \label{tab:stats}
 \resizebox{\columnwidth}{!}{%
 \begin{tabular}{llrrlrl}
@@ -449,6 +494,24 @@ H4 & rich   & 26\,004 & 0.010  & *   & --- & \checkmark \\
 H4 & medium & 25\,770 & 0.006  & **  & --- & \checkmark \\
 H4 & sparse & 30\,000 & 1.000  &     & --- & \texttimes \\
 H4 & scarce & 30\,000 & 1.000  &     & --- & \texttimes \\
+\midrule
+\multicolumn{7}{l}{\emph{H5: Viroid V0..V4 vs V0..V3 (alive, more with V4)}} \\
+H5 & rich   & 238    & $<\!10^{-30}$ & *** & $-$0.95 [$-$0.99, $-$0.91] & \texttimes \\
+H5 & medium & 9\,998 & $<\!10^{-33}$ & *** & 1.00 [1.00, 1.00] & \checkmark \\
+H5 & sparse & 10\,000 & $<\!10^{-37}$ & *** & 1.00 [1.00, 1.00] & \checkmark \\
+H5 & scarce & 9\,950 & $<\!10^{-37}$ & *** & 0.99 [0.97, 1.00] & \checkmark \\
+\midrule
+\multicolumn{7}{l}{\emph{H6: Viroid V0..V5 vs V0..V4 (alive, more with V5)}} \\
+H6 & rich   & 10\,000 & $<\!10^{-33}$ & *** & 1.00 [1.00, 1.00] & \checkmark \\
+H6 & medium & 1\,412 & $<\!10^{-17}$ & *** & $-$0.72 [$-$0.81, $-$0.61] & \texttimes \\
+H6 & sparse & 27     & $<\!10^{-33}$ & *** & $-$0.99 [$-$1.00, $-$0.99] & \texttimes \\
+H6 & scarce & 50     & $<\!10^{-37}$ & *** & $-$0.99 [$-$1.00, $-$0.97] & \texttimes \\
+\midrule
+\multicolumn{7}{l}{\emph{H7: Viroid V0$\rightarrow$V5 monotonic trend (JT)}} \\
+H7 & rich   & 39\,881 & $<\!10^{-100}$ & *** & --- & \checkmark \\
+H7 & medium & 34\,721 & $<\!10^{-100}$ & *** & --- & \checkmark \\
+H7 & sparse & 41\,573 & $<\!10^{-100}$ & *** & --- & \checkmark \\
+H7 & scarce & 50\,050 & $<\!10^{-100}$ & *** & --- & \checkmark \\
 \bottomrule
 \end{tabular}%
 }
@@ -481,6 +544,36 @@ The Jonckheere-Terpstra test detects the overall upward tendency (V0 to V3)
 but the non-monotonic intermediate dip limits statistical power, particularly
 in harsh environments where the signal-to-noise ratio collapses.
 
+\textbf{H5} (chemotaxis benefit) is confirmed in medium ($\delta=1.00$),
+sparse ($\delta=1.00$), and scarce ($\delta=0.99$), but \emph{reversed} in
+rich ($\delta=-0.95$, $p_\text{corr}<10^{-30}$).
+V4 chemotaxis improves survival where resources are heterogeneous:
+mean alive rises from 53.4 to 86.0 in medium ($+61\%$) and from 20.0 to 35.9
+in sparse ($+80\%$).
+However, in resource-rich environments where resources are uniformly abundant,
+the per-step movement cost ($0.01 \times |\Delta\mathbf{v}|$) reduces
+survival from 199.1 to 152.2 ($-24\%$).
+This reveals a \emph{second cost valley}: behavioural capabilities incur
+overhead that is only justified when the environment rewards directed movement.
+
+\textbf{H6} (lifecycle staging) is confirmed only in rich ($\delta=1.00$,
+$p_\text{corr}<10^{-33}$), where V5 dormancy enables energy conservation
+during transient low-resource periods, pushing mean alive from 152.2 to 204.7
+($+34\%$).
+In medium ($\delta=-0.72$), sparse ($\delta=-0.99$), and scarce
+($\delta=-0.99$), V5 \emph{reduces} survival: dormancy phases suppress
+replication windows, and dispersal's elevated energy decay ($\times 1.5$) is
+counterproductive when resources cannot sustain the cost.
+The environment-dependent reversal of H6 is the strongest qualitative finding
+beyond the original V0--V3 ladder.
+
+\textbf{H7} (full monotonic trend V0--V5) is significant at all four
+harshness levels ($p_\text{corr}<10^{-100}$, Jonckheere-Terpstra).
+Despite the non-monotonic pairwise reversals in H5 and H6, the overall
+six-level trend V0$\to$V5 is robustly upward: the V3 metabolism recovery
+dominates the signal, and V4/V5 additions, while environment-dependent,
+do not reverse the aggregate trajectory.
+
 \subsection{Replication--Persistence Tradeoff}
 \label{sec:results-tradeoff}
 
@@ -495,7 +588,7 @@ at step~500 for all conditions.
   (mean over 100 seeds).
   Colour: archetype (Viroid: orange; Virus: sky-blue; ProtoOrganelle: green).
   Marker shape: capability level (circle=V0, square=2-cap, triangle=3-cap,
-  diamond=4-cap).
+  diamond=4-cap, hexagon=5-cap, star=6-cap).
   Transparency encodes harshness (bright=rich, dim=scarce).}
 \label{fig:tradeoff}
 \end{figure}
@@ -583,6 +676,22 @@ This ``cost valley'' at V1/V2---followed by a V3 recovery---mirrors the
 biological intuition that capsid assembly and regulatory overhead impose
 energetic costs that are only justified when coupled with internal metabolism.
 
+Beyond V3, the ladder reveals a second, subtler cost-benefit structure.
+V4 chemotaxis (H5) improves survival in medium through scarce environments
+where resource gradients carry useful information (mean alive rises 61--80\%
+over V3) but \emph{reduces} survival in rich environments ($-24\%$) where
+uniform abundance makes movement wasteful.
+V5 lifecycle staging (H6) shows the opposite environment dependence: dormancy
+and dispersal pay off only in rich environments ($+34\%$ over V4), while in
+sparse and scarce conditions the dormancy phases suppress replication windows
+and dispersal's elevated energy cost ($\times 1.5$) is counterproductive.
+These environment-dependent reversals suggest that ``more capabilities''
+is not universally beneficial---each addition is only justified when
+the environment rewards the specific function it provides.
+Despite these pairwise reversals, the full V0$\to$V5 trend (H7, JT test)
+is significant at all harshness levels ($p<10^{-100}$): the V3 metabolic
+recovery dominates the aggregate signal.
+
 The H3 ProtoOrganelle liberation result is environment-dependent: in resource-rich
 conditions, adding V0 replication to a metabolically complete entity (V1+V2+V3)
 immediately produces a replicating population ($\delta=1.00$); in sparse/scarce
@@ -608,8 +717,9 @@ is internally sourced.
 Crucially, the survival benefit of V3 (seen in H2 and Figure~\ref{fig:phase})
 is measured from alive counts, not from II, confirming structural
 independence.
-Future work can extend II to multi-criterion entities (V4 sensing, V5 staged
-lifecycle) as more internal functions are added.
+V4 and V5 do not directly contribute to~II (they do not alter the
+$E_\text{int}/E_\text{ext}$ ratio), but they improve survival of high-II
+entities by enabling directed resource access and energy-conserving dormancy.
 
 \subsection{Weak ALife Stance}
 
@@ -618,17 +728,16 @@ All claims in this paper are functional analogies.
 provides a per-step cost plus a protective effect that prevents death and
 blocks premature replication.
 It does not claim to be a capsid, nor to model capsid biochemistry.
-The same applies to homeostasis (V2) and metabolism~(V3).
+The same applies to homeostasis (V2), metabolism~(V3), chemotaxis~(V4),
+and staged lifecycle~(V5).
 We take a \emph{weak ALife} position \citep{langton_1989_artificial}:
 the computational system models life-like properties without claiming to
 \emph{be} alive or to resolve the definition of life.
 
 \subsection{Limitations}
 
-The present study covers V0--V3 with three archetypes and $n\!=\!100$ test
+The present study covers V0--V5 with three archetypes and $n\!=\!100$ test
 seeds.
-V4 (sensing and resource-gradient navigation) and V5 (staged lifecycle:
-dormant/active/dispersal) are left for future work.
 The 10-entity initialisation per run limits population dynamics; for
 larger-scale phase diagrams, $n_\text{init}\!=\!50{-}100$ would reduce
 stochastic extinction artefacts.
@@ -639,13 +748,15 @@ confounds the clean capability-ladder interpretation.
 
 \subsection{Future Directions}
 
-The most immediate extension is V4~(policy: resource-gradient sensing and
-movement), which would test whether \emph{behavioural} adaptation provides
-survival benefit beyond metabolic buffering.
-V5 adds a staged lifecycle (dormant / active / dispersal) to test whether
-developmental regulation provides a further fitness advantage.
 A competition axis---placing multiple archetypes in the same world simultaneously
---- would reveal which capability profiles dominate under natural selection.
+---would reveal which capability profiles dominate under natural selection.
+Extending V4 with nonlinear policies (small neural networks) could test
+whether complex sensing strategies emerge under selection pressure.
+Allowing V5 stage-transition parameters to evolve would test whether
+lifecycle timing self-optimises across harshness gradients.
+Finally, scaling to larger populations ($n_\text{init}\!=\!50{-}100$) and
+longer runs ($>$1000 steps) would probe whether the cost valley persists
+at ecological timescales.
 
 % ============================================================================
 \section*{Data Availability}

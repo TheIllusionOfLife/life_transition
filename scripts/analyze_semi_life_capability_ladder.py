@@ -1,11 +1,11 @@
 """Statistical analysis of the SemiLife capability ladder experiment.
 
 Reads the test-seed TSV (experiment_semi_life_v1v3.py, seeds 100–199) and
-runs pre-registered hypothesis tests H1–H4.
+runs pre-registered hypothesis tests H1–H7.
 
 Usage:
     uv run python scripts/analyze_semi_life_capability_ladder.py \\
-        experiments/semi_life_v1v3_test.tsv
+        experiments/semi_life_v1v5_test.tsv
 
 Output:
     JSON to experiments/semi_life_capability_stats.json
@@ -214,6 +214,97 @@ def analyze_h4(rows: list[dict]) -> list[dict]:
     return results
 
 
+def analyze_h5(rows: list[dict]) -> list[dict]:
+    """H5: Viroid V0..V4 vs V0..V3 — V4 response improves survival."""
+    results = []
+    for harshness in RESOURCE_INITIAL_VALUES:
+        a = get_alive_at_final(rows, "viroid_v0v1v2v3v4", harshness)
+        b = get_alive_at_final(rows, "viroid_v0v1v2v3", harshness)
+        result = run_mannwhitney(a, b)
+        result.update(
+            {
+                "hypothesis": "H5",
+                "archetype": "viroid",
+                "harshness": harshness,
+                "comparison": "viroid_v0v1v2v3v4 vs viroid_v0v1v2v3",
+                "metric": "alive",
+                "pre_registered_direction": "V4 > V3 (chemotaxis improves resource access)",
+            }
+        )
+        results.append(result)
+    return results
+
+
+def analyze_h6(rows: list[dict]) -> list[dict]:
+    """H6: Viroid V0..V5 vs V0..V4 — V5 lifecycle improves survival."""
+    results = []
+    for harshness in RESOURCE_INITIAL_VALUES:
+        a = get_alive_at_final(rows, "viroid_v0v1v2v3v4v5", harshness)
+        b = get_alive_at_final(rows, "viroid_v0v1v2v3v4", harshness)
+        result = run_mannwhitney(a, b)
+        result.update(
+            {
+                "hypothesis": "H6",
+                "archetype": "viroid",
+                "harshness": harshness,
+                "comparison": "viroid_v0v1v2v3v4v5 vs viroid_v0v1v2v3v4",
+                "metric": "alive",
+                "pre_registered_direction": "V5 > V4 (dormancy conserves energy in scarce)",
+            }
+        )
+        results.append(result)
+    return results
+
+
+def analyze_h7(rows: list[dict]) -> list[dict]:
+    """H7: JT monotonic trend V0→V5 × alive × all harshness levels."""
+    viroid_order = [
+        "viroid_v0",
+        "viroid_v0v1",
+        "viroid_v0v1v2",
+        "viroid_v0v1v2v3",
+        "viroid_v0v1v2v3v4",
+        "viroid_v0v1v2v3v4v5",
+    ]
+    results = []
+    for harshness in RESOURCE_INITIAL_VALUES:
+        groups = [np.array(get_alive_at_final(rows, cond, harshness)) for cond in viroid_order]
+        if any(len(g) < 2 for g in groups):
+            results.append(
+                {
+                    "hypothesis": "H7",
+                    "archetype": "viroid",
+                    "harshness": harshness,
+                    "comparison": "V0→V5 trend (JT)",
+                    "metric": "alive",
+                    "JT_statistic": None,
+                    "p_raw": None,
+                    "cliffs_delta": None,
+                    "ci_low": None,
+                    "ci_high": None,
+                    "pre_registered_direction": "monotonic increase V0→V5",
+                }
+            )
+            continue
+        jt_stat, p_val = jonckheere_terpstra(groups)
+        results.append(
+            {
+                "hypothesis": "H7",
+                "archetype": "viroid",
+                "harshness": harshness,
+                "comparison": "V0→V5 trend (JT)",
+                "metric": "alive",
+                "JT_statistic": float(jt_stat),
+                "p_raw": float(p_val),
+                "cliffs_delta": None,
+                "ci_low": None,
+                "ci_high": None,
+                "pre_registered_direction": "monotonic increase V0→V5",
+            }
+        )
+    return results
+
+
 _ENERGY_COMPARISONS: list[tuple[str, str, str]] = [
     ("H1_energy", "viroid_v0", "viroid_v0v1"),
     ("H2_energy", "viroid_v0v1v2v3", "viroid_v0v1v2"),
@@ -246,9 +337,24 @@ def analyze_mean_energy_supplement(rows: list[dict]) -> list[dict]:
     return results
 
 
+_EXPECTED_PREREGISTERED_TESTS = 28  # H1–H7 × 4 harshness levels
+
+
 def apply_holm_bonferroni(all_results: list[dict]) -> list[dict]:
-    """Apply Holm-Bonferroni correction across all 16 pre-registered tests."""
+    """Apply Holm-Bonferroni correction across all 28 pre-registered tests.
+
+    Raises ValueError if the number of valid p-values differs from the
+    pre-registered family size (28), which would silently weaken the correction.
+    """
     with_p = [r for r in all_results if r.get("p_raw") is not None]
+    if 0 < len(with_p) != _EXPECTED_PREREGISTERED_TESTS:
+        raise ValueError(
+            f"Expected {_EXPECTED_PREREGISTERED_TESTS} pre-registered tests with valid "
+            f"p-values, got {len(with_p)}. Missing tests would silently weaken "
+            f"Holm-Bonferroni correction."
+        )
+    if len(with_p) == 0:
+        return all_results
     p_values = [r["p_raw"] for r in with_p]
     corrected = holm_bonferroni(p_values)
     for result, p_corr in zip(with_p, corrected, strict=True):
@@ -259,7 +365,7 @@ def apply_holm_bonferroni(all_results: list[dict]) -> list[dict]:
 def main(argv: list[str] | None = None) -> None:
     if argv is None:
         argv = sys.argv[1:]
-    tsv_path = Path(argv[0]) if argv else _EXPERIMENTS_DIR / "semi_life_v1v3_test.tsv"
+    tsv_path = Path(argv[0]) if argv else _EXPERIMENTS_DIR / "semi_life_v1v5_test.tsv"
 
     if not tsv_path.exists():
         print(f"ERROR: TSV not found: {tsv_path}", file=sys.stderr)
@@ -274,6 +380,9 @@ def main(argv: list[str] | None = None) -> None:
     all_results.extend(analyze_h2(rows))
     all_results.extend(analyze_h3(rows))
     all_results.extend(analyze_h4(rows))
+    all_results.extend(analyze_h5(rows))
+    all_results.extend(analyze_h6(rows))
+    all_results.extend(analyze_h7(rows))
     all_results = apply_holm_bonferroni(all_results)
 
     out_path = _EXPERIMENTS_DIR / "semi_life_capability_stats.json"

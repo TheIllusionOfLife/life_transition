@@ -15,6 +15,7 @@ import json
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 # ---------------------------------------------------------------------------
 # Synthetic TSV helpers
@@ -365,24 +366,29 @@ def test_analyze_h4_schema_includes_cliffs_delta_fields():
 
 
 def test_holm_bonferroni_never_reduces_p_values():
-    """apply_holm_bonferroni must produce p_corrected >= p_raw for all results."""
+    """apply_holm_bonferroni must produce p_corrected >= p_raw for all 28 results."""
+    from analyze_semi_life_capability_ladder import apply_holm_bonferroni
+
+    # Build exactly 28 results to match pre-registered family size.
+    results = [{"hypothesis": f"H{i}", "p_raw": 0.01 + i * 0.001} for i in range(28)]
+    corrected = apply_holm_bonferroni(results)
+    for r in corrected:
+        assert r["p_corrected"] >= r["p_raw"], (
+            f"HB correction lowered p: raw={r['p_raw']}, corrected={r['p_corrected']}"
+        )
+
+
+def test_holm_bonferroni_rejects_wrong_family_size():
+    """apply_holm_bonferroni must reject if family size != 28."""
     from analyze_semi_life_capability_ladder import apply_holm_bonferroni
 
     results = [
         {"hypothesis": "H1", "p_raw": 0.01},
         {"hypothesis": "H2", "p_raw": 0.04},
         {"hypothesis": "H3", "p_raw": 0.10},
-        {"hypothesis": "H4", "p_raw": None},  # JT result — skipped by correction
     ]
-    corrected = apply_holm_bonferroni(results)
-    for r in corrected:
-        if r.get("p_raw") is not None:
-            assert r["p_corrected"] >= r["p_raw"], (
-                f"HB correction lowered p: raw={r['p_raw']}, corrected={r['p_corrected']}"
-            )
-    # The None-p result must not receive p_corrected
-    none_result = next(r for r in corrected if r["p_raw"] is None)
-    assert "p_corrected" not in none_result
+    with pytest.raises(ValueError, match="Expected 28"):
+        apply_holm_bonferroni(results)
 
 
 # ---------------------------------------------------------------------------

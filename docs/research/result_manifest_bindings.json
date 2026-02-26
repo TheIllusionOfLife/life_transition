@@ -6,7 +6,7 @@
       "paper_ref": "fig:phase",
       "manifest": "experiments/semi_life_capability_stats.json",
       "source_files": [
-        "experiments/semi_life_v1v3_test.tsv",
+        "experiments/semi_life_v1v5_test.tsv",
         "paper/figures/fig_semi_life_phase_diagram.pdf"
       ],
       "notes": "Phase diagram: capability level x harshness -> mean alive count."
@@ -16,7 +16,7 @@
       "paper_ref": "fig:ii",
       "manifest": "experiments/semi_life_capability_stats.json",
       "source_files": [
-        "experiments/semi_life_v1v3_test.tsv",
+        "experiments/semi_life_v1v5_test.tsv",
         "paper/figures/fig_semi_life_internalization.pdf"
       ],
       "notes": "InternalizationIndex vs capability level."
@@ -26,7 +26,7 @@
       "paper_ref": "fig:tradeoff",
       "manifest": "experiments/semi_life_capability_stats.json",
       "source_files": [
-        "experiments/semi_life_v1v3_test.tsv",
+        "experiments/semi_life_v1v5_test.tsv",
         "paper/figures/fig_semi_life_tradeoffs.pdf"
       ],
       "notes": "Replication-persistence tradeoff scatter."
@@ -37,7 +37,7 @@
       "manifest": "experiments/semi_life_shock_stats.json",
       "source_files": [
         "experiments/semi_life_shocks.tsv",
-        "experiments/semi_life_v1v3_test.tsv",
+        "experiments/semi_life_v1v5_test.tsv",
         "paper/figures/fig_semi_life_recovery.pdf"
       ],
       "notes": "Shock recovery time series (exploratory)."
@@ -47,17 +47,17 @@
       "paper_ref": "tab:stats",
       "manifest": "experiments/semi_life_capability_stats.json",
       "source_files": [
-        "experiments/semi_life_v1v3_test.tsv",
+        "experiments/semi_life_v1v5_test.tsv",
         "experiments/semi_life_capability_stats.json"
       ],
-      "notes": "Pre-registered H1-H4 hypothesis test results table."
+      "notes": "Pre-registered H1-H7 hypothesis test results table (28-test Holm-Bonferroni family)."
     },
     {
       "result_id": "semi_life_energy_robustness",
       "paper_ref": "sec:results-energy",
       "manifest": "experiments/semi_life_mean_energy_supplement.json",
       "source_files": [
-        "experiments/semi_life_v1v3_test.tsv",
+        "experiments/semi_life_v1v5_test.tsv",
         "experiments/semi_life_mean_energy_supplement.json"
       ],
       "notes": "Exploratory mean_energy effect sizes (H1/H2 robustness check)."

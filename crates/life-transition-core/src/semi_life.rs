@@ -157,6 +157,8 @@ pub struct SemiLifeRuntime {
     pub policy: Option<[f32; 8]>,
     /// V5 — staged lifecycle state.
     pub stage: Option<SemiLifeStage>,
+    /// V5 — ticks spent in current stage (reset on stage transition).
+    pub stage_ticks: u32,
 
     /// How this entity draws external resources.
     pub dependency_mode: DependencyMode,
@@ -220,6 +222,7 @@ impl SemiLifeRuntime {
             internal_pool,
             policy: None,
             stage: None,
+            stage_ticks: 0,
             dependency_mode,
             replications: 0,
             failed_replications: 0,

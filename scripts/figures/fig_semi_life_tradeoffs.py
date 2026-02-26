@@ -23,6 +23,8 @@ _COND_MARKER = {
     "viroid_v0v1v2v3": "D",  # 4 capabilities
     "virus_v0v1v2v3": "D",
     "proto_liberated": "D",
+    "viroid_v0v1v2v3v4": "h",  # 5 capabilities (hexagon)
+    "viroid_v0v1v2v3v4v5": "*",  # 6 capabilities (star)
 }
 
 _HARSHNESS_ALPHA = {"rich": 0.95, "medium": 0.7, "sparse": 0.5, "scarce": 0.3}
@@ -32,6 +34,8 @@ _ALL_CONDITIONS = [
     ("viroid_v0v1", "viroid"),
     ("viroid_v0v1v2", "viroid"),
     ("viroid_v0v1v2v3", "viroid"),
+    ("viroid_v0v1v2v3v4", "viroid"),
+    ("viroid_v0v1v2v3v4v5", "viroid"),
     ("proto_baseline", "proto_organelle"),
     ("proto_liberated", "proto_organelle"),
     ("virus_baseline", "virus"),

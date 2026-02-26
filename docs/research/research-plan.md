@@ -103,13 +103,21 @@ Start at V0 (“virus-only”) then add functions:
 
 * **V4: Response to stimuli**
 
-  * Adds sensing + action selection (movement or interaction choices), which in your system is strongly necessary (large ablation effect). 
+  * Adds chemotaxis-like gradient-following movement via a linear policy: 8-dimensional sensory input (resource gradient, energy, boundary, neighbor density, age) → dot product with evolvable weight vector → velocity delta.
+  * Energy cost: `v4_move_cost × |displacement|` per step (dynamic process).
+  * Sham control: computes policy + deducts cost but does NOT apply position change.
+  * Mutation: per-weight Gaussian noise σ=0.05 on replication.
 
 * **V5: Growth/development**
 
-  * Adds staged lifecycle (dormant → active → dispersal), paralleling your staged developmental program. 
+  * Adds staged lifecycle: Dormant → Active → Dispersal, each with different behavior multipliers.
+  * Dormant: energy decay ×0.3, no replication, no movement (hibernation).
+  * Active: normal multipliers (1.0 for all).
+  * Dispersal: energy decay ×1.5, no replication, movement speed ×2.0 (fast prospecting).
+  * Stage transitions: Dormant→Active at energy > threshold; Active→Dispersal after age ticks; Dispersal→Dormant after duration or low energy.
+  * Sham control: tracks stages + deducts transition cost, but all multipliers are 1.0.
 
-**Key principle:** each added function should be implemented as a **dynamic process**, not a static “buff”, matching your functional analogy condition #1. 
+**Key principle:** each added function should be implemented as a **dynamic process**, not a static “buff”, matching your functional analogy condition #1.
 
 ---
 
