@@ -47,11 +47,14 @@ capability--survival trends were pre-registered before any test-seed data
 collection, with Holm-Bonferroni correction across all 16 tests.
 Using $n\!=\!100$ held-out test seeds, we test these hypotheses across
 a four-level resource harshness axis and a periodic-shock resilience axis.
-Phase diagrams over the capability~$\times$~harshness plane reveal where
-survival boundaries shift with each added capability, making the
-virus-to-life transition operationally measurable without a host organism.
-Results and effect sizes for all pre-registered comparisons are reported
-in Section~\ref{sec:results}.
+Phase diagrams over the capability~$\times$~harshness plane reveal a
+non-monotonic ``cost valley'': boundary maintenance~(V1) reduces survival
+at all harshness levels ($\delta\!=\!1.00$), while internal metabolism~(V3)
+produces a dramatic recovery exceeding the V0 baseline ($\delta\!=\!1.00$).
+ProtoOrganelle ``liberation'' (gaining V0 replication) succeeds in
+resource-rich environments ($\delta\!=\!1.00$) but fails under scarcity.
+Twelve of sixteen pre-registered tests are confirmed; four null results in
+harsh environments are reported transparently.
 \end{abstract}
 
 Submission type: \textbf{Full Paper}\\
@@ -355,15 +358,23 @@ contour marks the 50\% survival boundary (5 of 10 initial entities).
 \label{fig:phase}
 \end{figure*}
 
-Across all three archetypes, higher capability levels shift the survival
-boundary towards harsher resource conditions.
-The Viroid panel shows the clearest ladder progression: V0-only survival
-collapses in the scarce regime, whereas V0+V1+V2+V3 maintains populations
-across all four harshness levels.
-The ProtoOrganelle liberation contrast (baseline vs.\ liberated) produces a
-qualitative shift---the baseline panel shows near-zero alive counts at all
-harshness levels (no replication), while the liberated column shows survival
-comparable to the Virus archetype.
+The Viroid panel reveals a non-monotonic capability ladder.
+V0-only Viroid achieves mean alive counts of 93.0 (rich) and 38.1 (medium),
+but adding V1 (boundary maintenance) \emph{reduces} survival to 33.1 and 17.6
+respectively---boundary repair costs outweigh protective benefit.
+V2 (homeostasis) adds negligible benefit (32.2 and 17.3).
+V3 (metabolism) produces a dramatic recovery: 199.1 (rich) and 53.4 (medium),
+exceeding even the V0-only baseline.
+In sparse and scarce environments, V0 and V0+V1+V2+V3 both maintain the
+initial 10--20 entities, while V0+V1 and V0+V1+V2 decline to 10.
+
+The Virus panel mirrors the Viroid V0+V1 starting point (identical
+parameterisation), confirming that the V3 metabolism effect is
+archetype-independent.
+The ProtoOrganelle liberation contrast produces the starkest qualitative
+shift: baseline (V1+V2+V3, no V0) maintains exactly 10 entities at all
+harshness levels (no replication possible), while the liberated condition
+(V0+V1+V2+V3) reaches 61.6 (rich) and 18.9 (medium).
 
 \subsection{InternalizationIndex}
 \label{sec:results-ii}
@@ -384,10 +395,15 @@ Viroid across V-levels and harshness conditions.
 
 V0, V0+V1, and V0+V1+V2 all yield $\mathrm{II}=0$ as expected from the
 definition: without V3, no energy flows through the internal pool.
-V0+V1+V2+V3 produces $\mathrm{II}>0$ in all harshness conditions, with the
-magnitude reflecting the fraction of maintenance energy supplied internally.
-This confirms that the II metric responds only to V3 capability addition and
-is structurally decoupled from the survival metrics reported below.
+V0+V1+V2+V3 produces substantial II values across all harshness conditions:
+$\mathrm{II}=0.63$ (rich), $0.64$ (medium), $0.47$ (sparse), and $0.47$
+(scarce) for Viroid.
+The higher II in resource-rich conditions reflects greater absolute internal
+conversion when the external pool is abundant.
+ProtoOrganelle baseline (V1+V2+V3, no V0) also shows $\mathrm{II}>0$ ($0.63$
+rich, $0.47$ medium) because V3 metabolism operates even without replication,
+confirming that II measures energy sourcing independently of reproductive
+success.
 
 \subsection{Pre-registered Hypothesis Tests}
 \label{sec:results-stats}
@@ -411,32 +427,59 @@ $p$-values across the 16-test family.
 H & Harshness & $U$ & $p_\text{corr}$ & Sig. & $\delta$ [95\% CI] & Dir. \\
 \midrule
 \multicolumn{7}{l}{\emph{H1: Viroid V0 vs V0+V1 (alive, fewer with V1)}} \\
-H1 & rich   & --- & --- & & --- & --- \\
-H1 & medium & --- & --- & & --- & --- \\
-H1 & sparse & --- & --- & & --- & --- \\
-H1 & scarce & --- & --- & & --- & --- \\
+H1 & rich   & 10\,000 & $<\!10^{-32}$ & *** & 1.00 [1.00, 1.00] & \checkmark \\
+H1 & medium & 10\,000 & $<\!10^{-32}$ & *** & 1.00 [1.00, 1.00] & \checkmark \\
+H1 & sparse & 10\,000 & $<\!10^{-43}$ & *** & 1.00 [1.00, 1.00] & \checkmark \\
+H1 & scarce & 10\,000 & $<\!10^{-43}$ & *** & 1.00 [1.00, 1.00] & \checkmark \\
 \midrule
 \multicolumn{7}{l}{\emph{H2: Viroid V0+V1+V2+V3 vs V0+V1+V2 (alive, more with V3)}} \\
-H2 & rich   & --- & --- & & --- & --- \\
-H2 & medium & --- & --- & & --- & --- \\
-H2 & sparse & --- & --- & & --- & --- \\
-H2 & scarce & --- & --- & & --- & --- \\
+H2 & rich   & 10\,000 & $<\!10^{-32}$ & *** & 1.00 [1.00, 1.00] & \checkmark \\
+H2 & medium & 10\,000 & $<\!10^{-32}$ & *** & 1.00 [1.00, 1.00] & \checkmark \\
+H2 & sparse & 10\,000 & $<\!10^{-43}$ & *** & 1.00 [1.00, 1.00] & \checkmark \\
+H2 & scarce & 10\,000 & $<\!10^{-43}$ & *** & 1.00 [1.00, 1.00] & \checkmark \\
 \midrule
 \multicolumn{7}{l}{\emph{H3: ProtoOrganelle liberated vs baseline (total\_replications)}} \\
-H3 & rich   & --- & --- & & --- & --- \\
-H3 & medium & --- & --- & & --- & --- \\
-H3 & sparse & --- & --- & & --- & --- \\
-H3 & scarce & --- & --- & & --- & --- \\
+H3 & rich   & 10\,000 & $<\!10^{-37}$ & *** & 1.00 [1.00, 1.00] & \checkmark \\
+H3 & medium & 10\,000 & $<\!10^{-38}$ & *** & 1.00 [1.00, 1.00] & \checkmark \\
+H3 & sparse & 5\,000  & 1.000         &     & 0.00 [0.00, 0.00] & \texttimes \\
+H3 & scarce & 5\,000  & 1.000         &     & 0.00 [0.00, 0.00] & \texttimes \\
 \midrule
 \multicolumn{7}{l}{\emph{H4: Viroid V0$\rightarrow$V3 monotonic trend (JT)}} \\
-H4 & rich   & --- & --- & & --- & --- \\
-H4 & medium & --- & --- & & --- & --- \\
-H4 & sparse & --- & --- & & --- & --- \\
-H4 & scarce & --- & --- & & --- & --- \\
+H4 & rich   & 26\,004 & 0.010  & *   & --- & \checkmark \\
+H4 & medium & 25\,770 & 0.006  & **  & --- & \checkmark \\
+H4 & sparse & 30\,000 & 1.000  &     & --- & \texttimes \\
+H4 & scarce & 30\,000 & 1.000  &     & --- & \texttimes \\
 \bottomrule
 \end{tabular}%
 }
 \end{table}
+
+\textbf{H1} (boundary overhead) is confirmed at all four harshness levels
+with maximal effect size ($\delta=1.00$, all $p_\text{corr}<10^{-32}$).
+V0+V1 always has \emph{fewer} alive entities than V0 alone:
+the boundary maintenance cost exceeds the protective benefit even in rich
+environments, not only in scarce as originally predicted.
+
+\textbf{H2} (metabolism buffering) is confirmed universally ($\delta=1.00$,
+all $p_\text{corr}<10^{-32}$).
+V3 addition transforms survival: in rich environments, mean alive rises from
+32.2 (V0+V1+V2) to 199.1 (V0+V1+V2+V3)---a 6.2$\times$ increase.
+
+\textbf{H3} (liberation) is confirmed in rich ($\delta=1.00$,
+$p_\text{corr}<10^{-37}$) and medium ($\delta=1.00$, $p_\text{corr}<10^{-38}$),
+where liberated ProtoOrganelle reaches 61.6 and 18.9 mean alive respectively.
+In sparse and scarce environments, neither baseline nor liberated
+ProtoOrganelle can sustain replication ($\delta=0.00$, $p=1.0$): the resource
+pool is too depleted for the higher replication threshold (0.80) of this
+archetype.
+
+\textbf{H4} (monotonic trend) is significant in rich ($p_\text{corr}=0.010$)
+and medium ($p_\text{corr}=0.006$) but not in sparse or scarce ($p=1.0$).
+The alive pattern across V-levels (e.g.\ rich: $93.0 \to 33.1 \to 32.2 \to
+199.1$) shows a pronounced dip at V1/V2 before a V3-driven recovery.
+The Jonckheere-Terpstra test detects the overall upward tendency (V0 to V3)
+but the non-monotonic intermediate dip limits statistical power, particularly
+in harsh environments where the signal-to-noise ratio collapses.
 
 \subsection{Replication--Persistence Tradeoff}
 \label{sec:results-tradeoff}
@@ -485,11 +528,13 @@ resource shocks (cycle period~$=50$) with no-shock baseline at sparse harshness.
 \end{figure*}
 
 \emph{Exploratory}: Under rapid shocks (period~$=50$), V0+V1+V2+V3 entities
-maintain higher mean alive counts than lower-capability levels, consistent
-with the metabolic buffering mechanism identified in~H2.
-V0-only Viroid shows the steepest decline during low-resource phases and the
-slowest recovery, suggesting that internal energy reserves (V3) provide a
-meaningful survival advantage under cyclic perturbation.
+maintain higher mean alive counts (20.0) than V0-only (19.2), with a large
+effect size (Cliff's~$\delta=0.69$, 95\%~CI $[0.60, 0.78]$).
+Under slow shocks (period~$=200$), the effect persists ($\delta=0.66$,
+$[0.56, 0.75]$).
+The recovery time analysis shows that most conditions recover within a single
+sampling interval (50 steps), suggesting that at the current temporal
+resolution, recovery time differences are not reliably measurable.
 This comparison is exploratory: shock resilience was not included in the
 H1--H4 pre-registration.
 
@@ -502,21 +547,30 @@ H1--H4 pre-registration.
 The phase diagrams (Figure~\ref{fig:phase}) operationalise the virus-to-life
 transition as a measurable shift in the capability~$\times$~harshness survival
 boundary.
-Each added capability either extends the viable harshness range (V3, consistent
-with H2) or imposes resource overhead that contracts it under extreme scarcity
-(V1, consistent with H1).
-This is not a monotone progression at all harshness levels---boundary
-maintenance~(V1) is a \emph{cost} in the scarce regime---mirroring
-the real biology of capsid assembly, which imposes an energy cost
-that only pays off under appropriate environmental conditions.
+The most striking finding is the \emph{non-monotonic} nature of the ladder:
+adding V1 boundary maintenance \emph{reduces} survival at every harshness
+level (H1, $\delta=1.00$ universally), while V3 metabolism produces a dramatic
+recovery that exceeds even the V0 baseline (H2, $\delta=1.00$).
+The intermediate V2 homeostasis capability adds negligible benefit.
+This ``cost valley'' at V1/V2---followed by a V3 recovery---mirrors the
+biological intuition that capsid assembly and regulatory overhead impose
+energetic costs that are only justified when coupled with internal metabolism.
 
-The H3 ProtoOrganelle liberation result is particularly striking: a metabolically
-complete entity (V1+V2+V3) that cannot replicate becomes a replicating
-population simply by adding V0.
-This operationalises the intuition that some progenitor-of-organelles
-could have gained independent reproductive capacity without restructuring its
-metabolism, consistent with some serial endosymbiosis hypotheses
-\citep{maturana_1980_autopoiesis}.
+The H3 ProtoOrganelle liberation result is environment-dependent: in resource-rich
+conditions, adding V0 replication to a metabolically complete entity (V1+V2+V3)
+immediately produces a replicating population ($\delta=1.00$); in sparse/scarce
+environments, the resource pool is too depleted for the ProtoOrganelle's higher
+replication threshold~(0.80).
+This suggests that the ``liberation'' of proto-endosymbionts---gaining
+independent reproduction---may require not just the right capability but also
+sufficiently favourable environmental conditions, consistent with serial
+endosymbiosis scenarios \citep{maturana_1980_autopoiesis}.
+
+The H4 monotonic trend is significant only in rich and medium environments.
+The non-monotonic dip at V1/V2 undermines the assumption of a smooth
+capability--survival gradient, indicating that the virus-to-life transition
+is better modelled as a \emph{cost-then-benefit} trajectory than as a monotonic
+improvement.
 
 \subsection{InternalizationIndex as a Life-Likeness Metric}
 
