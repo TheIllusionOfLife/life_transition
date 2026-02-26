@@ -32,7 +32,7 @@ from experiment_common import log, make_config_dict
 
 STEPS = 500
 SAMPLE_EVERY = 50
-SEEDS = list(range(50))
+SEEDS = list(range(100, 200))
 
 # Capability bitmask constants (must match crate::semi_life::capability).
 V0 = 0x01
@@ -104,13 +104,13 @@ def _load_archetype_config(archetype: str) -> dict:
     return {}
 
 
-def make_config(
+def make_semi_life_config_dict(
     archetype: str,
     cap_bits: int | None,
     resource_initial: float,
     seed: int,
-) -> str:
-    """Build a full config JSON string for one condition/seed."""
+) -> dict:
+    """Build config dict for one condition/seed (without serialization)."""
     base_params = _load_archetype_config(archetype)
     config = make_config_dict(seed=seed, overrides={})
     config["enable_semi_life"] = True
@@ -124,7 +124,17 @@ def make_config(
     else:
         sl.pop("capability_overrides", None)
     config["semi_life_config"] = sl
-    return json.dumps(config)
+    return config
+
+
+def make_config(
+    archetype: str,
+    cap_bits: int | None,
+    resource_initial: float,
+    seed: int,
+) -> str:
+    """Build a full config JSON string for one condition/seed."""
+    return json.dumps(make_semi_life_config_dict(archetype, cap_bits, resource_initial, seed))
 
 
 def _aggregate(snapshots: list[dict], archetype: str) -> dict:

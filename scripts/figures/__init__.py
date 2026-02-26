@@ -30,6 +30,10 @@ from figures.fig_midrun import generate_midrun_ablation
 from figures.fig_orthogonal import generate_orthogonal
 from figures.fig_phenotype import generate_persistent_clusters, generate_phenotype
 from figures.fig_proxy import generate_proxy
+from figures.fig_semi_life_internalization import generate_fig_semi_life_internalization
+from figures.fig_semi_life_phase_diagram import generate_fig_semi_life_phase_diagram
+from figures.fig_semi_life_recovery import generate_fig_semi_life_recovery
+from figures.fig_semi_life_tradeoffs import generate_fig_semi_life_tradeoffs
 from figures.fig_spatial import generate_spatial
 from figures.fig_timeseries import generate_timeseries
 from figures.fig_trait_evolution import generate_trait_evolution
@@ -55,4 +59,8 @@ __all__ = [
     "generate_invariance",
     "generate_ecology_stress",
     "generate_trait_evolution",
+    "generate_fig_semi_life_phase_diagram",
+    "generate_fig_semi_life_internalization",
+    "generate_fig_semi_life_tradeoffs",
+    "generate_fig_semi_life_recovery",
 ]
