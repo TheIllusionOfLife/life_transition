@@ -1,10 +1,10 @@
-"""SemiLife capability ladder experiment: V0 → V0+V1 → V0+V1+V2 → V0+V1+V2+V3.
+"""SemiLife capability ladder experiment: V0 → V0+V1 → ... → V0+V1+V2+V3+V4+V5.
 
 For each archetype, runs capability levels in isolation (single archetype per run,
 one capability level per run) across multiple resource harshness levels.
 
 Primary comparisons:
-  Viroid:        V0 | V0+V1 | V0+V1+V2 | V0+V1+V2+V3
+  Viroid:        V0 | V0+V1 | V0+V1+V2 | V0+V1+V2+V3 | V0..V4 | V0..V5
   ProtoOrganelle: V1+V2+V3 (baseline) | V0+V1+V2+V3 ("liberation")
   Virus:         V0+V1 (baseline) | V0+V1+V2 | V0+V1+V2+V3
 
@@ -39,6 +39,8 @@ V0 = 0x01
 V1 = 0x02
 V2 = 0x04
 V3 = 0x08
+V4 = 0x10
+V5 = 0x20
 
 # Harshness axis: resource_initial_value per cell.
 # 1.0 = full pool (10 000 total units); 0.05 = scarcest (500 total units).
@@ -56,11 +58,16 @@ RESOURCE_REGEN_RATE = 0.003
 # Per-archetype conditions: list of (label_suffix, archetype_name, cap_bits | None).
 # None means no capability_overrides entry → use archetype's baseline_capabilities.
 ARCHETYPE_CONDITIONS: list[tuple[str, str, int | None]] = [
-    # Viroid capability ladder
+    # Viroid capability ladder (V0 → V5)
     ("viroid_v0", "viroid", V0),
     ("viroid_v0v1", "viroid", V0 | V1),
     ("viroid_v0v1v2", "viroid", V0 | V1 | V2),
     ("viroid_v0v1v2v3", "viroid", V0 | V1 | V2 | V3),
+    ("viroid_v0v1v2v3v4", "viroid", V0 | V1 | V2 | V3 | V4),
+    ("viroid_v0v1v2v3v4v5", "viroid", V0 | V1 | V2 | V3 | V4 | V5),
+    # Sham controls for V4 and V5
+    ("viroid_v4_sham", "viroid", V0 | V1 | V2 | V3),  # V4 cost computed, no position change
+    ("viroid_v5_sham", "viroid", V0 | V1 | V2 | V3 | V4),  # V5 stages tracked, no multipliers
     # ProtoOrganelle: baseline (V1+V2+V3) vs liberation (V0 added)
     ("proto_baseline", "proto_organelle", None),
     ("proto_liberated", "proto_organelle", V0 | V1 | V2 | V3),
@@ -86,6 +93,10 @@ TSV_COLUMNS = [
     "total_replications",
     "total_failed",
     "world_replications_total",
+    "mean_policy_mag",
+    "n_dormant",
+    "n_active",
+    "n_dispersal",
 ]
 
 
@@ -150,6 +161,16 @@ def _aggregate(snapshots: list[dict], archetype: str) -> dict:
     caps = 0
     for e in alive:
         caps |= e["active_capabilities"]
+    # V4: mean policy magnitude across alive entities.
+    policy_mags = [e.get("policy_magnitude", 0.0) for e in alive]
+    mean_policy_mag = sum(policy_mags) / len(policy_mags) if policy_mags else 0.0
+
+    # V5: stage distribution across alive entities.
+    stages = [e.get("stage") for e in alive]
+    n_dormant = sum(1 for s in stages if s == "dormant")
+    n_active = sum(1 for s in stages if s == "active")
+    n_dispersal = sum(1 for s in stages if s == "dispersal")
+
     return {
         "alive": len(alive),
         "mean_energy": (sum(e["maintenance_energy"] for e in alive) / len(alive) if alive else 0.0),
@@ -157,6 +178,10 @@ def _aggregate(snapshots: list[dict], archetype: str) -> dict:
         "total_replications": sum(e["replications"] for e in entities),
         "total_failed": sum(e["failed_replications"] for e in entities),
         "capability_bits": caps,
+        "mean_policy_mag": mean_policy_mag,
+        "n_dormant": n_dormant,
+        "n_active": n_active,
+        "n_dispersal": n_dispersal,
     }
 
 
@@ -194,6 +219,10 @@ def run_one(
             str(agg["total_replications"]),
             str(agg["total_failed"]),
             str(world_rep),
+            f"{agg['mean_policy_mag']:.4f}",
+            str(agg["n_dormant"]),
+            str(agg["n_active"]),
+            str(agg["n_dispersal"]),
         ]
         print("\t".join(row), flush=True)
 
