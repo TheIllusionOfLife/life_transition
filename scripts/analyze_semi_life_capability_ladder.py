@@ -70,6 +70,15 @@ def get_mean_ii_at_final(rows: list[dict], condition: str, harshness: str) -> li
     return [float(r["mean_ii"]) for r in cond_rows if float(r["step"]) == max_step]
 
 
+def get_mean_energy_at_final(rows: list[dict], condition: str, harshness: str) -> list[float]:
+    """Extract mean_energy at the final step per seed."""
+    cond_rows = [r for r in rows if r["condition"] == condition and r["harshness"] == harshness]
+    if not cond_rows:
+        return []
+    max_step = max(float(r["step"]) for r in cond_rows)
+    return [float(r["mean_energy"]) for r in cond_rows if float(r["step"]) == max_step]
+
+
 def run_mannwhitney(a: list[float], b: list[float]) -> dict:
     """Mann-Whitney U test with Cliff's delta and bootstrap CI."""
     arr_a = np.array(a)
@@ -205,6 +214,48 @@ def analyze_h4(rows: list[dict]) -> list[dict]:
     return results
 
 
+def analyze_mean_energy_supplement(rows: list[dict]) -> list[dict]:
+    """Exploratory: H1/H2 comparisons using mean_energy instead of alive count.
+
+    Addresses the δ=1.00 ceiling/floor concern by providing a finer-grained
+    continuous metric.  These are explicitly labelled 'exploratory'.
+    """
+    results = []
+    for harshness in RESOURCE_INITIAL_VALUES:
+        # H1_energy: V0 vs V0+V1 (mean_energy)
+        a = get_mean_energy_at_final(rows, "viroid_v0", harshness)
+        b = get_mean_energy_at_final(rows, "viroid_v0v1", harshness)
+        result = run_mannwhitney(a, b)
+        result.update(
+            {
+                "hypothesis": "H1_energy",
+                "archetype": "viroid",
+                "harshness": harshness,
+                "comparison": "viroid_v0 vs viroid_v0v1",
+                "metric": "mean_energy",
+                "analysis_type": "exploratory",
+            }
+        )
+        results.append(result)
+
+        # H2_energy: V0+V1+V2+V3 vs V0+V1+V2 (mean_energy)
+        a = get_mean_energy_at_final(rows, "viroid_v0v1v2v3", harshness)
+        b = get_mean_energy_at_final(rows, "viroid_v0v1v2", harshness)
+        result = run_mannwhitney(a, b)
+        result.update(
+            {
+                "hypothesis": "H2_energy",
+                "archetype": "viroid",
+                "harshness": harshness,
+                "comparison": "viroid_v0v1v2v3 vs viroid_v0v1v2",
+                "metric": "mean_energy",
+                "analysis_type": "exploratory",
+            }
+        )
+        results.append(result)
+    return results
+
+
 def apply_holm_bonferroni(all_results: list[dict]) -> list[dict]:
     """Apply Holm-Bonferroni correction across all 16 pre-registered tests."""
     with_p = [r for r in all_results if r.get("p_raw") is not None]
@@ -239,6 +290,13 @@ def main(argv: list[str] | None = None) -> None:
     out_path.write_text(json.dumps(all_results, indent=2), encoding="utf-8")
     print(f"Wrote {out_path}", file=sys.stderr)
     print(f"  Total comparisons: {len(all_results)}", file=sys.stderr)
+
+    # Exploratory: mean_energy supplement (addresses δ=1.00 concern)
+    supplement = analyze_mean_energy_supplement(rows)
+    supp_path = _EXPERIMENTS_DIR / "semi_life_mean_energy_supplement.json"
+    supp_path.write_text(json.dumps(supplement, indent=2), encoding="utf-8")
+    print(f"Wrote {supp_path}", file=sys.stderr)
+    print(f"  Exploratory mean_energy comparisons: {len(supplement)}", file=sys.stderr)
 
 
 if __name__ == "__main__":
