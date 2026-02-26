@@ -34,7 +34,7 @@ from experiment_semi_life_v1v3 import (
     SEEDS,
     STEPS,
     _aggregate,
-    make_config,
+    make_semi_life_config_dict,
 )
 
 # Shock parameters
@@ -71,8 +71,7 @@ def make_shock_config(
     seed: int,
 ) -> str:
     """Build config JSON with cyclic resource modulation for shock experiments."""
-    base_json = make_config(archetype, cap_bits, resource_initial, seed)
-    config = json.loads(base_json)
+    config = make_semi_life_config_dict(archetype, cap_bits, resource_initial, seed)
     config["environment_cycle_period"] = shock_period
     config["environment_cycle_low_rate"] = SHOCK_LOW_RATE
     return json.dumps(config)

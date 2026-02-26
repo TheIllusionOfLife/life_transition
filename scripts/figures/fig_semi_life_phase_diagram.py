@@ -95,8 +95,8 @@ def generate_fig_semi_life_phase_diagram(data_tsv: Path, out_dir: Path) -> None:
                     linewidths=1.2,
                     linestyles="--",
                 )
-            except Exception:
-                pass  # contour silently skipped if data too sparse
+            except (TypeError, ValueError):
+                pass  # contour silently skipped if data too sparse for level
 
         ax.set_xticks(range(n_caps))
         ax.set_xticklabels(cap_labels, rotation=25, ha="right", fontsize=7)

@@ -287,3 +287,122 @@ def test_shock_experiment_produces_recovery_metric():
             all_alive.append(agg["alive"])
 
     assert len(all_alive) > 0, "Shock experiment produced no samples"
+
+
+# ---------------------------------------------------------------------------
+# Test 7: analyze_h2, analyze_h3, analyze_h4 output schema
+# ---------------------------------------------------------------------------
+
+
+def _make_rows_for_h234(harshness_levels: list[str]) -> list[dict]:
+    """Build minimal rows covering H2, H3, and H4 conditions."""
+    rows = []
+    for harshness in harshness_levels:
+        for seed in range(5):
+            base = {
+                "step": "500",
+                "mean_energy": "0.5",
+                "mean_ii": "0.1",
+                "total_failed": "0",
+                "world_replications_total": "0",
+                "harshness": harshness,
+                "seed": str(seed),
+            }
+            for cond, arch, cbits, alive, reps in [
+                ("viroid_v0", "viroid", "1", str(3 + seed), "8"),
+                ("viroid_v0v1", "viroid", "3", str(4 + seed), "9"),
+                ("viroid_v0v1v2", "viroid", "7", str(5 + seed), "10"),
+                ("viroid_v0v1v2v3", "viroid", "15", str(7 + seed), "12"),
+                ("proto_baseline", "proto_organelle", "14", "3", "0"),
+                ("proto_liberated", "proto_organelle", "15", "5", "10"),
+            ]:
+                rows.append(
+                    {
+                        **base,
+                        "condition": cond,
+                        "archetype": arch,
+                        "capability_bits": cbits,
+                        "alive": alive,
+                        "total_replications": reps,
+                    }
+                )
+    return rows
+
+
+def test_analyze_h2_h3_output_schema():
+    """analyze_h2 and analyze_h3 must return 4 results with required schema fields."""
+    from analyze_semi_life_capability_ladder import analyze_h2, analyze_h3
+
+    rows = _make_rows_for_h234(["rich", "medium", "sparse", "scarce"])
+    required = {"hypothesis", "comparison", "harshness", "metric", "p_raw"}
+
+    for fn, label in [(analyze_h2, "H2"), (analyze_h3, "H3")]:
+        results = fn(rows)
+        assert len(results) == 4, f"{label}: expected 4 results, got {len(results)}"
+        for r in results:
+            missing = required - r.keys()
+            assert not missing, f"{label} result missing fields: {missing}"
+        assert all(r["hypothesis"] == label for r in results)
+
+
+def test_analyze_h4_schema_includes_cliffs_delta_fields():
+    """analyze_h4 results must include cliffs_delta/ci fields for uniform schema."""
+    from analyze_semi_life_capability_ladder import analyze_h4
+
+    rows = _make_rows_for_h234(["rich", "medium", "sparse", "scarce"])
+    results = analyze_h4(rows)
+    assert len(results) == 4, f"Expected 4 H4 results, got {len(results)}"
+    for r in results:
+        assert r["hypothesis"] == "H4"
+        assert "cliffs_delta" in r, "H4 result missing cliffs_delta field"
+        assert "ci_low" in r, "H4 result missing ci_low field"
+        assert "ci_high" in r, "H4 result missing ci_high field"
+
+
+# ---------------------------------------------------------------------------
+# Test 8: Holm-Bonferroni correction never reduces p-values
+# ---------------------------------------------------------------------------
+
+
+def test_holm_bonferroni_never_reduces_p_values():
+    """apply_holm_bonferroni must produce p_corrected >= p_raw for all results."""
+    from analyze_semi_life_capability_ladder import apply_holm_bonferroni
+
+    results = [
+        {"hypothesis": "H1", "p_raw": 0.01},
+        {"hypothesis": "H2", "p_raw": 0.04},
+        {"hypothesis": "H3", "p_raw": 0.10},
+        {"hypothesis": "H4", "p_raw": None},  # JT result — skipped by correction
+    ]
+    corrected = apply_holm_bonferroni(results)
+    for r in corrected:
+        if r.get("p_raw") is not None:
+            assert r["p_corrected"] >= r["p_raw"], (
+                f"HB correction lowered p: raw={r['p_raw']}, corrected={r['p_corrected']}"
+            )
+    # The None-p result must not receive p_corrected
+    none_result = next(r for r in corrected if r["p_raw"] is None)
+    assert "p_corrected" not in none_result
+
+
+# ---------------------------------------------------------------------------
+# Test 9: compute_recovery_time detects known recovery event
+# ---------------------------------------------------------------------------
+
+
+def test_compute_recovery_time_detects_recovery():
+    """Recovery time must be detected when alive crosses 80% threshold post-shock."""
+    from analyze_semi_life_shocks import compute_recovery_time
+
+    # Shock at step 50: population drops, then recovers at step 80
+    step_alives = {
+        0: [10.0, 10.0],  # pre-shock baseline: mean = 10.0
+        50: [10.0, 10.0],  # shock occurs here; last pre-shock observation is step 0
+        60: [2.0, 2.0],  # post-shock trough: mean = 2.0 < threshold (8.0)
+        80: [9.0, 9.0],  # recovered: mean = 9.0 >= 80% × 10.0 = 8.0
+    }
+    recovery_times = compute_recovery_time(step_alives, shock_period=50, recovery_target=0.80)
+    assert len(recovery_times) == 1, f"Expected 1 shock event, got {len(recovery_times)}"
+    assert recovery_times[0] == 30.0, (
+        f"Expected recovery at step 30 post-shock, got {recovery_times[0]}"
+    )

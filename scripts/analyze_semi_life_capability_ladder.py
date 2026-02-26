@@ -26,6 +26,7 @@ from analyses.results.statistics import (
     jonckheere_terpstra,
 )
 from experiment_semi_life_v1v3 import RESOURCE_INITIAL_VALUES
+from scipy import stats as scipy_stats
 
 _EXPERIMENTS_DIR = Path(__file__).resolve().parent.parent / "experiments"
 
@@ -71,8 +72,6 @@ def get_mean_ii_at_final(rows: list[dict], condition: str, harshness: str) -> li
 
 def run_mannwhitney(a: list[float], b: list[float]) -> dict:
     """Mann-Whitney U test with Cliff's delta and bootstrap CI."""
-    from scipy import stats as scipy_stats
-
     arr_a = np.array(a)
     arr_b = np.array(b)
     n_a, n_b = len(arr_a), len(arr_b)
@@ -169,8 +168,8 @@ def analyze_h4(rows: list[dict]) -> list[dict]:
     results = []
     for harshness in RESOURCE_INITIAL_VALUES:
         groups = [np.array(get_alive_at_final(rows, cond, harshness)) for cond in viroid_order]
-        non_empty = [g for g in groups if len(g) >= 2]
-        if len(non_empty) < 2:
+        # Require all 4 groups to have data; skip if any is too sparse for a valid trend test.
+        if any(len(g) < 2 for g in groups):
             results.append(
                 {
                     "hypothesis": "H4",
@@ -180,6 +179,9 @@ def analyze_h4(rows: list[dict]) -> list[dict]:
                     "metric": "alive",
                     "JT_statistic": None,
                     "p_raw": None,
+                    "cliffs_delta": None,
+                    "ci_low": None,
+                    "ci_high": None,
                     "pre_registered_direction": "monotonic increase V0→V3",
                 }
             )
@@ -194,6 +196,9 @@ def analyze_h4(rows: list[dict]) -> list[dict]:
                 "metric": "alive",
                 "JT_statistic": float(jt_stat),
                 "p_raw": float(p_val),
+                "cliffs_delta": None,
+                "ci_low": None,
+                "ci_high": None,
                 "pre_registered_direction": "monotonic increase V0→V3",
             }
         )

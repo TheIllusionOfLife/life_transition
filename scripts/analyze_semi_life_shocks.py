@@ -26,6 +26,7 @@ from experiment_semi_life_v1v3 import ARCHETYPE_CONDITIONS
 _EXPERIMENTS_DIR = Path(__file__).resolve().parent.parent / "experiments"
 
 RECOVERY_TARGET = 0.80  # recover to 80% of pre-shock population
+_SHOCK_HARSHNESS = "sparse"  # shock experiment always runs at sparse harshness
 
 
 def load_tsv(path: Path) -> list[dict]:
@@ -99,6 +100,7 @@ def analyze_condition(
     baseline_rows: list[dict],
     condition: str,
     shock_period: int,
+    harshness: str = _SHOCK_HARSHNESS,
 ) -> dict:
     """Per-condition recovery statistics for one shock period."""
     shock_filtered = [
@@ -108,7 +110,9 @@ def analyze_condition(
     ]
     shock_ts = get_step_alives(shock_filtered, condition)
 
-    baseline_filtered = [r for r in baseline_rows if r["condition"] == condition]
+    baseline_filtered = [
+        r for r in baseline_rows if r["condition"] == condition and r.get("harshness") == harshness
+    ]
     baseline_ts = get_step_alives(baseline_filtered, condition)
 
     recovery_times = compute_recovery_time(shock_ts, shock_period)
