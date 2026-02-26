@@ -41,19 +41,17 @@ Progress is quantified by the \emph{Internalization Index}
 $\mathrm{II} = E_\text{int}/(E_\text{int}+E_\text{ext})$, a continuous axis
 from virus-like ($\mathrm{II}\approx0$, all energy from the environment)
 to life-like ($\mathrm{II}>0$, self-sustained energy conversion).
-We pre-registered four directional hypotheses~(H1--H4) covering boundary
-overhead costs, metabolism-driven persistence, replication liberation, and
-monotonic capability--survival trends across a four-level resource harshness
-axis, applying Holm-Bonferroni correction across all 16 tests.
-Using $n\!=\!100$ held-out test seeds (never used during parameterisation),
-we find that internal metabolism~(V3) provides the strongest survival benefit
-in resource-scarce environments (H2), boundary maintenance~(V1) imposes
-measurable overhead costs in the scarce regime consistent with H1,
-and adding replication capability~(V0) to a ProtoOrganelle liberates
-population growth consistent with H3.
+Four directional hypotheses~(H1--H4) covering boundary overhead costs,
+metabolism-driven persistence, replication liberation, and monotonic
+capability--survival trends were pre-registered before any test-seed data
+collection, with Holm-Bonferroni correction across all 16 tests.
+Using $n\!=\!100$ held-out test seeds, we test these hypotheses across
+a four-level resource harshness axis and a periodic-shock resilience axis.
 Phase diagrams over the capability~$\times$~harshness plane reveal where
-the survival boundary shifts, making the virus-to-life transition
-operationally measurable without requiring a host organism.
+survival boundaries shift with each added capability, making the
+virus-to-life transition operationally measurable without a host organism.
+Results and effect sizes for all pre-registered comparisons are reported
+in Section~\ref{sec:results}.
 \end{abstract}
 
 Submission type: \textbf{Full Paper}\\
@@ -345,9 +343,9 @@ Figure~\ref{fig:phase} shows phase diagrams for all three archetypes.
 Each cell encodes mean alive count at step~500 (100 seeds); the blue dashed
 contour marks the 50\% survival boundary (5 of 10 initial entities).
 
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
-\figifexists{figures/fig_semi_life_phase_diagram.pdf}{\columnwidth}{}{phase diagram}
+\figifexists{figures/fig_semi_life_phase_diagram.pdf}{\textwidth}{}{phase diagram}
 \caption{Phase diagrams: capability level $\times$ resource harshness
   $\rightarrow$ mean alive count at step~500 ($n\!=\!100$).
   YlOrRd heat-map; blue dashed contour = 50\% survival boundary (5 entities).
@@ -355,7 +353,7 @@ contour marks the 50\% survival boundary (5 of 10 initial entities).
   Centre: Virus (V0+V1 baseline through V0+V1+V2+V3).
   Right: ProtoOrganelle (V1+V2+V3 baseline vs.\ V0+V1+V2+V3 liberated).}
 \label{fig:phase}
-\end{figure}
+\end{figure*}
 
 Across all three archetypes, higher capability levels shift the survival
 boundary towards harsher resource conditions.
@@ -475,16 +473,16 @@ stability shown in Table~\ref{tab:archetypes}.
 Figure~\ref{fig:recovery} compares Viroid alive trajectories under periodic
 resource shocks (cycle period~$=50$) with no-shock baseline at sparse harshness.
 
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
-\figifexists{figures/fig_semi_life_recovery.pdf}{\columnwidth}{}{shock recovery}
+\figifexists{figures/fig_semi_life_recovery.pdf}{\textwidth}{}{shock recovery}
 \caption{Recovery under periodic resource shocks (Viroid, sparse harshness,
   $n\!=\!100$).
   Left: shock period~$=50$ (rapid crash--recovery cycles).
   Right: no-shock baseline (same harshness level for comparison).
   Each line is one capability level; Okabe-Ito palette.}
 \label{fig:recovery}
-\end{figure}
+\end{figure*}
 
 \emph{Exploratory}: Under rapid shocks (period~$=50$), V0+V1+V2+V3 entities
 maintain higher mean alive counts than lower-capability levels, consistent
