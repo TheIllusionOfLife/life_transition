@@ -282,11 +282,14 @@ def main(argv: list[str] | None = None) -> None:
     print(f"  Total comparisons: {len(all_results)}", file=sys.stderr)
 
     # Exploratory: mean_energy supplement (addresses δ=1.00 concern)
-    supplement = analyze_mean_energy_supplement(rows)
-    supp_path = _EXPERIMENTS_DIR / "semi_life_mean_energy_supplement.json"
-    supp_path.write_text(json.dumps(supplement, indent=2), encoding="utf-8")
-    print(f"Wrote {supp_path}", file=sys.stderr)
-    print(f"  Exploratory mean_energy comparisons: {len(supplement)}", file=sys.stderr)
+    if rows and "mean_energy" in rows[0]:
+        supplement = analyze_mean_energy_supplement(rows)
+        supp_path = _EXPERIMENTS_DIR / "semi_life_mean_energy_supplement.json"
+        supp_path.write_text(json.dumps(supplement, indent=2), encoding="utf-8")
+        print(f"Wrote {supp_path}", file=sys.stderr)
+        print(f"  Exploratory mean_energy comparisons: {len(supplement)}", file=sys.stderr)
+    else:
+        print("Skipping mean_energy supplement: column not in TSV", file=sys.stderr)
 
 
 if __name__ == "__main__":

@@ -51,6 +51,16 @@
         "experiments/semi_life_capability_stats.json"
       ],
       "notes": "Pre-registered H1-H4 hypothesis test results table."
+    },
+    {
+      "result_id": "semi_life_energy_robustness",
+      "paper_ref": "sec:results-energy",
+      "manifest": "experiments/semi_life_mean_energy_supplement.json",
+      "source_files": [
+        "experiments/semi_life_v1v3_test.tsv",
+        "experiments/semi_life_mean_energy_supplement.json"
+      ],
+      "notes": "Exploratory mean_energy effect sizes (H1/H2 robustness check)."
     }
   ]
 }

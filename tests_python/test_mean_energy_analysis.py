@@ -190,3 +190,58 @@ class TestAnalyzeMeanEnergySupplement:
     def test_label_is_exploratory(self, full_supplement_rows):
         results = analyze_mean_energy_supplement(full_supplement_rows)
         assert all(r.get("analysis_type") == "exploratory" for r in results)
+
+
+class TestMeanEnergyColumnGuard:
+    """Verify fail-soft behavior when mean_energy column is absent."""
+
+    def test_missing_column_raises_key_error_in_extractor(self):
+        """get_mean_energy_at_final crashes if column absent — the guard
+        in main() should prevent this from being called."""
+        rows = [
+            {
+                "condition": "viroid_v0",
+                "harshness": "rich",
+                "seed": "100",
+                "step": "500",
+                "alive": "10",
+                "mean_ii": "0.0",
+                "total_replications": "0",
+                "total_failed": "0",
+                "world_replications_total": "0",
+                "archetype": "viroid",
+                "capability_bits": "1",
+            }
+        ]
+        with pytest.raises(KeyError, match="mean_energy"):
+            get_mean_energy_at_final(rows, "viroid_v0", "rich")
+
+    def test_main_guard_skips_when_column_absent(self, tmp_path):
+        """main() should complete H1-H4 even if mean_energy is absent."""
+        from analyze_semi_life_capability_ladder import main
+
+        tsv = tmp_path / "no_energy.tsv"
+        header = (
+            "condition\tharshness\tseed\tstep\tarchetype\t"
+            "capability_bits\talive\tmean_ii\t"
+            "total_replications\ttotal_failed\t"
+            "world_replications_total"
+        )
+        # Minimal row — enough for load_tsv to succeed
+        row = "viroid_v0\trich\t100\t500\tviroid\t1\t10\t0.0\t0\t0\t0"
+        tsv.write_text(f"{header}\n{row}\n")
+
+        # Override experiments dir so main() writes to tmp
+        import analyze_semi_life_capability_ladder as mod
+
+        orig_dir = mod._EXPERIMENTS_DIR
+        mod._EXPERIMENTS_DIR = tmp_path
+        try:
+            main([str(tsv)])
+        finally:
+            mod._EXPERIMENTS_DIR = orig_dir
+
+        # H1-H4 stats should be written
+        assert (tmp_path / "semi_life_capability_stats.json").exists()
+        # Supplement should NOT be written
+        assert not (tmp_path / "semi_life_mean_energy_supplement.json").exists()
