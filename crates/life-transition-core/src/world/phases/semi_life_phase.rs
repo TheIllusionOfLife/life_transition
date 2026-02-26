@@ -47,7 +47,7 @@ fn apply_capability_fields(sl: &mut SemiLifeRuntime, cfg: &SemiLifeConfig) {
     sl.stage = sl
         .active_capabilities
         .has(capability::V5_LIFECYCLE)
-        .then(|| SemiLifeStage::Dormant);
+        .then_some(SemiLifeStage::Dormant);
 }
 
 /// Compute V5 behavior multipliers for energy decay, replication, and movement.
@@ -58,7 +58,11 @@ fn v5_multipliers(sl: &SemiLifeRuntime, cfg: &SemiLifeConfig) -> (f32, f32, f32)
     match sl.stage {
         Some(SemiLifeStage::Dormant) => (cfg.v5_dormant_decay_mult, 0.0, 0.0),
         Some(SemiLifeStage::Active) => (1.0, 1.0, 1.0),
-        Some(SemiLifeStage::Dispersal) => (cfg.v5_dispersal_decay_mult, 0.0, cfg.v5_dispersal_speed_mult),
+        Some(SemiLifeStage::Dispersal) => (
+            cfg.v5_dispersal_decay_mult,
+            0.0,
+            cfg.v5_dispersal_speed_mult,
+        ),
         None => (1.0, 1.0, 1.0),
     }
 }
@@ -67,9 +71,9 @@ impl World {
     /// Step all SemiLife entities through one simulation timestep.
     ///
     /// Phase order per entity:
-    /// 0.5. V5 stage transition (Dormant→Active→Dispersal→Dormant)
-    /// 1.   Compute positions (immutable scan)
-    /// 1.5. V4 movement pass (policy-driven chemotaxis)
+    ///      0.5. V5 stage transition (Dormant→Active→Dispersal→Dormant)
+    ///      1.   Compute positions (immutable scan)
+    ///      1.5. V4 movement pass (policy-driven chemotaxis)
     /// 2.   Maintenance cost (with V5 decay multiplier)
     /// 3.   Resource uptake / Prion contact propagation
     /// 4.   V3 internal pool → energy conversion + pool refill
@@ -140,6 +144,7 @@ impl World {
             .collect();
 
         // --- Pass 1.5: V4 movement (policy-driven chemotaxis) ---
+        #[allow(clippy::needless_range_loop)] // `i` indexes both `positions` and `self.semi_lives`
         for i in 0..n {
             if !self.semi_lives[i].alive {
                 continue;
@@ -168,12 +173,8 @@ impl World {
             let grad_x = (res_right - res_left).clamp(-1.0, 1.0);
             let grad_y = (res_up - res_down).clamp(-1.0, 1.0);
 
-            let energy_norm = self.semi_lives[i]
-                .maintenance_energy
-                .clamp(0.0, 1.0);
-            let boundary_norm = self.semi_lives[i]
-                .boundary_integrity
-                .unwrap_or(1.0);
+            let energy_norm = self.semi_lives[i].maintenance_energy.clamp(0.0, 1.0);
+            let boundary_norm = self.semi_lives[i].boundary_integrity.unwrap_or(1.0);
 
             // Neighbor count: count SemiLife agents nearby (simple O(n) scan; acceptable for
             // small entity counts; R-tree lookup would be overkill for 10-50 entities).
@@ -184,8 +185,12 @@ impl World {
                     a.owner_type == OwnerType::SemiLife
                         && a.organism_id != self.semi_lives[i].id
                         && {
-                            let dx = (a.position[0] - pos[0]).abs().min(world_size - (a.position[0] - pos[0]).abs());
-                            let dy = (a.position[1] - pos[1]).abs().min(world_size - (a.position[1] - pos[1]).abs());
+                            let dx = (a.position[0] - pos[0])
+                                .abs()
+                                .min(world_size - (a.position[0] - pos[0]).abs());
+                            let dy = (a.position[1] - pos[1])
+                                .abs()
+                                .min(world_size - (a.position[1] - pos[1]).abs());
                             dx * dx + dy * dy < 25.0 // radius 5.0 squared
                         }
                 })
