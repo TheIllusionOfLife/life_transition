@@ -12,8 +12,15 @@ from figures._shared import *
 # ---------------------------------------------------------------------------
 _PANELS = {
     "viroid": {
-        "conditions": ["viroid_v0", "viroid_v0v1", "viroid_v0v1v2", "viroid_v0v1v2v3"],
-        "cap_labels": ["V0", "V0+V1", "V0+V1+V2", "V0+V1+V2+V3"],
+        "conditions": [
+            "viroid_v0",
+            "viroid_v0v1",
+            "viroid_v0v1v2",
+            "viroid_v0v1v2v3",
+            "viroid_v0v1v2v3v4",
+            "viroid_v0v1v2v3v4v5",
+        ],
+        "cap_labels": ["V0", "V0+V1", "V0..V2", "V0..V3", "V0..V4", "V0..V5"],
         "title": "Viroid",
     },
     "virus": {

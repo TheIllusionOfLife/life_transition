@@ -1,7 +1,7 @@
 """Generate all four Semi-Life paper figures.
 
 Requires:
-  experiments/semi_life_v1v3_test.tsv   -- capability ladder test-seed data
+  experiments/semi_life_v1v5_test.tsv   -- capability ladder test-seed data
   experiments/semi_life_shocks.tsv      -- shock experiment data
 
 Usage:
@@ -37,7 +37,7 @@ _ROOT = Path(__file__).resolve().parent.parent
 _EXPERIMENTS = _ROOT / "experiments"
 _FIG_DIR = _ROOT / "paper" / "figures"
 
-_V1V3_TSV = _EXPERIMENTS / "semi_life_v1v3_test.tsv"
+_V1V5_TSV = _EXPERIMENTS / "semi_life_v1v5_test.tsv"
 _SHOCKS_TSV = _EXPERIMENTS / "semi_life_shocks.tsv"
 
 
@@ -45,28 +45,28 @@ def main() -> None:
     """Generate all Semi-Life figures; skip gracefully if data is missing."""
     _FIG_DIR.mkdir(parents=True, exist_ok=True)
 
-    if not _V1V3_TSV.exists():
-        print(f"ERROR: capability ladder data not found: {_V1V3_TSV}", file=sys.stderr)
+    if not _V1V5_TSV.exists():
+        print(f"ERROR: capability ladder data not found: {_V1V5_TSV}", file=sys.stderr)
         print(
-            f"  Run: uv run python scripts/experiment_semi_life_v1v3.py > {_V1V3_TSV}",
+            f"  Run: uv run python scripts/experiment_semi_life_v1v3.py > {_V1V5_TSV}",
             file=sys.stderr,
         )
         sys.exit(1)
 
-    print(f"Loading capability ladder data from {_V1V3_TSV.name} ...")
+    print(f"Loading capability ladder data from {_V1V5_TSV.name} ...")
 
     print("Figure 1: Phase diagram")
-    generate_fig_semi_life_phase_diagram(_V1V3_TSV, _FIG_DIR)
+    generate_fig_semi_life_phase_diagram(_V1V5_TSV, _FIG_DIR)
 
     print("Figure 2: InternalizationIndex")
-    generate_fig_semi_life_internalization(_V1V3_TSV, _FIG_DIR)
+    generate_fig_semi_life_internalization(_V1V5_TSV, _FIG_DIR)
 
     print("Figure 3: Replication-persistence tradeoff")
-    generate_fig_semi_life_tradeoffs(_V1V3_TSV, _FIG_DIR)
+    generate_fig_semi_life_tradeoffs(_V1V5_TSV, _FIG_DIR)
 
     if _SHOCKS_TSV.exists():
         print("Figure 4: Shock recovery")
-        generate_fig_semi_life_recovery(_SHOCKS_TSV, _V1V3_TSV, _FIG_DIR)
+        generate_fig_semi_life_recovery(_SHOCKS_TSV, _V1V5_TSV, _FIG_DIR)
     else:
         print(f"SKIP Figure 4: shock data not found ({_SHOCKS_TSV.name})")
 

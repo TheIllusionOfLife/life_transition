@@ -5,7 +5,7 @@ runs pre-registered hypothesis tests H1–H7.
 
 Usage:
     uv run python scripts/analyze_semi_life_capability_ladder.py \\
-        experiments/semi_life_v1v3_test.tsv
+        experiments/semi_life_v1v5_test.tsv
 
 Output:
     JSON to experiments/semi_life_capability_stats.json
@@ -350,7 +350,7 @@ def apply_holm_bonferroni(all_results: list[dict]) -> list[dict]:
 def main(argv: list[str] | None = None) -> None:
     if argv is None:
         argv = sys.argv[1:]
-    tsv_path = Path(argv[0]) if argv else _EXPERIMENTS_DIR / "semi_life_v1v3_test.tsv"
+    tsv_path = Path(argv[0]) if argv else _EXPERIMENTS_DIR / "semi_life_v1v5_test.tsv"
 
     if not tsv_path.exists():
         print(f"ERROR: TSV not found: {tsv_path}", file=sys.stderr)
