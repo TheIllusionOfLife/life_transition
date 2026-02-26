@@ -59,7 +59,7 @@ harsh environments are reported transparently.
 
 Submission type: \textbf{Full Paper}\\
 
-\blfootnote{\textcopyright 2026 [AUTHORS' NAMES]. Published under a Creative
+\blfootnote{\textcopyright 2026 The Author(s). Published under a Creative
 Commons Attribution 4.0 International (CC BY 4.0) license.}
 
 % ============================================================================
@@ -538,6 +538,33 @@ resolution, recovery time differences are not reliably measurable.
 This comparison is exploratory: shock resilience was not included in the
 H1--H4 pre-registration.
 
+\subsection{Effect Size Robustness Check}
+\label{sec:results-energy}
+
+\emph{Exploratory}: The alive-count metric used in H1--H4 exhibits
+ceiling/floor effects ($\delta=1.00$ with $[1.00,1.00]$~CI in 12 of 16
+tests), raising the concern that the metric is too coarse to distinguish
+strong from overwhelming effects.
+As a robustness check, we repeat the H1 and H2 comparisons using
+\texttt{mean\_energy} at step~500---a continuous per-entity measure that
+avoids the binary alive/dead dichotomy.
+Mean energy for Viroid V0 in the rich environment is
+$0.413 \pm 0.009$ (mean $\pm$ SD, $n\!=\!100$), dropping to
+$0.356 \pm 0.013$ with V1 ($-14\%$) and recovering to
+$0.430 \pm 0.005$ with V3 ($+4\%$ above V0 baseline).
+In the medium environment, the V1 drop is more severe
+($0.408 \to 0.173$, $-58\%$) and the V3 recovery is nearly complete
+($0.393$).
+Cliff's~$\delta$ for the H1 energy comparison at rich harshness is
+$0.9998$ with CI $[0.999, 1.000]$---marginally below the alive-count
+$\delta=1.00$, confirming that the distributions are nearly but not
+perfectly separated.
+All other harshness levels remain at $\delta=1.00$ for both metrics.
+We conclude that the saturated effect sizes reflect genuinely
+non-overlapping population outcomes rather than a metric artefact:
+the capability additions produce all-or-nothing survival shifts across
+the 100 test seeds.
+
 % ============================================================================
 \section{Discussion}
 \label{sec:discussion}
@@ -619,6 +646,16 @@ V5 adds a staged lifecycle (dormant / active / dispersal) to test whether
 developmental regulation provides a further fitness advantage.
 A competition axis---placing multiple archetypes in the same world simultaneously
 --- would reveal which capability profiles dominate under natural selection.
+
+% ============================================================================
+\section*{Data Availability}
+
+All simulation code, experiment scripts, pre-registration, and analysis
+pipelines are available in the project repository (URL withheld for
+double-blind review).
+Raw TSV data files and statistical output (JSON) will be archived on
+Zenodo upon acceptance, with a persistent DOI linked from the
+camera-ready manuscript.
 
 % ============================================================================
 
