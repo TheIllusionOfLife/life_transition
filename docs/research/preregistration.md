@@ -8,11 +8,11 @@
 
 ## Pre-registered Hypotheses
 
-### H1: Boundary overhead in scarce environments (Viroid)
+### H1: Boundary overhead (Viroid)
 
 **Comparison**: Viroid V0 vs. Viroid V0+V1
-**Environment**: scarce (resource_initial_value = 0.05)
-**Direction**: V0+V1 produces *fewer* alive entities at step 500 than V0 alone
+**Environments**: all 4 harshness levels (rich/medium/sparse/scarce)
+**Direction**: V0+V1 produces *fewer* alive entities at step 500 than V0 alone; strongest effect predicted in scarce
 **Rationale**: Boundary maintenance (V1) requires per-step energy; in scarce resources this
 overhead exceeds the protective benefit, reducing equilibrium population.
 **Test**: Mann-Whitney U, two-tailed, α = 0.05
@@ -86,9 +86,9 @@ extends H4 with the full capability ladder
 - **Trend test**: Jonckheere-Terpstra for H4 and H7 (ordered groups, included in 28-test family)
 - **Exploratory analyses**: clearly labeled "EXPLORATORY" in all output and manuscript sections
 
-> **Amendment (2026-02-27, before test-seed data collection)**: H2 scope expanded from
-> sparse+scarce to all 4 harshness levels; H4 scope expanded from scarce-only to all 4
-> harshness levels. Both changes were made for Holm-Bonferroni family consistency (16 tests
+> **Amendment (2026-02-27, before test-seed data collection)**: H1, H2, and H4 scopes
+> expanded to all 4 harshness levels (H1 from scarce-only, H2 from sparse+scarce, H4 from
+> scarce-only). All changes were made for Holm-Bonferroni family consistency (16 tests
 > total) and before any test-seed (100–199) data was collected. Directional predictions
 > remain as stated above.
 
