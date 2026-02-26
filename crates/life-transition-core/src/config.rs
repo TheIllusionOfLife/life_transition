@@ -90,6 +90,29 @@ pub struct SemiLifeConfig {
     pub internal_conversion_rate: f32,
     /// Per-step resource uptake rate into the internal pool (V3 entities).
     pub internal_pool_uptake_rate: f32,
+    // V4 — Response to stimuli
+    /// Maximum speed from V4 policy-driven movement (world units per step).
+    pub v4_max_speed: f32,
+    /// Per-step energy cost per unit of V4 movement distance.
+    pub v4_move_cost: f32,
+    /// Initial policy weights for V4 sensory-motor mapping.
+    /// [grad_x, grad_y, energy, boundary, neighbor_count, age_norm, 0, 0]
+    pub v4_policy_init: [f32; 8],
+    /// Standard deviation of Gaussian mutation noise applied to V4 policy on replication.
+    pub v4_mutation_sigma: f32,
+    // V5 — Staged lifecycle (growth/development)
+    /// Energy threshold for Dormant → Active transition (V5 entities).
+    pub v5_activation_threshold: f32,
+    /// Ticks in Active stage before Active → Dispersal transition (V5 entities).
+    pub v5_dispersal_age: u32,
+    /// Duration of Dispersal stage in ticks before returning to Dormant (V5 entities).
+    pub v5_dispersal_duration: u32,
+    /// Energy decay multiplier during Dormant stage (V5 entities).
+    pub v5_dormant_decay_mult: f32,
+    /// Movement speed multiplier during Dispersal stage (V5 entities).
+    pub v5_dispersal_speed_mult: f32,
+    /// Energy decay multiplier during Dispersal stage (V5 entities).
+    pub v5_dispersal_decay_mult: f32,
     // Prion
     /// Contact radius for conformational propagation (Prion entities, world units).
     pub prion_contact_radius: f64,
@@ -139,6 +162,16 @@ impl Default for SemiLifeConfig {
             internal_pool_capacity: 1.0,
             internal_conversion_rate: 0.05,
             internal_pool_uptake_rate: 0.01,
+            v4_max_speed: 1.0,
+            v4_move_cost: 0.01,
+            v4_policy_init: [0.5, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            v4_mutation_sigma: 0.05,
+            v5_activation_threshold: 0.6,
+            v5_dispersal_age: 100,
+            v5_dispersal_duration: 20,
+            v5_dormant_decay_mult: 0.3,
+            v5_dispersal_speed_mult: 2.0,
+            v5_dispersal_decay_mult: 1.5,
             prion_contact_radius: 5.0,
             prion_conversion_prob: 0.05,
             prion_fragmentation_loss: 0.01,

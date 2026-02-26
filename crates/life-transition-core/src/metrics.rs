@@ -82,10 +82,23 @@ pub struct SemiLifeSnapshot {
     pub alive: bool,
     /// Fraction of energy obtained internally this step. 0.0 for V0-only entities.
     pub internalization_index: f32,
+    /// L2 magnitude of the V4 policy weight vector (0.0 if V4 absent).
+    pub policy_magnitude: f32,
+    /// V5 lifecycle stage as string ("dormant"/"active"/"dispersal"), null if V5 absent.
+    pub stage: Option<String>,
 }
 
 impl SemiLifeSnapshot {
     pub fn from_runtime(sl: &SemiLifeRuntime) -> Self {
+        let policy_magnitude = sl
+            .policy
+            .map(|p| p.iter().map(|w| w * w).sum::<f32>().sqrt())
+            .unwrap_or(0.0);
+        let stage = sl.stage.map(|s| match s {
+            crate::semi_life::SemiLifeStage::Dormant => "dormant".to_owned(),
+            crate::semi_life::SemiLifeStage::Active => "active".to_owned(),
+            crate::semi_life::SemiLifeStage::Dispersal => "dispersal".to_owned(),
+        });
         Self {
             id: sl.id,
             stable_id: sl.stable_id,
@@ -97,6 +110,8 @@ impl SemiLifeSnapshot {
             age_steps: sl.age_steps,
             alive: sl.alive,
             internalization_index: sl.internalization_index(),
+            policy_magnitude,
+            stage,
         }
     }
 }

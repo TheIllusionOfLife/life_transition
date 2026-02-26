@@ -2,7 +2,7 @@ use super::super::World;
 use crate::agent::{Agent, OwnerType};
 use crate::config::{SemiLifeConfig, SimConfig};
 use crate::semi_life::{
-    capability, CapabilitySet, DependencyMode, SemiLifeArchetype, SemiLifeRuntime,
+    capability, CapabilitySet, DependencyMode, SemiLifeArchetype, SemiLifeRuntime, SemiLifeStage,
 };
 use crate::spatial;
 use crate::spatial::AgentLocation;
@@ -40,20 +40,44 @@ fn apply_capability_fields(sl: &mut SemiLifeRuntime, cfg: &SemiLifeConfig) {
         .active_capabilities
         .has(capability::V3_METABOLISM)
         .then_some(cfg.internal_pool_init_fraction * cfg.internal_pool_capacity);
+    sl.policy = sl
+        .active_capabilities
+        .has(capability::V4_RESPONSE)
+        .then_some(cfg.v4_policy_init);
+    sl.stage = sl
+        .active_capabilities
+        .has(capability::V5_LIFECYCLE)
+        .then(|| SemiLifeStage::Dormant);
+}
+
+/// Compute V5 behavior multipliers for energy decay, replication, and movement.
+///
+/// Returns `(decay_mult, repl_mult, speed_mult)`.
+/// Entities without V5 get (1.0, 1.0, 1.0) — no behavioral change.
+fn v5_multipliers(sl: &SemiLifeRuntime, cfg: &SemiLifeConfig) -> (f32, f32, f32) {
+    match sl.stage {
+        Some(SemiLifeStage::Dormant) => (cfg.v5_dormant_decay_mult, 0.0, 0.0),
+        Some(SemiLifeStage::Active) => (1.0, 1.0, 1.0),
+        Some(SemiLifeStage::Dispersal) => (cfg.v5_dispersal_decay_mult, 0.0, cfg.v5_dispersal_speed_mult),
+        None => (1.0, 1.0, 1.0),
+    }
 }
 
 impl World {
     /// Step all SemiLife entities through one simulation timestep.
     ///
     /// Phase order per entity:
-    /// 1. Maintenance cost (universal)
-    /// 2. Resource uptake / Prion contact propagation
-    /// 3. V3 internal pool → energy conversion + pool refill
-    /// 4. V2 regulator cost
-    /// 5. V1 boundary decay/repair
-    /// 6. Energy cap + death check
-    /// 7. Collect V0 replication candidates
-    /// 8. Spawn children (after the main loop to avoid borrow conflicts)
+    /// 0.5. V5 stage transition (Dormant→Active→Dispersal→Dormant)
+    /// 1.   Compute positions (immutable scan)
+    /// 1.5. V4 movement pass (policy-driven chemotaxis)
+    /// 2.   Maintenance cost (with V5 decay multiplier)
+    /// 3.   Resource uptake / Prion contact propagation
+    /// 4.   V3 internal pool → energy conversion + pool refill
+    /// 5.   V2 regulator cost
+    /// 6.   V1 boundary decay/repair
+    /// 7.   Energy cap + death check
+    /// 8.   Collect V0 replication candidates (with V5 replication multiplier)
+    /// 9.   Spawn children (after the main loop to avoid borrow conflicts)
     pub(in crate::world) fn step_semi_life_phase(&mut self, tree: &RTree<AgentLocation>) {
         if !self.config.enable_semi_life || self.semi_lives.is_empty() {
             return;
@@ -63,6 +87,45 @@ impl World {
         let dt = self.config.dt as f32;
         let world_size = self.config.world_size;
         let n = self.semi_lives.len();
+
+        // --- Pass 0.5: V5 stage transitions ---
+        for sl in self.semi_lives.iter_mut() {
+            if !sl.alive {
+                continue;
+            }
+            if let Some(stage) = sl.stage {
+                sl.stage_ticks = sl.stage_ticks.saturating_add(1);
+                let new_stage = match stage {
+                    SemiLifeStage::Dormant => {
+                        if sl.maintenance_energy > cfg.v5_activation_threshold {
+                            Some(SemiLifeStage::Active)
+                        } else {
+                            None
+                        }
+                    }
+                    SemiLifeStage::Active => {
+                        if sl.stage_ticks >= cfg.v5_dispersal_age {
+                            Some(SemiLifeStage::Dispersal)
+                        } else {
+                            None
+                        }
+                    }
+                    SemiLifeStage::Dispersal => {
+                        if sl.stage_ticks >= cfg.v5_dispersal_duration
+                            || sl.maintenance_energy < 0.2
+                        {
+                            Some(SemiLifeStage::Dormant)
+                        } else {
+                            None
+                        }
+                    }
+                };
+                if let Some(next) = new_stage {
+                    sl.stage = Some(next);
+                    sl.stage_ticks = 0;
+                }
+            }
+        }
 
         // --- Pass 1: Compute positions (immutable scan) ---
         // Stores None for entities whose agent is missing (shouldn't happen in normal operation).
@@ -76,7 +139,109 @@ impl World {
             })
             .collect();
 
+        // --- Pass 1.5: V4 movement (policy-driven chemotaxis) ---
+        for i in 0..n {
+            if !self.semi_lives[i].alive {
+                continue;
+            }
+            let pos = match positions[i] {
+                Some(p) => p,
+                None => continue,
+            };
+            if !self.semi_lives[i]
+                .active_capabilities
+                .has(capability::V4_RESPONSE)
+            {
+                continue;
+            }
+            let policy = match self.semi_lives[i].policy {
+                Some(p) => p,
+                None => continue,
+            };
+
+            // Compute sensory input vector.
+            let cell_size = self.resource_field.cell_size();
+            let res_right = self.resource_field.get(pos[0] + cell_size, pos[1]);
+            let res_left = self.resource_field.get(pos[0] - cell_size, pos[1]);
+            let res_up = self.resource_field.get(pos[0], pos[1] + cell_size);
+            let res_down = self.resource_field.get(pos[0], pos[1] - cell_size);
+            let grad_x = (res_right - res_left).clamp(-1.0, 1.0);
+            let grad_y = (res_up - res_down).clamp(-1.0, 1.0);
+
+            let energy_norm = self.semi_lives[i]
+                .maintenance_energy
+                .clamp(0.0, 1.0);
+            let boundary_norm = self.semi_lives[i]
+                .boundary_integrity
+                .unwrap_or(1.0);
+
+            // Neighbor count: count SemiLife agents nearby (simple O(n) scan; acceptable for
+            // small entity counts; R-tree lookup would be overkill for 10-50 entities).
+            let neighbor_count = self
+                .agents
+                .iter()
+                .filter(|a| {
+                    a.owner_type == OwnerType::SemiLife
+                        && a.organism_id != self.semi_lives[i].id
+                        && {
+                            let dx = (a.position[0] - pos[0]).abs().min(world_size - (a.position[0] - pos[0]).abs());
+                            let dy = (a.position[1] - pos[1]).abs().min(world_size - (a.position[1] - pos[1]).abs());
+                            dx * dx + dy * dy < 25.0 // radius 5.0 squared
+                        }
+                })
+                .count();
+            let neighbor_norm = (neighbor_count as f32 / 8.0).clamp(0.0, 1.0);
+
+            let age_norm = (self.semi_lives[i].age_steps as f32 / 500.0).clamp(0.0, 1.0);
+
+            let input = [
+                grad_x,
+                grad_y,
+                energy_norm,
+                boundary_norm,
+                neighbor_norm,
+                age_norm,
+                0.0,
+                0.0,
+            ];
+
+            // Dot product: policy · input → velocity delta.
+            let dot: f32 = policy.iter().zip(input.iter()).map(|(w, x)| w * x).sum();
+
+            // V5 speed multiplier.
+            let (_, _, speed_mult) = v5_multipliers(&self.semi_lives[i], &cfg);
+            let effective_max_speed = cfg.v4_max_speed * speed_mult;
+
+            // Movement: scale gradient direction by dot product magnitude.
+            let grad_mag = (grad_x * grad_x + grad_y * grad_y).sqrt().max(f32::EPSILON);
+            let speed = dot.clamp(-effective_max_speed, effective_max_speed);
+            let dx = (speed * grad_x / grad_mag) as f64;
+            let dy = (speed * grad_y / grad_mag) as f64;
+
+            // Energy cost of movement.
+            let distance = ((dx * dx + dy * dy) as f32).sqrt();
+            self.semi_lives[i].maintenance_energy -= cfg.v4_move_cost * distance;
+
+            // Apply position change to the entity's agent.
+            if let Some(agent) = self.agents.iter_mut().find(|a| {
+                a.owner_type == OwnerType::SemiLife && a.organism_id == self.semi_lives[i].id
+            }) {
+                agent.position[0] = (agent.position[0] + dx).rem_euclid(world_size);
+                agent.position[1] = (agent.position[1] + dy).rem_euclid(world_size);
+            }
+        }
+
         // --- Pass 2: Energy + capability updates, collect replication candidates ---
+        // Re-read positions after V4 movement.
+        let positions: Vec<Option<[f64; 2]>> = (0..self.semi_lives.len())
+            .map(|i| {
+                let id = self.semi_lives[i].id;
+                self.agents
+                    .iter()
+                    .find(|a| a.owner_type == OwnerType::SemiLife && a.organism_id == id)
+                    .map(|a| a.position)
+            })
+            .collect();
         let mut to_replicate: Vec<usize> = Vec::new();
 
         for (i, pos_opt) in positions.iter().enumerate() {
@@ -120,10 +285,12 @@ impl World {
                 continue;
             }
 
-            // Collect V0 replication candidates.
-            if self.semi_lives[i]
-                .active_capabilities
-                .has(capability::V0_REPLICATION)
+            // Collect V0 replication candidates (V5 replication multiplier gates this).
+            let (_, repl_mult, _) = v5_multipliers(&self.semi_lives[i], &cfg);
+            if repl_mult > 0.0
+                && self.semi_lives[i]
+                    .active_capabilities
+                    .has(capability::V0_REPLICATION)
             {
                 self.semi_lives[i].steps_without_replication = self.semi_lives[i]
                     .steps_without_replication
@@ -168,8 +335,9 @@ impl World {
     ) {
         let sl = &mut semi_lives[i];
 
-        // 1. Maintenance cost.
-        sl.maintenance_energy -= cfg.maintenance_cost * dt;
+        // 1. Maintenance cost (scaled by V5 decay multiplier).
+        let (decay_mult, _, _) = v5_multipliers(sl, cfg);
+        sl.maintenance_energy -= cfg.maintenance_cost * dt * decay_mult;
 
         // 2. V3 — Internal pool → energy conversion.
         if sl.active_capabilities.has(capability::V3_METABOLISM) {
@@ -357,11 +525,22 @@ impl World {
             cfg.internal_pool_init_fraction * cfg.internal_pool_capacity,
         );
         // Inherit the same capability override as the parent so all generations are consistent.
-        // Invariant: capabilities are fixed at spawn and do not mutate during an entity's
-        // lifetime (V0–V3 only). If V4–V5 PRs introduce runtime capability mutation, this
-        // call site must also update optional fields on each step rather than once at spawn.
         child.active_capabilities = resolve_capabilities(parent_archetype, cfg);
         apply_capability_fields(&mut child, cfg);
+
+        // V4: Inherit parent policy with Gaussian mutation noise.
+        if let Some(parent_policy) = self.semi_lives[parent_idx].policy {
+            let mut child_policy = parent_policy;
+            for w in child_policy.iter_mut() {
+                // Box-Muller transform for Gaussian noise (avoids rand_distr dependency).
+                let u1: f32 = child.rng.random::<f32>().max(f32::EPSILON);
+                let u2: f32 = child.rng.random::<f32>();
+                let z = (-2.0 * u1.ln()).sqrt() * (2.0 * std::f32::consts::PI * u2).cos();
+                *w += z * cfg.v4_mutation_sigma;
+            }
+            child.policy = Some(child_policy);
+        }
+
         child.agent_ids.push(agent_id);
         self.semi_lives.push(child);
 
@@ -486,9 +665,6 @@ impl World {
                     cfg.internal_pool_init_fraction * cfg.internal_pool_capacity,
                 );
                 // Apply capability override (if any) and re-gate optional fields.
-                // Invariant: capabilities are fixed at spawn (V0–V3 only). If V4–V5 PRs
-                // introduce runtime capability mutation, optional fields must also be
-                // updated on each step rather than once at spawn.
                 sl.active_capabilities = resolve_capabilities(archetype, &cfg);
                 apply_capability_fields(&mut sl, &cfg);
                 sl.agent_ids.push(agent_id);
