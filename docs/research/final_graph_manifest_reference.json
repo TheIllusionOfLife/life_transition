@@ -1,5 +1,5 @@
 {
-  "schema_version": 3,
+  "schema_version": 2,
   "experiment_name": "semi_life_capability_ladder",
   "source_git_commit": "5314e9c",
   "source_generated_at_utc": "2026-02-26T00:00:00Z",
