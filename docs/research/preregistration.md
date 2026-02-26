@@ -44,6 +44,35 @@ adding V0 "liberates" the replication capability already latent in V1+V2+V3.
 effect predicted in scarce where marginal capability gains matter most
 **Test**: Jonckheere-Terpstra trend test, α = 0.05
 
+### H5: V4 (response to stimuli) improves survival over V3-only in sparse/scarce (Viroid)
+
+**Comparison**: Viroid V0+V1+V2+V3+V4 vs. Viroid V0+V1+V2+V3
+**Environments**: all 4 harshness levels (rich/medium/sparse/scarce)
+**Direction**: V4 produces *more* alive entities at step 500; strongest effect predicted in
+sparse + scarce where chemotaxis toward resource gradients matters most
+**Rationale**: Response to stimuli (V4) enables gradient-following movement, allowing entities
+to locate and exploit resource-rich patches rather than relying on passive resource uptake at
+their current location.
+**Test**: Mann-Whitney U, two-tailed, α = 0.05
+
+### H6: V5 (staged lifecycle) improves survival over V4 in sparse/scarce (Viroid)
+
+**Comparison**: Viroid V0+V1+V2+V3+V4+V5 vs. Viroid V0+V1+V2+V3+V4
+**Environments**: all 4 harshness levels (rich/medium/sparse/scarce)
+**Direction**: V5 produces *more* alive entities at step 500; strongest effect predicted in
+sparse + scarce where the dormancy energy-conservation strategy matters most
+**Rationale**: Staged lifecycle (V5) enables dormancy during energy scarcity and dispersal
+for resource prospecting, providing survival advantages over purely active entities.
+**Test**: Mann-Whitney U, two-tailed, α = 0.05
+
+### H7: Monotonic trend V0→V5 across harshness levels (Jonckheere-Terpstra)
+
+**Groups**: Viroid V0 | V0+V1 | V0+V1+V2 | V0+V1+V2+V3 | V0+V1+V2+V3+V4 | V0+V1+V2+V3+V4+V5
+**Environments**: all 4 harshness levels (rich/medium/sparse/scarce)
+**Direction**: Alive count at step 500 increases monotonically across all 6 V-levels;
+extends H4 with the full capability ladder
+**Test**: Jonckheere-Terpstra trend test, α = 0.05
+
 ---
 
 ## Statistical Plan
@@ -52,9 +81,9 @@ effect predicted in scarce where marginal capability gains matter most
 - **Effect size**: Cliff's δ (thresholds: |δ| < 0.147 negligible, < 0.33 small,
   < 0.474 medium, ≥ 0.474 large)
 - **Bootstrap CIs**: 2000 resamples, 95% percentile interval
-- **Multiple comparisons**: Holm-Bonferroni correction across all 16 pre-registered tests
-  (H1 × 4 harshness + H2 × 4 harshness + H3 × 4 harshness + H4 × 4 harshness = 16)
-- **Trend test**: Jonckheere-Terpstra for H4 (ordered groups, included in 16-test family)
+- **Multiple comparisons**: Holm-Bonferroni correction across all 28 pre-registered tests
+  (H1 × 4 + H2 × 4 + H3 × 4 + H4 × 4 + H5 × 4 + H6 × 4 + H7 × 4 = 28)
+- **Trend test**: Jonckheere-Terpstra for H4 and H7 (ordered groups, included in 28-test family)
 - **Exploratory analyses**: clearly labeled "EXPLORATORY" in all output and manuscript sections
 
 > **Amendment (2026-02-27, before test-seed data collection)**: H2 scope expanded from
@@ -62,6 +91,11 @@ effect predicted in scarce where marginal capability gains matter most
 > harshness levels. Both changes were made for Holm-Bonferroni family consistency (16 tests
 > total) and before any test-seed (100–199) data was collected. Directional predictions
 > remain as stated above.
+
+> **Amendment 2 (2026-02-27, before V4/V5 test-seed data collection)**: Added H5–H7 for V4
+> (response to stimuli) and V5 (staged lifecycle) capabilities. Holm-Bonferroni family expanded
+> from 16 to 28 tests. H5 and H6 use Mann-Whitney U; H7 extends H4's JT trend test to the full
+> V0→V5 ladder. All amendments made before any V4/V5 test-seed (100–199) data was collected.
 
 ---
 
@@ -81,6 +115,10 @@ effect predicted in scarce where marginal capability gains matter most
 
 - Sham controls (compute capability but no state effect) are NOT expected to differ from
   capability-absent conditions — if they do, flag as anomaly before writing results.
+  This applies to V4 sham (computes policy + deducts energy but does not move) and
+  V5 sham (tracks stage transitions but applies no behavioral multipliers).
 - V1 boundary *benefit* in *rich* environments (resource_initial_value = 1.0) is exploratory
   only — we pre-register no direction for this comparison.
-- Recovery advantage of V3 over V0 under shocks is exploratory — not in H1–H4 family.
+- Recovery advantage of V3 over V0 under shocks is exploratory — not in H1–H7 family.
+- V4/V5 survival advantage in *rich* environments is exploratory only — gradient-following
+  and lifecycle staging are predicted to matter primarily in resource-scarce conditions.
