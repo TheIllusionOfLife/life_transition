@@ -16,13 +16,8 @@ DEFAULT_PAPER = PROJECT_ROOT / "paper" / "main.tex"
 DEFAULT_MANIFEST = PROJECT_ROOT / "docs" / "research" / "final_graph_manifest_reference.json"
 DEFAULT_BINDINGS = PROJECT_ROOT / "docs" / "research" / "result_manifest_bindings.json"
 EXPERIMENT_SCRIPTS = [
-    PROJECT_ROOT / "scripts" / "experiment_final_graph.py",
-    PROJECT_ROOT / "scripts" / "experiment_pairwise.py",
-    PROJECT_ROOT / "scripts" / "experiment_cyclic.py",
-    PROJECT_ROOT / "scripts" / "experiment_evolution.py",
-    PROJECT_ROOT / "scripts" / "experiment_midrun_ablation.py",
-    PROJECT_ROOT / "scripts" / "experiment_invariance.py",
-    PROJECT_ROOT / "scripts" / "experiment_ecology_stress.py",
+    PROJECT_ROOT / "scripts" / "experiment_semi_life_v1v3.py",
+    PROJECT_ROOT / "scripts" / "experiment_semi_life_shocks.py",
 ]
 
 
@@ -38,7 +33,7 @@ def _read_json(path: Path) -> dict:
 
 def _extract_reported_timing(tex: str) -> tuple[int | None, int | None]:
     pattern = re.compile(
-        r"runs for\s+(\d+)\s+timesteps\s+with\s+population\s+sampled\s+every\s+(\d+)",
+        r"(\d+)\s*~?\s*timesteps\s*[,;\s]\s*(?:with\s+population\s+)?sampl(?:ed|ing)\s+every\s+(\d+)",
         re.IGNORECASE | re.DOTALL,
     )
     m = pattern.search(tex)

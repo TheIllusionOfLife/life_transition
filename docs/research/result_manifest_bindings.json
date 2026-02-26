@@ -1,88 +1,56 @@
 {
-  "version": 1,
+  "version": 2,
   "bindings": [
     {
-      "result_id": "ablation_primary",
-      "paper_ref": "tab:ablation",
-      "manifest": "experiments/final_graph_manifest.json",
+      "result_id": "semi_life_phase_diagram",
+      "paper_ref": "fig:phase",
+      "manifest": "experiments/semi_life_capability_stats.json",
       "source_files": [
-        "experiments/final_graph_statistics.json",
-        "experiments/final_graph_data.tsv"
+        "experiments/semi_life_v1v3_test.tsv",
+        "paper/figures/fig_semi_life_phase_diagram.pdf"
       ],
-      "notes": "Primary criterion-ablation significance table."
+      "notes": "Phase diagram: capability level x harshness -> mean alive count."
     },
     {
-      "result_id": "coupling_main",
-      "paper_ref": "fig:coupling",
-      "manifest": "experiments/final_graph_manifest.json",
+      "result_id": "semi_life_internalization",
+      "paper_ref": "fig:ii",
+      "manifest": "experiments/semi_life_capability_stats.json",
       "source_files": [
-        "experiments/coupling_analysis.json",
-        "experiments/final_graph_normal.json"
+        "experiments/semi_life_v1v3_test.tsv",
+        "paper/figures/fig_semi_life_internalization.pdf"
       ],
-      "notes": "Directed coupling evidence and graph summary."
+      "notes": "InternalizationIndex vs capability level."
     },
     {
-      "result_id": "evolution_evidence",
-      "paper_ref": "fig:evolution",
-      "manifest": "experiments/evolution_long_manifest.json",
+      "result_id": "semi_life_tradeoffs",
+      "paper_ref": "fig:tradeoff",
+      "manifest": "experiments/semi_life_capability_stats.json",
       "source_files": [
-        "experiments/evolution_evidence.json",
-        "experiments/evolution_long_normal.json",
-        "experiments/evolution_long_no_evolution.json"
+        "experiments/semi_life_v1v3_test.tsv",
+        "paper/figures/fig_semi_life_tradeoffs.pdf"
       ],
-      "notes": "Long-horizon evolution comparison and evidence synthesis."
+      "notes": "Replication-persistence tradeoff scatter."
     },
     {
-      "result_id": "phenotype_persistence",
-      "paper_ref": "fig:persistent_clusters",
-      "manifest": "experiments/evolution_long_manifest.json",
+      "result_id": "semi_life_recovery",
+      "paper_ref": "fig:recovery",
+      "manifest": "experiments/semi_life_shock_stats.json",
       "source_files": [
-        "experiments/phenotype_analysis.json",
-        "experiments/niche_normal.json",
-        "experiments/niche_normal_long.json",
-        "docs/research/zenodo_niche_long_horizon_metadata.json"
+        "experiments/semi_life_shocks.tsv",
+        "experiments/semi_life_v1v3_test.tsv",
+        "paper/figures/fig_semi_life_recovery.pdf"
       ],
-      "notes": "Ecological persistence and long-horizon sensitivity (raw long-run artifacts tracked via Zenodo metadata/checksums)."
+      "notes": "Shock recovery time series (exploratory)."
     },
     {
-      "result_id": "pairwise_interaction",
-      "paper_ref": "tab:intervention",
-      "manifest": "experiments/pairwise_graph_manifest.json",
+      "result_id": "semi_life_hypothesis_tests",
+      "paper_ref": "tab:stats",
+      "manifest": "experiments/semi_life_capability_stats.json",
       "source_files": [
-        "experiments/pairwise_graph_data.tsv",
-        "experiments/pairwise_graph_statistics.json"
+        "experiments/semi_life_v1v3_test.tsv",
+        "experiments/semi_life_capability_stats.json"
       ],
-      "notes": "Pairwise intervention interaction summary."
-    },
-    {
-      "result_id": "midrun_ablation",
-      "paper_ref": "fig:protocol_extensions",
-      "manifest": "experiments/midrun_ablation_manifest.json",
-      "source_files": [
-        "experiments/midrun_ablation_data.tsv",
-        "experiments/midrun_ablation_statistics.json"
-      ],
-      "notes": "Step-0 versus delayed-ablation robustness protocol."
-    },
-    {
-      "result_id": "implementation_invariance",
-      "paper_ref": "fig:protocol_extensions",
-      "manifest": "experiments/invariance_manifest.json",
-      "source_files": [
-        "experiments/invariance_data.tsv",
-        "experiments/invariance_statistics.json"
-      ],
-      "notes": "Boundary/homeostasis implementation-invariance protocol."
-    },
-    {
-      "result_id": "ecology_stress",
-      "paper_ref": "fig:ecology_stress",
-      "manifest": "experiments/ecology_stress_manifest.json",
-      "source_files": [
-        "experiments/ecology_stress_data.tsv",
-        "experiments/ecology_stress_statistics.json"
-      ],
-      "notes": "Temporal ecology stress protocol with evolution comparison."
+      "notes": "Pre-registered H1-H4 hypothesis test results table."
     }
   ]
 }
