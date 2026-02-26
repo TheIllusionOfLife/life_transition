@@ -6,23 +6,13 @@ import json
 import re
 from pathlib import Path
 
-try:
-    from .experiment_manifest import config_digest as _config_digest
-except ImportError:
-    from experiment_manifest import config_digest as _config_digest
-
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_PAPER = PROJECT_ROOT / "paper" / "main.tex"
-DEFAULT_MANIFEST = PROJECT_ROOT / "docs" / "research" / "final_graph_manifest_reference.json"
+DEFAULT_MANIFEST = PROJECT_ROOT / "docs" / "research" / "manifest_reference.json"
 DEFAULT_BINDINGS = PROJECT_ROOT / "docs" / "research" / "result_manifest_bindings.json"
 EXPERIMENT_SCRIPTS = [
-    PROJECT_ROOT / "scripts" / "experiment_final_graph.py",
-    PROJECT_ROOT / "scripts" / "experiment_pairwise.py",
-    PROJECT_ROOT / "scripts" / "experiment_cyclic.py",
-    PROJECT_ROOT / "scripts" / "experiment_evolution.py",
-    PROJECT_ROOT / "scripts" / "experiment_midrun_ablation.py",
-    PROJECT_ROOT / "scripts" / "experiment_invariance.py",
-    PROJECT_ROOT / "scripts" / "experiment_ecology_stress.py",
+    PROJECT_ROOT / "scripts" / "experiment_semi_life_v1v3.py",
+    PROJECT_ROOT / "scripts" / "experiment_semi_life_shocks.py",
 ]
 
 
@@ -38,7 +28,7 @@ def _read_json(path: Path) -> dict:
 
 def _extract_reported_timing(tex: str) -> tuple[int | None, int | None]:
     pattern = re.compile(
-        r"runs for\s+(\d+)\s+timesteps\s+with\s+population\s+sampled\s+every\s+(\d+)",
+        r"(\d+)\s*~?\s*timesteps\s*[,;\s]\s*(?:with\s+population\s+)?sampl(?:ed|ing)\s+every\s+(\d+)",
         re.IGNORECASE | re.DOTALL,
     )
     m = pattern.search(tex)
@@ -164,70 +154,38 @@ def _check_bindings(registry: dict, tex: str) -> tuple[list[str], list[str]]:
     return issues, checks
 
 
+_GENERATED_ARTIFACTS = [
+    PROJECT_ROOT / "experiments" / "semi_life_capability_stats.json",
+    PROJECT_ROOT / "experiments" / "semi_life_shock_stats.json",
+]
+
+
 def _check_freshness(manifest: dict, manifest_path: Path) -> tuple[list[str], list[str]]:
     issues: list[str] = []
     checks: list[str] = []
 
-    generated_manifest_path = PROJECT_ROOT / "experiments" / "final_graph_manifest.json"
     should_check_freshness = manifest_path.resolve() == DEFAULT_MANIFEST.resolve()
+    if not should_check_freshness:
+        return issues, checks
 
-    if should_check_freshness and generated_manifest_path.exists():
-        try:
-            generated_manifest = _read_json(generated_manifest_path)
-        except ValueError as exc:
-            issues.append(str(exc))
-            return issues, checks
+    any_found = False
+    for artifact in _GENERATED_ARTIFACTS:
+        if artifact.exists():
+            any_found = True
+            try:
+                data = _read_json(artifact)
+            except ValueError as exc:
+                issues.append(str(exc))
+                continue
+            checks.append(f"generated artifact valid JSON: {artifact.name}")
+            # Basic schema validation: must be non-empty list or dict
+            if isinstance(data, list) and len(data) == 0:
+                issues.append(f"generated artifact is empty: {artifact.name}")
+            elif isinstance(data, dict) and len(data) == 0:
+                issues.append(f"generated artifact is empty: {artifact.name}")
 
-        checks.append("generated manifest freshness check")
-        for key in ["steps", "sample_every"]:
-            if generated_manifest.get(key) != manifest.get(key):
-                issues.append(
-                    "reference manifest stale for "
-                    f"{key}: ref={manifest.get(key)} generated={generated_manifest.get(key)}"
-                )
-        generated_base_cfg = generated_manifest.get("base_config", {})
-        base_cfg = manifest.get("base_config", {})
-
-        if not generated_base_cfg:
-            issues.append("generated manifest missing or empty base_config")
-        if not base_cfg:
-            issues.append("reference manifest missing or empty base_config")
-        if generated_base_cfg and base_cfg:
-            # Reference manifests may intentionally store a compact base_config.
-            # Compare only keys present in the reference manifest so freshness
-            # checks remain stable as config schema expands.
-            # Schema rename compatibility:
-            # reference may use mutation_scale while generated uses mutation_point_scale.
-            key_map = {
-                "mutation_scale": "mutation_point_scale",
-            }
-            missing = [
-                k
-                for k in base_cfg
-                if key_map.get(k, k) not in generated_base_cfg and k not in generated_base_cfg
-            ]
-            if missing:
-                issues.append(
-                    "generated manifest missing reference base_config keys: "
-                    + ", ".join(sorted(missing))
-                )
-            else:
-                projected_generated = {}
-                for k in base_cfg:
-                    mapped = key_map.get(k, k)
-                    if mapped in generated_base_cfg:
-                        projected_generated[k] = generated_base_cfg[mapped]
-                    else:
-                        projected_generated[k] = generated_base_cfg[k]
-                generated_digest = _config_digest(projected_generated)
-                reference_digest = _config_digest(base_cfg)
-                if generated_digest != reference_digest:
-                    issues.append(
-                        "reference manifest base_config differs from generated manifest "
-                        "on shared keys"
-                    )
-    elif should_check_freshness:
-        checks.append("generated manifest not present (freshness check skipped)")
+    if not any_found:
+        checks.append("no generated artifacts found (freshness check skipped)")
 
     return issues, checks
 

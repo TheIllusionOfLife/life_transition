@@ -1,11 +1,14 @@
-.PHONY: all figures paper clean
+.PHONY: all figures semi_life_figures paper clean
 
-all: figures paper
+all: semi_life_figures paper
 
 figures:
 	cd .. && uv run python scripts/generate_figures.py
 
-paper: figures
+semi_life_figures:
+	cd .. && uv run python scripts/generate_semi_life_figures.py
+
+paper: semi_life_figures
 	tectonic main.tex
 
 clean:
