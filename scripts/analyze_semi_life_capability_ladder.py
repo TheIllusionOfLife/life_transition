@@ -214,6 +214,12 @@ def analyze_h4(rows: list[dict]) -> list[dict]:
     return results
 
 
+_ENERGY_COMPARISONS: list[tuple[str, str, str]] = [
+    ("H1_energy", "viroid_v0", "viroid_v0v1"),
+    ("H2_energy", "viroid_v0v1v2v3", "viroid_v0v1v2"),
+]
+
+
 def analyze_mean_energy_supplement(rows: list[dict]) -> list[dict]:
     """Exploratory: H1/H2 comparisons using mean_energy instead of alive count.
 
@@ -222,37 +228,21 @@ def analyze_mean_energy_supplement(rows: list[dict]) -> list[dict]:
     """
     results = []
     for harshness in RESOURCE_INITIAL_VALUES:
-        # H1_energy: V0 vs V0+V1 (mean_energy)
-        a = get_mean_energy_at_final(rows, "viroid_v0", harshness)
-        b = get_mean_energy_at_final(rows, "viroid_v0v1", harshness)
-        result = run_mannwhitney(a, b)
-        result.update(
-            {
-                "hypothesis": "H1_energy",
-                "archetype": "viroid",
-                "harshness": harshness,
-                "comparison": "viroid_v0 vs viroid_v0v1",
-                "metric": "mean_energy",
-                "analysis_type": "exploratory",
-            }
-        )
-        results.append(result)
-
-        # H2_energy: V0+V1+V2+V3 vs V0+V1+V2 (mean_energy)
-        a = get_mean_energy_at_final(rows, "viroid_v0v1v2v3", harshness)
-        b = get_mean_energy_at_final(rows, "viroid_v0v1v2", harshness)
-        result = run_mannwhitney(a, b)
-        result.update(
-            {
-                "hypothesis": "H2_energy",
-                "archetype": "viroid",
-                "harshness": harshness,
-                "comparison": "viroid_v0v1v2v3 vs viroid_v0v1v2",
-                "metric": "mean_energy",
-                "analysis_type": "exploratory",
-            }
-        )
-        results.append(result)
+        for hypothesis, cond_a, cond_b in _ENERGY_COMPARISONS:
+            a = get_mean_energy_at_final(rows, cond_a, harshness)
+            b = get_mean_energy_at_final(rows, cond_b, harshness)
+            result = run_mannwhitney(a, b)
+            result.update(
+                {
+                    "hypothesis": hypothesis,
+                    "archetype": "viroid",
+                    "harshness": harshness,
+                    "comparison": f"{cond_a} vs {cond_b}",
+                    "metric": "mean_energy",
+                    "analysis_type": "exploratory",
+                }
+            )
+            results.append(result)
     return results
 
 
