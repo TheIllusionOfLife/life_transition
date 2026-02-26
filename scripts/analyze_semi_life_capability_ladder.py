@@ -337,9 +337,24 @@ def analyze_mean_energy_supplement(rows: list[dict]) -> list[dict]:
     return results
 
 
+_EXPECTED_PREREGISTERED_TESTS = 28  # H1–H7 × 4 harshness levels
+
+
 def apply_holm_bonferroni(all_results: list[dict]) -> list[dict]:
-    """Apply Holm-Bonferroni correction across all 28 pre-registered tests."""
+    """Apply Holm-Bonferroni correction across all 28 pre-registered tests.
+
+    Raises ValueError if the number of valid p-values differs from the
+    pre-registered family size (28), which would silently weaken the correction.
+    """
     with_p = [r for r in all_results if r.get("p_raw") is not None]
+    if 0 < len(with_p) != _EXPECTED_PREREGISTERED_TESTS:
+        raise ValueError(
+            f"Expected {_EXPECTED_PREREGISTERED_TESTS} pre-registered tests with valid "
+            f"p-values, got {len(with_p)}. Missing tests would silently weaken "
+            f"Holm-Bonferroni correction."
+        )
+    if len(with_p) == 0:
+        return all_results
     p_values = [r["p_raw"] for r in with_p]
     corrected = holm_bonferroni(p_values)
     for result, p_corr in zip(with_p, corrected, strict=True):
