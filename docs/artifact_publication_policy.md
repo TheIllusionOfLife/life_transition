@@ -112,7 +112,7 @@ uv run python scripts/upload_zenodo.py \
 3. Fill `\author{}` with real names + affiliations
 4. Fill `[ANONYMOUS]` with GitHub repo URL
 5. Update `.zenodo.json` with real author names
-6. Final commit on main
+6. Create PR with camera-ready changes, merge to main
 7. `git tag v1.0 && git push origin v1.0`
 8. `gh release create v1.0 --title "ALIFE 2026"`
 9. Verify code record at zenodo.org
