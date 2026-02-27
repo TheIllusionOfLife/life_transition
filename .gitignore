@@ -28,6 +28,7 @@ build/
 /experiments/*.tsv
 /experiments/*.gz
 /experiments/*.txt
+/experiments/*.log
 /experiments/logs/
 /experiments/*_part_*.json
 # Keep manifest-bound source artifacts trackable.
@@ -46,6 +47,9 @@ paper/*.blg
 paper/*.log
 paper/*.out
 paper/*.synctex.gz
+
+# Zenodo staging (archives for upload, not tracked)
+zenodo_staging/
 
 # IDE/editor
 .idea/

@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "generated_at_utc": "2026-02-27T03:24:25.030147+00:00",
+  "experiment_name": "semi_life_capability_ladder",
+  "artifact_source_commit": "351d3db426cbe266a5b1db05a7196c18e5db2172",
+  "entrypoint": null,
+  "metadata_generation_argv": [
+    "zenodo_staging/semi_life_calibration_data.tar.gz",
+    "zenodo_staging/semi_life_capability_data.tar.gz",
+    "zenodo_staging/semi_life_shock_data.tar.gz",
+    "--experiment-name",
+    "semi_life_capability_ladder",
+    "--steps",
+    "500",
+    "--seed-start",
+    "100",
+    "--seed-end",
+    "199",
+    "--paper-binding",
+    "fig:phase=experiments/semi_life_v1v5_test.tsv",
+    "--paper-binding",
+    "fig:ii=experiments/semi_life_v1v5_test.tsv",
+    "--paper-binding",
+    "fig:tradeoff=experiments/semi_life_v1v5_test.tsv",
+    "--paper-binding",
+    "fig:recovery=experiments/semi_life_shocks.tsv",
+    "--paper-binding",
+    "tab:stats=experiments/semi_life_capability_stats.json",
+    "--paper-binding",
+    "sec:results-energy=experiments/semi_life_mean_energy_supplement.json",
+    "--output",
+    "docs/zenodo_metadata.json"
+  ],
+  "seed_range": {
+    "start": 100,
+    "end": 199
+  },
+  "steps": 500,
+  "artifacts": [
+    {
+      "path": "zenodo_staging/semi_life_calibration_data.tar.gz",
+      "size_bytes": 991,
+      "sha256": "84b5879564683eea763e9b6373473ccef7f8deafbe95fc75f314266a04290208"
+    },
+    {
+      "path": "zenodo_staging/semi_life_capability_data.tar.gz",
+      "size_bytes": 455873,
+      "sha256": "581e4e010abac983c214897c7abe27ef89b4caf6f175da0d7486b7bd3ad9a694"
+    },
+    {
+      "path": "zenodo_staging/semi_life_shock_data.tar.gz",
+      "size_bytes": 114143,
+      "sha256": "642028f8a89406e89de427ae87210396d8629edf1486947e7aacdde2b65e87a1"
+    }
+  ],
+  "paper_bindings": [
+    {
+      "paper_ref": "fig:phase",
+      "file_path": "experiments/semi_life_v1v5_test.tsv"
+    },
+    {
+      "paper_ref": "fig:ii",
+      "file_path": "experiments/semi_life_v1v5_test.tsv"
+    },
+    {
+      "paper_ref": "fig:tradeoff",
+      "file_path": "experiments/semi_life_v1v5_test.tsv"
+    },
+    {
+      "paper_ref": "fig:recovery",
+      "file_path": "experiments/semi_life_shocks.tsv"
+    },
+    {
+      "paper_ref": "tab:stats",
+      "file_path": "experiments/semi_life_capability_stats.json"
+    },
+    {
+      "paper_ref": "sec:results-energy",
+      "file_path": "experiments/semi_life_mean_energy_supplement.json"
+    }
+  ]
+}
