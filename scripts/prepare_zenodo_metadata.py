@@ -56,15 +56,21 @@ def _parse_binding(raw: str) -> dict[str, str]:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("files", type=Path, nargs="+")
-    parser.add_argument("--experiment-name", required=True)
-    parser.add_argument("--steps", type=int, required=True)
-    parser.add_argument("--seed-start", type=int, required=True)
-    parser.add_argument("--seed-end", type=int, required=True)
-    parser.add_argument("--entrypoint", default=None)
-    parser.add_argument("--paper-binding", action="append", default=[])
-    parser.add_argument("--zenodo-doi", default=None)
-    parser.add_argument("--output", type=Path, default=Path("zenodo_metadata.json"))
+    parser.add_argument("files", type=Path, nargs="+", help="artifact files to include")
+    parser.add_argument("--experiment-name", required=True, help="name of the experiment")
+    parser.add_argument(
+        "--steps", type=int, required=True, help="simulation timesteps (>0)",
+    )
+    parser.add_argument("--seed-start", type=int, required=True, help="first seed")
+    parser.add_argument("--seed-end", type=int, required=True, help="last seed")
+    parser.add_argument("--entrypoint", default=None, help="experiment command")
+    parser.add_argument(
+        "--paper-binding", action="append", default=[], help="REF=PATH binding",
+    )
+    parser.add_argument("--zenodo-doi", default=None, help="pre-reserved DOI")
+    parser.add_argument(
+        "--output", type=Path, default=Path("zenodo_metadata.json"), help="output path",
+    )
     args = parser.parse_args()
     if args.steps <= 0:
         parser.error("--steps must be positive")

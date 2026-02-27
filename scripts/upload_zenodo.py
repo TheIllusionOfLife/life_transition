@@ -62,7 +62,7 @@ def _check_response(resp: requests.Response, context: str) -> None:
         print(f"ERROR [{context}]: {resp.status_code}", file=sys.stderr)
         try:
             print(json.dumps(resp.json(), indent=2), file=sys.stderr)
-        except ValueError:
+        except requests.exceptions.JSONDecodeError:
             print(resp.text[:500], file=sys.stderr)
         sys.exit(1)
 
@@ -273,17 +273,29 @@ def _load_and_verify(args: argparse.Namespace, meta: dict) -> list[Path]:
         print("ERROR: no artifacts in metadata.", file=sys.stderr)
         sys.exit(1)
     paths: list[Path] = []
+    seen_basenames: dict[str, Path] = {}
     for entry in artifacts:
         p = Path(entry["path"])
+        if p.name in seen_basenames:
+            print(
+                f"ERROR: duplicate basename '{p.name}': "
+                f"{seen_basenames[p.name]} and {p}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        seen_basenames[p.name] = p
         if not p.exists():
             print(f"ERROR: not found: {p}", file=sys.stderr)
             sys.exit(1)
         if not args.no_verify_checksums:
-            local = _sha256(p)
-            expected = entry.get("sha256", "")
-            if local != expected:
-                print(f"ERROR: checksum mismatch: {p}", file=sys.stderr)
-                sys.exit(1)
+            expected = entry.get("sha256")
+            if expected:
+                local = _sha256(p)
+                if local != expected:
+                    print(f"ERROR: checksum mismatch: {p}", file=sys.stderr)
+                    sys.exit(1)
+            else:
+                print(f"WARNING: no sha256 for {p}, skipping checksum verify", file=sys.stderr)
         paths.append(p)
     return paths
 

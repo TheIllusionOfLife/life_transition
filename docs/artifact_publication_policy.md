@@ -95,7 +95,14 @@ uv run python scripts/upload_zenodo.py \
 ```bash
 uv run python scripts/upload_zenodo.py \
   --metadata docs/zenodo_metadata.json \
-  ... --publish
+  --title "Semi-Life Capability Ladder: Experiment Data" \
+  --description "Raw TSV data, statistical JSON outputs, and calibration data" \
+  --creator "Last, First; Affiliation; ORCID" \
+  --version v1.0 \
+  --keyword "artificial life" --keyword "semi-life" \
+  --conference-title "ALIFE 2026" \
+  --language eng \
+  --publish
 ```
 
 ## Submission Sequence (post-acceptance)
