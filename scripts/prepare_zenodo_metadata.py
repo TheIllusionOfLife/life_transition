@@ -54,7 +54,7 @@ def _parse_binding(raw: str) -> dict[str, str]:
     return {"paper_ref": ref, "file_path": path}
 
 
-def main() -> int:
+def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("files", type=Path, nargs="+")
     parser.add_argument("--experiment-name", required=True)
@@ -66,7 +66,15 @@ def main() -> int:
     parser.add_argument("--zenodo-doi", default=None)
     parser.add_argument("--output", type=Path, default=Path("zenodo_metadata.json"))
     args = parser.parse_args()
+    if args.steps <= 0:
+        parser.error("--steps must be positive")
+    if args.seed_start > args.seed_end:
+        parser.error("--seed-start must be <= --seed-end")
+    return args
 
+
+def build_metadata(args: argparse.Namespace) -> dict:
+    """Build metadata payload from parsed args (testable without I/O)."""
     artifacts = []
     for path in sorted(args.files):
         resolved = path.resolve()
@@ -78,7 +86,7 @@ def main() -> int:
             "sha256": _sha256(resolved),
         })
 
-    payload = {
+    payload: dict = {
         "schema_version": 1,
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "experiment_name": args.experiment_name,
@@ -93,6 +101,12 @@ def main() -> int:
     }
     if args.zenodo_doi:
         payload["zenodo_doi"] = args.zenodo_doi
+    return payload
+
+
+def main() -> int:
+    args = parse_args()
+    payload = build_metadata(args)
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with open(args.output, "w") as f:
