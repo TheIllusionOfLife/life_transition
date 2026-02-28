@@ -47,9 +47,9 @@ SWEEP_PARAMS: list[tuple[str, str, float]] = [
     ("overconsumption_waste_fraction", "overconsumption_waste_fraction", 0.3),
     ("regulator_cost_per_step", "regulator_cost_per_step", 0.0005),
     ("internal_conversion_rate", "internal_conversion_rate", 0.05),
-    ("v4_move_cost", "v4_move_cost", 0.01),
-    ("v5_dormant_decay_mult", "v5_dormant_decay_mult", 0.3),
 ]
+# Note: v4_move_cost and v5_dormant_decay_mult are excluded because the sweep
+# runs V0+V1+V2+V3 only (CAPABILITY_BITS above); V4/V5 are inactive.
 
 MULTIPLIERS = [0.5, 0.75, 1.0, 1.5, 2.0]
 

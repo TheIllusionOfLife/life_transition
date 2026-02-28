@@ -1,7 +1,7 @@
 """Statistical analysis of the SemiLife capability ladder experiment.
 
 Reads the test-seed TSV (experiment_semi_life_v1v3.py, seeds 100–199) and
-runs pre-registered hypothesis tests H1–H7.
+runs pre-registered hypothesis tests H1–H8.
 
 Usage:
     uv run python scripts/analyze_semi_life_capability_ladder.py \\

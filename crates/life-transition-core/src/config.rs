@@ -505,6 +505,14 @@ define_sim_config_error! {
     InvalidSemiLifePrionContactRadius => "semi_life_config.prion_contact_radius must be finite and non-negative";
     InvalidResourceInitialValue => "resource_initial_value must be finite and non-negative";
     InvalidSemiLifeCapabilityOverride => "semi_life_config.capability_overrides: bitmask bits above V5 (0x3F) are reserved";
+    InvalidSemiLifeEnergyLeakageRate => "semi_life_config.energy_leakage_rate must be finite and non-negative";
+    InvalidSemiLifeEnvDamageProbability => "semi_life_config.env_damage_probability must be finite and non-negative";
+    InvalidSemiLifeEnvDamageAmount => "semi_life_config.env_damage_amount must be finite and non-negative";
+    InvalidSemiLifeBoundaryDamageAbsorption => "semi_life_config.boundary_damage_absorption must be finite and within [0, 1]";
+    InvalidSemiLifeBoundaryDamageIntegrityCost => "semi_life_config.boundary_damage_integrity_cost must be finite and non-negative";
+    InvalidSemiLifeOverconsumptionWasteFraction => "semi_life_config.overconsumption_waste_fraction must be finite and within [0, 1]";
+    InvalidSemiLifeOptimalUptakeRate => "semi_life_config.optimal_uptake_rate must be finite and non-negative";
+    InvalidSemiLifeRegulatorInit => "semi_life_config.regulator_init must be finite and within [0, 1.25]";
 }
 
 impl std::error::Error for SimConfigError {}
@@ -816,6 +824,44 @@ impl SimConfig {
         }
         if !(cfg.prion_contact_radius.is_finite() && cfg.prion_contact_radius >= 0.0) {
             return Err(SimConfigError::InvalidSemiLifePrionContactRadius);
+        }
+        // V1 protective-benefit parameters.
+        if !(cfg.energy_leakage_rate.is_finite() && cfg.energy_leakage_rate >= 0.0) {
+            return Err(SimConfigError::InvalidSemiLifeEnergyLeakageRate);
+        }
+        if !(cfg.env_damage_probability.is_finite() && cfg.env_damage_probability >= 0.0) {
+            return Err(SimConfigError::InvalidSemiLifeEnvDamageProbability);
+        }
+        if !(cfg.env_damage_amount.is_finite() && cfg.env_damage_amount >= 0.0) {
+            return Err(SimConfigError::InvalidSemiLifeEnvDamageAmount);
+        }
+        if !(cfg.boundary_damage_absorption.is_finite()
+            && cfg.boundary_damage_absorption >= 0.0
+            && cfg.boundary_damage_absorption <= 1.0)
+        {
+            return Err(SimConfigError::InvalidSemiLifeBoundaryDamageAbsorption);
+        }
+        if !(cfg.boundary_damage_integrity_cost.is_finite()
+            && cfg.boundary_damage_integrity_cost >= 0.0)
+        {
+            return Err(SimConfigError::InvalidSemiLifeBoundaryDamageIntegrityCost);
+        }
+        // V2 overconsumption parameters.
+        if !(cfg.overconsumption_waste_fraction.is_finite()
+            && cfg.overconsumption_waste_fraction >= 0.0
+            && cfg.overconsumption_waste_fraction <= 1.0)
+        {
+            return Err(SimConfigError::InvalidSemiLifeOverconsumptionWasteFraction);
+        }
+        if !(cfg.optimal_uptake_rate.is_finite() && cfg.optimal_uptake_rate >= 0.0) {
+            return Err(SimConfigError::InvalidSemiLifeOptimalUptakeRate);
+        }
+        // Regulator init: capped at 1.25 so waste multiplier (1 - reg * 0.8) stays ≥ 0.
+        if !(cfg.regulator_init.is_finite()
+            && cfg.regulator_init >= 0.0
+            && cfg.regulator_init <= 1.25)
+        {
+            return Err(SimConfigError::InvalidSemiLifeRegulatorInit);
         }
         // Capability bitmasks must only use V0–V5 bits (0x01–0x20 → all fit in 0x3F).
         for bits in cfg.capability_overrides.values() {

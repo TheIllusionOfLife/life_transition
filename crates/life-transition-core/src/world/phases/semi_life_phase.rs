@@ -383,6 +383,9 @@ impl World {
                     sl.maintenance_energy -= residual;
                     sl.boundary_integrity =
                         Some((integrity - cfg.boundary_damage_integrity_cost).max(0.0));
+                } else {
+                    // V1 active but integrity field missing — treat as no boundary.
+                    sl.maintenance_energy -= base_damage;
                 }
             } else {
                 sl.maintenance_energy -= base_damage;
@@ -427,7 +430,7 @@ impl World {
                 .has(capability::V2_HOMEOSTASIS)
             {
                 let reg = semi_lives[i].regulator_state.unwrap_or(0.0);
-                let regulated = cfg.overconsumption_waste_fraction * (1.0 - reg * 0.8);
+                let regulated = (cfg.overconsumption_waste_fraction * (1.0 - reg * 0.8)).max(0.0);
                 // Regulation channel: waste saved is the internal contribution.
                 let waste_saved = unregulated_waste - excess * regulated;
                 semi_lives[i].regulation_internal += waste_saved;

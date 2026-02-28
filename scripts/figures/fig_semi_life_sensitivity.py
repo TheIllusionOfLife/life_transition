@@ -15,11 +15,9 @@ _PARAM_LABELS = {
     "overconsumption_waste_fraction": "Waste fraction",
     "regulator_cost_per_step": "Regulator cost",
     "internal_conversion_rate": "Conversion rate",
-    "v4_move_cost": "V4 move cost",
-    "v5_dormant_decay_mult": "V5 dormancy mult",
 }
 
-# Okabe-Ito inspired, 8 distinguishable colors
+# Okabe-Ito inspired, 6 distinguishable colors (one per swept param)
 _PARAM_COLORS = [
     "#E69F00",
     "#56B4E9",
@@ -27,8 +25,6 @@ _PARAM_COLORS = [
     "#F0E442",
     "#0072B2",
     "#D55E00",
-    "#CC79A7",
-    "#000000",
 ]
 
 
