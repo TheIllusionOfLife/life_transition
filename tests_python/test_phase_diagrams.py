@@ -257,8 +257,7 @@ def test_internalization_monotonic_across_v_levels():
     import numpy as np
 
     ii_by_level = [
-        float(np.mean(_get_final_values(rows, cond, "sparse", "mean_ii")))
-        for cond in conds
+        float(np.mean(_get_final_values(rows, cond, "sparse", "mean_ii"))) for cond in conds
     ]
     for i in range(1, len(ii_by_level)):
         assert ii_by_level[i] >= ii_by_level[i - 1], (
