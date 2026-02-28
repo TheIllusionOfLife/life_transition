@@ -100,7 +100,52 @@ def generate_fig_semi_life_tradeoffs(data_tsv: Path, out_dir: Path) -> None:
     ax.set_xlabel("Total Replications (rate proxy)", fontsize=9)
     ax.set_ylabel("Mean Alive at Step 500 (persistence)", fontsize=9)
     ax.set_title("Replication Rate vs. Persistence Tradeoff", fontsize=9)
-    ax.legend(title="Archetype", fontsize=7, title_fontsize=7)
+
+    # Dual legend: archetype colors (left) + capability markers (right)
+    from matplotlib.lines import Line2D
+
+    arch_handles = [
+        Line2D(
+            [0],
+            [0],
+            marker="o",
+            color="w",
+            markerfacecolor=c,
+            markersize=6,
+            label=name.capitalize(),
+        )
+        for name, c in _ARCHETYPE_COLORS.items()
+    ]
+    cap_shape_legend = [
+        ("o", "V0 (1 cap)"),
+        ("s", "2 caps"),
+        ("^", "3 caps"),
+        ("D", "4 caps"),
+        ("h", "5 caps"),
+        ("*", "6 caps"),
+    ]
+    cap_handles = [
+        Line2D([0], [0], marker=m, color="w", markerfacecolor="#666666", markersize=6, label=lbl)
+        for m, lbl in cap_shape_legend
+    ]
+    leg1 = ax.legend(
+        handles=arch_handles,
+        title="Archetype",
+        fontsize=6,
+        title_fontsize=6,
+        loc="upper left",
+        framealpha=0.8,
+    )
+    ax.add_artist(leg1)
+    ax.legend(
+        handles=cap_handles,
+        title="Capability",
+        fontsize=6,
+        title_fontsize=6,
+        loc="lower right",
+        framealpha=0.8,
+    )
+
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
 

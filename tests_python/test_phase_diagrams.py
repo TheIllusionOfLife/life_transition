@@ -229,7 +229,7 @@ def test_phase_diagram_figure_renders(tmp_path):
 
 def test_internalization_monotonic_across_v_levels():
     """mean_ii must be non-decreasing V0→V3 when given crafted monotonic data."""
-    from figures.fig_semi_life_internalization import _mean_ii_at_final
+    from figures.fig_semi_life_internalization import _get_final_values
 
     conds = ["viroid_v0", "viroid_v0v1", "viroid_v0v1v2", "viroid_v0v1v2v3"]
     ii_values = [0.0, 0.15, 0.30, 0.50]
@@ -254,7 +254,12 @@ def test_internalization_monotonic_across_v_levels():
                 }
             )
 
-    ii_by_level = [_mean_ii_at_final(rows, cond, "sparse") for cond in conds]
+    import numpy as np
+
+    ii_by_level = [
+        float(np.mean(_get_final_values(rows, cond, "sparse", "mean_ii")))
+        for cond in conds
+    ]
     for i in range(1, len(ii_by_level)):
         assert ii_by_level[i] >= ii_by_level[i - 1], (
             f"II not monotonic: level {i} = {ii_by_level[i]:.3f} < "
