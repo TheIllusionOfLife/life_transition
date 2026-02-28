@@ -92,6 +92,21 @@ impl World {
         let world_size = self.config.world_size;
         let n = self.semi_lives.len();
 
+        // --- Pass 0: Reset per-step II accumulators (before any channel accumulation) ---
+        for sl in self.semi_lives.iter_mut() {
+            if !sl.alive {
+                continue;
+            }
+            sl.energy_from_internal = 0.0;
+            sl.energy_from_external = 0.0;
+            sl.regulation_internal = 0.0;
+            sl.regulation_total = 0.0;
+            sl.behavior_internal = 0.0;
+            sl.behavior_total = 0.0;
+            sl.lifecycle_internal = 0.0;
+            sl.lifecycle_total = 0.0;
+        }
+
         // --- Pass 0.5: V5 stage transitions ---
         for sl in self.semi_lives.iter_mut() {
             if !sl.alive {
@@ -268,16 +283,6 @@ impl World {
                 Some(p) => p,
                 None => continue,
             };
-
-            // Reset per-step energy-flow accumulators (used for InternalizationIndex).
-            self.semi_lives[i].energy_from_internal = 0.0;
-            self.semi_lives[i].energy_from_external = 0.0;
-            self.semi_lives[i].regulation_internal = 0.0;
-            self.semi_lives[i].regulation_total = 0.0;
-            self.semi_lives[i].behavior_internal = 0.0;
-            self.semi_lives[i].behavior_total = 0.0;
-            self.semi_lives[i].lifecycle_internal = 0.0;
-            self.semi_lives[i].lifecycle_total = 0.0;
 
             match self.semi_lives[i].dependency_mode {
                 DependencyMode::HostContact => {
