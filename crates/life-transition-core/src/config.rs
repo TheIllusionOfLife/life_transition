@@ -66,6 +66,16 @@ pub struct SemiLifeConfig {
     /// Per-step resource uptake rate drawn from the resource field.
     pub resource_uptake_rate: f32,
     // V1 — Boundary
+    /// Per-step energy leakage rate for entities WITHOUT V1 boundary (diffusion loss).
+    pub energy_leakage_rate: f32,
+    /// Per-step probability of a stochastic environmental damage event.
+    pub env_damage_probability: f32,
+    /// Base energy lost per environmental damage event (without V1 protection).
+    pub env_damage_amount: f32,
+    /// Fraction of environmental damage absorbed by V1 boundary (0.0–1.0).
+    pub boundary_damage_absorption: f32,
+    /// Boundary integrity cost per damage absorption event.
+    pub boundary_damage_integrity_cost: f32,
     /// Per-step boundary decay rate (V1 entities).
     pub boundary_decay_rate: f32,
     /// Per-step boundary repair rate (V1 entities; costs energy).
@@ -75,6 +85,10 @@ pub struct SemiLifeConfig {
     /// Minimum boundary required for V0 replication (V1 entities).
     pub boundary_replication_min: f32,
     // V2 — Homeostasis
+    /// Fraction of excess uptake wasted when intake exceeds optimal rate (overconsumption penalty).
+    pub overconsumption_waste_fraction: f32,
+    /// Uptake threshold per step above which overconsumption waste applies.
+    pub optimal_uptake_rate: f32,
     /// Initial regulator state (V2 entities).
     pub regulator_init: f32,
     /// Multiplier: regulator_state scales resource uptake (V2 entities).
@@ -151,10 +165,17 @@ impl Default for SemiLifeConfig {
             replication_cost: 0.3,
             replication_spawn_radius: 3.0,
             resource_uptake_rate: 0.02,
+            energy_leakage_rate: 0.005,
+            env_damage_probability: 0.05,
+            env_damage_amount: 0.05,
+            boundary_damage_absorption: 0.8,
+            boundary_damage_integrity_cost: 0.02,
             boundary_decay_rate: 0.002,
             boundary_repair_rate: 0.01,
             boundary_death_threshold: 0.1,
             boundary_replication_min: 0.5,
+            overconsumption_waste_fraction: 0.3,
+            optimal_uptake_rate: 0.015,
             regulator_init: 1.0,
             regulator_uptake_scale: 1.0,
             regulator_cost_per_step: 0.0005,

@@ -99,6 +99,8 @@ impl World {
             }
             if let Some(stage) = sl.stage {
                 sl.stage_ticks = sl.stage_ticks.saturating_add(1);
+                // Lifecycle channel: baseline 1.0 per step when V5 is active.
+                sl.lifecycle_total += 1.0;
                 let new_stage = match stage {
                     SemiLifeStage::Dormant => {
                         if sl.maintenance_energy > cfg.v5_activation_threshold {
@@ -127,6 +129,8 @@ impl World {
                 if let Some(next) = new_stage {
                     sl.stage = Some(next);
                     sl.stage_ticks = 0;
+                    // Lifecycle internal: transition driven by internal state conditions.
+                    sl.lifecycle_internal += 1.0;
                 }
             }
         }
@@ -227,6 +231,13 @@ impl World {
             let distance = ((dx * dx + dy * dy) as f32).sqrt();
             self.semi_lives[i].maintenance_energy -= cfg.v4_move_cost * distance;
 
+            // Behavior channel: policy-driven movement fraction (for multi-channel II).
+            self.semi_lives[i].behavior_total += 1.0;
+            if effective_max_speed > f32::EPSILON {
+                self.semi_lives[i].behavior_internal +=
+                    (distance / effective_max_speed).clamp(0.0, 1.0);
+            }
+
             // Apply position change to the entity's agent.
             if let Some(agent) = self.agents.iter_mut().find(|a| {
                 a.owner_type == OwnerType::SemiLife && a.organism_id == self.semi_lives[i].id
@@ -261,6 +272,12 @@ impl World {
             // Reset per-step energy-flow accumulators (used for InternalizationIndex).
             self.semi_lives[i].energy_from_internal = 0.0;
             self.semi_lives[i].energy_from_external = 0.0;
+            self.semi_lives[i].regulation_internal = 0.0;
+            self.semi_lives[i].regulation_total = 0.0;
+            self.semi_lives[i].behavior_internal = 0.0;
+            self.semi_lives[i].behavior_total = 0.0;
+            self.semi_lives[i].lifecycle_internal = 0.0;
+            self.semi_lives[i].lifecycle_total = 0.0;
 
             match self.semi_lives[i].dependency_mode {
                 DependencyMode::HostContact => {
@@ -344,6 +361,29 @@ impl World {
         let (decay_mult, _, _) = v5_multipliers(sl, cfg);
         sl.maintenance_energy -= cfg.maintenance_cost * dt * decay_mult;
 
+        // 1b. Energy leakage for entities WITHOUT V1 boundary (diffusion loss).
+        if !sl.active_capabilities.has(capability::V1_BOUNDARY) {
+            sl.maintenance_energy -= cfg.energy_leakage_rate * dt;
+        }
+
+        // 1c. Environmental damage (stochastic; V1 absorbs partial damage).
+        if cfg.env_damage_probability > 0.0
+            && sl.rng.random::<f32>() < cfg.env_damage_probability * dt
+        {
+            let base_damage = cfg.env_damage_amount;
+            if sl.active_capabilities.has(capability::V1_BOUNDARY) {
+                if let Some(integrity) = sl.boundary_integrity {
+                    let absorbed = base_damage * cfg.boundary_damage_absorption * integrity;
+                    let residual = base_damage - absorbed;
+                    sl.maintenance_energy -= residual;
+                    sl.boundary_integrity =
+                        Some((integrity - cfg.boundary_damage_integrity_cost).max(0.0));
+                }
+            } else {
+                sl.maintenance_energy -= base_damage;
+            }
+        }
+
         // 2. V3 — Internal pool → energy conversion.
         if sl.active_capabilities.has(capability::V3_METABOLISM) {
             if let Some(pool) = sl.internal_pool {
@@ -371,6 +411,29 @@ impl World {
         let got_energy = resource_field.take(pos[0], pos[1], want_energy);
         semi_lives[i].maintenance_energy += got_energy;
         semi_lives[i].energy_from_external += got_energy;
+
+        // 4b. Overconsumption waste penalty (V2 mitigates).
+        let optimal = cfg.optimal_uptake_rate * dt;
+        if got_energy > optimal && cfg.overconsumption_waste_fraction > 0.0 {
+            let excess = got_energy - optimal;
+            let unregulated_waste = excess * cfg.overconsumption_waste_fraction;
+            let waste_mult = if semi_lives[i]
+                .active_capabilities
+                .has(capability::V2_HOMEOSTASIS)
+            {
+                let reg = semi_lives[i].regulator_state.unwrap_or(0.0);
+                let regulated = cfg.overconsumption_waste_fraction * (1.0 - reg * 0.8);
+                // Regulation channel: waste saved is the internal contribution.
+                let waste_saved = unregulated_waste - excess * regulated;
+                semi_lives[i].regulation_internal += waste_saved;
+                semi_lives[i].regulation_total += unregulated_waste;
+                regulated
+            } else {
+                cfg.overconsumption_waste_fraction
+            };
+            let waste = excess * waste_mult;
+            semi_lives[i].maintenance_energy -= waste;
+        }
 
         // 5. V3 — Pool refill from resource field.
         if semi_lives[i]

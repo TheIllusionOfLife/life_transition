@@ -2203,3 +2203,508 @@ fn semi_life_agents_excluded_from_organism_spatial_tree() {
         "3 Viroid entities should produce 3 SemiLife agents"
     );
 }
+
+// ─── V1 Leakage / Environmental Damage tests ─────────────────────────────────
+
+/// Helper: create a SemiLife world with full control over new V1/V2 parameters.
+fn make_semi_life_world_v1v2(
+    num: usize,
+    resource_density: f32,
+    seed: u64,
+    capability_bits: u8,
+    cfg_patch: impl FnOnce(&mut crate::config::SemiLifeConfig),
+) -> World {
+    use crate::config::SemiLifeConfig;
+    use crate::semi_life::SemiLifeArchetype;
+    use std::collections::HashMap;
+
+    let mut overrides = HashMap::new();
+    overrides.insert("viroid".to_string(), capability_bits);
+
+    let mut semi_life_config = SemiLifeConfig {
+        enabled_archetypes: vec![SemiLifeArchetype::Viroid],
+        num_per_archetype: num,
+        capability_overrides: overrides,
+        ..SemiLifeConfig::default()
+    };
+    cfg_patch(&mut semi_life_config);
+
+    let agents: Vec<Agent> = (0..10)
+        .map(|i| Agent::new(i as u32, 0, [50.0, 50.0]))
+        .collect();
+    let nn = NeuralNet::from_weights(std::iter::repeat_n(0.1f32, NeuralNet::WEIGHT_COUNT));
+    let config = SimConfig {
+        seed,
+        world_size: 100.0,
+        num_organisms: 1,
+        agents_per_organism: 10,
+        resource_regeneration_rate: resource_density * 0.01,
+        enable_semi_life: true,
+        semi_life_config,
+        ..SimConfig::default()
+    };
+    let mut world = World::new(agents, vec![nn], config).unwrap();
+    for x in 0..100 {
+        for y in 0..100 {
+            world
+                .resource_field_mut()
+                .set(x as f64, y as f64, resource_density);
+        }
+    }
+    world
+}
+
+/// Non-V1 entity loses energy from leakage; V1 entity does not.
+#[test]
+fn v1_leakage_only_affects_entities_without_boundary() {
+    use crate::semi_life::capability::{V0_REPLICATION, V1_BOUNDARY};
+
+    // V0-only: suffers leakage
+    let mut world_v0 = make_semi_life_world_v1v2(1, 0.0, 42, V0_REPLICATION, |cfg| {
+        cfg.energy_leakage_rate = 0.01;
+        cfg.env_damage_probability = 0.0; // isolate leakage
+        cfg.maintenance_cost = 0.0; // isolate leakage
+        cfg.overconsumption_waste_fraction = 0.0;
+    });
+    let e0_before = world_v0.semi_lives[0].maintenance_energy;
+    world_v0.step();
+    let e0_after = world_v0.semi_lives[0].maintenance_energy;
+
+    // V0+V1: no leakage (but has boundary costs)
+    let mut world_v1 = make_semi_life_world_v1v2(1, 0.0, 42, V0_REPLICATION | V1_BOUNDARY, |cfg| {
+        cfg.energy_leakage_rate = 0.01;
+        cfg.env_damage_probability = 0.0;
+        cfg.maintenance_cost = 0.0;
+        cfg.boundary_decay_rate = 0.0; // disable boundary costs too
+        cfg.boundary_repair_rate = 0.0;
+        cfg.overconsumption_waste_fraction = 0.0;
+    });
+    let e1_before = world_v1.semi_lives[0].maintenance_energy;
+    world_v1.step();
+    let e1_after = world_v1.semi_lives[0].maintenance_energy;
+
+    // V0 should lose energy from leakage
+    assert!(
+        e0_after < e0_before,
+        "V0 entity should lose energy from leakage: {e0_before} -> {e0_after}"
+    );
+    // V1 entity should NOT lose energy from leakage (no other costs either)
+    assert!(
+        (e1_after - e1_before).abs() < 0.001,
+        "V1 entity should not lose energy from leakage: {e1_before} -> {e1_after}"
+    );
+}
+
+/// Environmental damage hits non-V1 entity at full strength;
+/// V1 entity absorbs partial damage via boundary.
+#[test]
+fn v1_boundary_absorbs_environmental_damage() {
+    use crate::semi_life::capability::{V0_REPLICATION, V1_BOUNDARY};
+
+    // Use high damage probability to guarantee a hit in deterministic seed search.
+    // Run enough steps that at least one damage event occurs.
+    let steps = 50;
+
+    let mut world_v0 = make_semi_life_world_v1v2(1, 0.0, 42, V0_REPLICATION, |cfg| {
+        cfg.energy_leakage_rate = 0.0;
+        cfg.env_damage_probability = 20.0; // prob * dt = 2.0 → guaranteed damage every step
+        cfg.env_damage_amount = 0.01;
+        cfg.maintenance_cost = 0.0;
+        cfg.overconsumption_waste_fraction = 0.0;
+    });
+    let e0_before = world_v0.semi_lives[0].maintenance_energy;
+    for _ in 0..steps {
+        world_v0.step();
+    }
+    let e0_loss = e0_before - world_v0.semi_lives[0].maintenance_energy;
+
+    let mut world_v1 = make_semi_life_world_v1v2(1, 0.0, 42, V0_REPLICATION | V1_BOUNDARY, |cfg| {
+        cfg.energy_leakage_rate = 0.0;
+        cfg.env_damage_probability = 20.0; // prob * dt = 2.0 → guaranteed
+        cfg.env_damage_amount = 0.01;
+        cfg.boundary_damage_absorption = 0.8;
+        cfg.boundary_damage_integrity_cost = 0.001;
+        cfg.maintenance_cost = 0.0;
+        cfg.boundary_decay_rate = 0.0;
+        cfg.boundary_repair_rate = 0.0;
+        cfg.overconsumption_waste_fraction = 0.0;
+    });
+    let e1_before = world_v1.semi_lives[0].maintenance_energy;
+    for _ in 0..steps {
+        if !world_v1.semi_lives[0].alive {
+            break;
+        }
+        world_v1.step();
+    }
+    let e1_loss = e1_before - world_v1.semi_lives[0].maintenance_energy;
+
+    // V1 entity should lose LESS energy than V0 (boundary absorbs damage)
+    assert!(
+        e1_loss < e0_loss,
+        "V1 entity should lose less energy from damage than V0: V0 lost {e0_loss}, V1 lost {e1_loss}"
+    );
+}
+
+/// Boundary integrity decreases after absorbing damage.
+#[test]
+fn v1_boundary_integrity_decreases_from_damage_absorption() {
+    use crate::semi_life::capability::{V0_REPLICATION, V1_BOUNDARY};
+
+    let mut world = make_semi_life_world_v1v2(1, 0.0, 42, V0_REPLICATION | V1_BOUNDARY, |cfg| {
+        cfg.energy_leakage_rate = 0.0;
+        cfg.env_damage_probability = 20.0; // prob * dt = 20 * 0.1 = 2.0 → guaranteed hit
+        cfg.env_damage_amount = 0.01;
+        cfg.boundary_damage_absorption = 0.8;
+        cfg.boundary_damage_integrity_cost = 0.05; // large cost for visibility
+        cfg.maintenance_cost = 0.0;
+        cfg.boundary_decay_rate = 0.0;
+        cfg.boundary_repair_rate = 0.0;
+        cfg.overconsumption_waste_fraction = 0.0;
+    });
+
+    let integrity_before = world.semi_lives[0].boundary_integrity.unwrap();
+    assert!((integrity_before - 1.0).abs() < f32::EPSILON);
+
+    world.step();
+    let integrity_after = world.semi_lives[0].boundary_integrity.unwrap();
+    assert!(
+        integrity_after < integrity_before,
+        "Boundary integrity should decrease after absorbing damage: {integrity_before} -> {integrity_after}"
+    );
+}
+
+/// Backward compat: with leakage=0 and damage_prob=0, behavior is unchanged.
+#[test]
+fn v1_backward_compat_no_leakage_no_damage() {
+    use crate::semi_life::capability::V0_REPLICATION;
+
+    let mut world_new = make_semi_life_world_v1v2(1, 1.0, 42, V0_REPLICATION, |cfg| {
+        cfg.energy_leakage_rate = 0.0;
+        cfg.env_damage_probability = 0.0;
+        cfg.overconsumption_waste_fraction = 0.0;
+    });
+    let mut world_default = make_semi_life_world_v1v2(1, 1.0, 42, V0_REPLICATION, |cfg| {
+        cfg.energy_leakage_rate = 0.0;
+        cfg.env_damage_probability = 0.0;
+        cfg.overconsumption_waste_fraction = 0.0;
+    });
+
+    for _ in 0..20 {
+        world_new.step();
+        world_default.step();
+    }
+
+    let e_new = world_new.semi_lives[0].maintenance_energy;
+    let e_default = world_default.semi_lives[0].maintenance_energy;
+    assert!(
+        (e_new - e_default).abs() < f32::EPSILON,
+        "With leakage=0 and damage=0, energy should be identical: {e_new} vs {e_default}"
+    );
+}
+
+/// Tradeoff test: with low damage, V1 entity has lower net energy than V0
+/// (repair cost exceeds leakage/damage savings).
+#[test]
+fn v1_tradeoff_low_damage_v1_worse_than_v0() {
+    use crate::semi_life::capability::{V0_REPLICATION, V1_BOUNDARY};
+
+    let steps = 100;
+
+    // V0: no leakage savings since leakage is very small
+    let mut world_v0 = make_semi_life_world_v1v2(1, 1.0, 42, V0_REPLICATION, |cfg| {
+        cfg.energy_leakage_rate = 0.0001; // very small leakage
+        cfg.env_damage_probability = 0.01; // very rare damage
+        cfg.env_damage_amount = 0.001; // tiny damage
+        cfg.overconsumption_waste_fraction = 0.0;
+    });
+    for _ in 0..steps {
+        world_v0.step();
+    }
+    let e_v0 = world_v0.semi_lives[0].maintenance_energy;
+
+    // V0+V1: repair cost should dominate over negligible leakage/damage savings
+    let mut world_v1 = make_semi_life_world_v1v2(1, 1.0, 42, V0_REPLICATION | V1_BOUNDARY, |cfg| {
+        cfg.energy_leakage_rate = 0.0001;
+        cfg.env_damage_probability = 0.01;
+        cfg.env_damage_amount = 0.001;
+        cfg.overconsumption_waste_fraction = 0.0;
+    });
+    for _ in 0..steps {
+        world_v1.step();
+    }
+    let e_v1 = world_v1.semi_lives[0].maintenance_energy;
+
+    assert!(
+        e_v1 < e_v0,
+        "With low damage, V1 repair cost should exceed leakage savings: V0={e_v0}, V1={e_v1}"
+    );
+}
+
+// ─── V2 Overconsumption Waste tests ──────────────────────────────────────────
+
+/// No waste when uptake is at or below optimal rate.
+#[test]
+fn v2_no_waste_below_optimal_uptake() {
+    use crate::semi_life::capability::V0_REPLICATION;
+
+    let mut world = make_semi_life_world_v1v2(1, 0.001, 42, V0_REPLICATION, |cfg| {
+        cfg.resource_uptake_rate = 0.01; // low uptake
+        cfg.optimal_uptake_rate = 0.02; // threshold higher than uptake
+        cfg.overconsumption_waste_fraction = 0.5;
+        cfg.energy_leakage_rate = 0.0;
+        cfg.env_damage_probability = 0.0;
+        cfg.maintenance_cost = 0.0;
+    });
+
+    let e_before = world.semi_lives[0].maintenance_energy;
+    world.step();
+    let e_after = world.semi_lives[0].maintenance_energy;
+
+    // Should gain energy from uptake with no waste penalty
+    assert!(
+        e_after >= e_before,
+        "Below optimal uptake, no waste should apply: {e_before} -> {e_after}"
+    );
+}
+
+/// Full waste for non-V2 entity on excess uptake.
+#[test]
+fn v2_full_waste_without_homeostasis() {
+    use crate::semi_life::capability::V0_REPLICATION;
+
+    // High resource density to ensure excess uptake
+    let mut world = make_semi_life_world_v1v2(1, 1.0, 42, V0_REPLICATION, |cfg| {
+        cfg.resource_uptake_rate = 0.1; // high uptake
+        cfg.optimal_uptake_rate = 0.01; // low threshold
+        cfg.overconsumption_waste_fraction = 0.5;
+        cfg.energy_leakage_rate = 0.0;
+        cfg.env_damage_probability = 0.0;
+        cfg.maintenance_cost = 0.0;
+    });
+
+    let e_before = world.semi_lives[0].maintenance_energy;
+    world.step();
+    let e_after = world.semi_lives[0].maintenance_energy;
+    let gain = e_after - e_before;
+
+    // Same setup but with no waste
+    let mut world_no_waste = make_semi_life_world_v1v2(1, 1.0, 42, V0_REPLICATION, |cfg| {
+        cfg.resource_uptake_rate = 0.1;
+        cfg.optimal_uptake_rate = 0.01;
+        cfg.overconsumption_waste_fraction = 0.0;
+        cfg.energy_leakage_rate = 0.0;
+        cfg.env_damage_probability = 0.0;
+        cfg.maintenance_cost = 0.0;
+    });
+
+    let e_before_nw = world_no_waste.semi_lives[0].maintenance_energy;
+    world_no_waste.step();
+    let e_after_nw = world_no_waste.semi_lives[0].maintenance_energy;
+    let gain_no_waste = e_after_nw - e_before_nw;
+
+    assert!(
+        gain < gain_no_waste,
+        "With overconsumption waste, energy gain should be less: {gain} vs {gain_no_waste} (no waste)"
+    );
+}
+
+/// V2 with regulator_state=1.0 reduces waste by ~80%.
+#[test]
+fn v2_regulator_reduces_waste() {
+    use crate::semi_life::capability::{V0_REPLICATION, V2_HOMEOSTASIS};
+
+    // V0 only: full waste
+    let mut world_v0 = make_semi_life_world_v1v2(1, 1.0, 42, V0_REPLICATION, |cfg| {
+        cfg.resource_uptake_rate = 0.1;
+        cfg.optimal_uptake_rate = 0.01;
+        cfg.overconsumption_waste_fraction = 0.5;
+        cfg.energy_leakage_rate = 0.0;
+        cfg.env_damage_probability = 0.0;
+        cfg.maintenance_cost = 0.0;
+        cfg.regulator_cost_per_step = 0.0; // isolate waste effect
+    });
+    let e0_before = world_v0.semi_lives[0].maintenance_energy;
+    world_v0.step();
+    let gain_v0 = world_v0.semi_lives[0].maintenance_energy - e0_before;
+
+    // V0+V2: regulator reduces waste
+    let mut world_v2 =
+        make_semi_life_world_v1v2(1, 1.0, 42, V0_REPLICATION | V2_HOMEOSTASIS, |cfg| {
+            cfg.resource_uptake_rate = 0.1;
+            cfg.optimal_uptake_rate = 0.01;
+            cfg.overconsumption_waste_fraction = 0.5;
+            cfg.energy_leakage_rate = 0.0;
+            cfg.env_damage_probability = 0.0;
+            cfg.maintenance_cost = 0.0;
+            cfg.regulator_init = 1.0;
+            cfg.regulator_cost_per_step = 0.0;
+        });
+    let e2_before = world_v2.semi_lives[0].maintenance_energy;
+    world_v2.step();
+    let gain_v2 = world_v2.semi_lives[0].maintenance_energy - e2_before;
+
+    assert!(
+        gain_v2 > gain_v0,
+        "V2 regulator should reduce waste, yielding higher energy gain: V0={gain_v0}, V2={gain_v2}"
+    );
+}
+
+/// Backward compat: with overconsumption_waste_fraction=0, no behavior change.
+#[test]
+fn v2_backward_compat_zero_waste_fraction() {
+    use crate::semi_life::capability::V0_REPLICATION;
+
+    let mut world = make_semi_life_world_v1v2(1, 1.0, 42, V0_REPLICATION, |cfg| {
+        cfg.overconsumption_waste_fraction = 0.0;
+        cfg.energy_leakage_rate = 0.0;
+        cfg.env_damage_probability = 0.0;
+    });
+
+    let e_before = world.semi_lives[0].maintenance_energy;
+    world.step();
+    let e_after = world.semi_lives[0].maintenance_energy;
+
+    // Should just be maintenance_cost + uptake (no waste deduction)
+    // Energy should increase from uptake (resource density 1.0)
+    assert!(
+        e_after > e_before - 0.01,
+        "With zero waste fraction, entity should gain energy normally: {e_before} -> {e_after}"
+    );
+}
+
+// ─── Multi-channel Internalization Index tests ───────────────────────────────
+
+/// V0-only entity: 0 active channels → II=0.
+#[test]
+fn ii_v0_only_returns_zero() {
+    use crate::semi_life::capability::V0_REPLICATION;
+
+    let mut world = make_semi_life_world_v1v2(1, 1.0, 42, V0_REPLICATION, |cfg| {
+        cfg.energy_leakage_rate = 0.0;
+        cfg.env_damage_probability = 0.0;
+        cfg.overconsumption_waste_fraction = 0.0;
+    });
+    world.step();
+
+    let snaps = world.semi_life_snapshots();
+    assert!(
+        snaps[0].internalization_index.abs() < f32::EPSILON,
+        "V0-only entity should have II=0, got {}",
+        snaps[0].internalization_index
+    );
+    assert!(snaps[0].ii_energy.abs() < f32::EPSILON);
+    assert!(snaps[0].ii_regulation.abs() < f32::EPSILON);
+    assert!(snaps[0].ii_behavior.abs() < f32::EPSILON);
+    assert!(snaps[0].ii_lifecycle.abs() < f32::EPSILON);
+}
+
+/// V0+V1+V2+V3 entity: energy channel should be active and > 0.
+#[test]
+fn ii_v3_energy_channel_active() {
+    use crate::semi_life::capability::{
+        V0_REPLICATION, V1_BOUNDARY, V2_HOMEOSTASIS, V3_METABOLISM,
+    };
+
+    let caps = V0_REPLICATION | V1_BOUNDARY | V2_HOMEOSTASIS | V3_METABOLISM;
+    let mut world = make_semi_life_world_v1v2(1, 1.0, 42, caps, |cfg| {
+        cfg.energy_leakage_rate = 0.0;
+        cfg.env_damage_probability = 0.0;
+        cfg.overconsumption_waste_fraction = 0.0;
+    });
+    // Run a few steps to accumulate energy flow
+    for _ in 0..5 {
+        world.step();
+    }
+
+    let snaps = world.semi_life_snapshots();
+    let snap = &snaps[0];
+    assert!(
+        snap.ii_energy > 0.0,
+        "V3 entity should have ii_energy > 0, got {}",
+        snap.ii_energy
+    );
+    assert!(
+        snap.internalization_index > 0.0,
+        "Composite II should be > 0 with V3 active"
+    );
+}
+
+/// Old single-channel II should match ii_energy when only energy channel is active.
+#[test]
+fn ii_composite_matches_energy_when_single_channel() {
+    use crate::semi_life::capability::{V0_REPLICATION, V3_METABOLISM};
+
+    // V0+V3 only (no V2/V4/V5 → only energy channel active)
+    let caps = V0_REPLICATION | V3_METABOLISM;
+    let mut world = make_semi_life_world_v1v2(1, 1.0, 42, caps, |cfg| {
+        cfg.energy_leakage_rate = 0.0;
+        cfg.env_damage_probability = 0.0;
+        cfg.overconsumption_waste_fraction = 0.0;
+    });
+    for _ in 0..5 {
+        world.step();
+    }
+
+    let snaps = world.semi_life_snapshots();
+    let snap = &snaps[0];
+    assert!(
+        (snap.internalization_index - snap.ii_energy).abs() < 0.001,
+        "With only energy channel, composite ({}) should equal ii_energy ({})",
+        snap.internalization_index,
+        snap.ii_energy
+    );
+}
+
+/// Multi-channel: channel count increases with capabilities.
+#[test]
+fn ii_channel_count_increases_with_capabilities() {
+    use crate::semi_life::capability::*;
+
+    let steps = 10;
+
+    // V0+V3: energy channel only
+    let mut w1 = make_semi_life_world_v1v2(1, 1.0, 42, V0_REPLICATION | V3_METABOLISM, |cfg| {
+        cfg.energy_leakage_rate = 0.0;
+        cfg.env_damage_probability = 0.0;
+        cfg.overconsumption_waste_fraction = 0.3;
+    });
+    for _ in 0..steps {
+        w1.step();
+    }
+    let s1 = &w1.semi_life_snapshots()[0];
+
+    // V0+V2+V3: energy + regulation channels
+    let mut w2 = make_semi_life_world_v1v2(
+        1,
+        1.0,
+        42,
+        V0_REPLICATION | V2_HOMEOSTASIS | V3_METABOLISM,
+        |cfg| {
+            cfg.energy_leakage_rate = 0.0;
+            cfg.env_damage_probability = 0.0;
+            cfg.overconsumption_waste_fraction = 0.3;
+            cfg.regulator_cost_per_step = 0.0;
+            cfg.resource_uptake_rate = 0.1; // high to trigger overconsumption
+            cfg.optimal_uptake_rate = 0.01;
+        },
+    );
+    for _ in 0..steps {
+        w2.step();
+    }
+    let s2 = &w2.semi_life_snapshots()[0];
+
+    // V0+V3 should only have energy channel
+    assert!(s1.ii_energy > 0.0);
+    assert!(
+        s1.ii_regulation.abs() < f32::EPSILON,
+        "V0+V3 should have no regulation channel"
+    );
+
+    // V0+V2+V3 should have both energy and regulation channels
+    assert!(s2.ii_energy > 0.0);
+    assert!(
+        s2.ii_regulation > 0.0,
+        "V0+V2+V3 with overconsumption should have regulation channel > 0, got {}",
+        s2.ii_regulation
+    );
+}

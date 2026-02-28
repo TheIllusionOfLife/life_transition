@@ -174,6 +174,20 @@ pub struct SemiLifeRuntime {
     /// Energy obtained from external resource field this step.
     pub energy_from_external: f32,
 
+    // Multi-channel II accumulators (reset each step).
+    /// V2 regulation channel: waste reduction achieved by regulator this step.
+    pub regulation_internal: f32,
+    /// V2 regulation channel: baseline (1.0 per step if V2 active, for normalization).
+    pub regulation_total: f32,
+    /// V4 behavior channel: policy-driven movement fraction this step.
+    pub behavior_internal: f32,
+    /// V4 behavior channel: baseline (1.0 per step if V4 active, for normalization).
+    pub behavior_total: f32,
+    /// V5 lifecycle channel: internal-state-driven stage transitions this step.
+    pub lifecycle_internal: f32,
+    /// V5 lifecycle channel: baseline (1.0 per step if V5 active, for normalization).
+    pub lifecycle_total: f32,
+
     /// Per-entity deterministic RNG stream (seeded from world seed XOR stable_id).
     pub rng: ChaCha12Rng,
 
@@ -229,23 +243,73 @@ impl SemiLifeRuntime {
             steps_without_replication: 0,
             energy_from_internal: 0.0,
             energy_from_external: 0.0,
+            regulation_internal: 0.0,
+            regulation_total: 0.0,
+            behavior_internal: 0.0,
+            behavior_total: 0.0,
+            lifecycle_internal: 0.0,
+            lifecycle_total: 0.0,
             rng: ChaCha12Rng::seed_from_u64(world_seed ^ stable_id),
             agent_ids: Vec::new(),
         }
     }
 
-    /// Compute the InternalizationIndex for this step.
+    /// Compute the per-channel Internalization Index values.
     ///
-    /// II = energy_from_internal / (energy_from_internal + energy_from_external).
-    /// Returns 0.0 for entities with no internal conversion (V0–V2 only).
+    /// Returns `(ii_energy, ii_regulation, ii_behavior, ii_lifecycle)`.
+    /// Each channel is the ratio of internal contribution to total for that dimension.
+    /// A channel returns 0.0 if its total is below ε (capability not active or no activity).
+    pub fn ii_channels(&self) -> (f32, f32, f32, f32) {
+        let ratio = |internal: f32, total: f32| -> f32 {
+            if total <= f32::EPSILON {
+                0.0
+            } else {
+                (internal / total).clamp(0.0, 1.0)
+            }
+        };
+        let ii_energy = {
+            let total = self.energy_from_internal + self.energy_from_external;
+            ratio(self.energy_from_internal, total)
+        };
+        let ii_regulation = ratio(self.regulation_internal, self.regulation_total);
+        let ii_behavior = ratio(self.behavior_internal, self.behavior_total);
+        let ii_lifecycle = ratio(self.lifecycle_internal, self.lifecycle_total);
+        (ii_energy, ii_regulation, ii_behavior, ii_lifecycle)
+    }
+
+    /// Compute the composite multi-channel InternalizationIndex for this step.
+    ///
+    /// Composite = mean of active channels (channels with total > ε).
+    /// Returns 0.0 when no channels are active (V0-only entities).
     /// **Independence**: survival metrics (lifespan, persistence) are measured
     /// from agent counts, not from II, to avoid circularity.
     pub fn internalization_index(&self) -> f32 {
-        let total = self.energy_from_internal + self.energy_from_external;
-        if total <= f32::EPSILON {
+        let (e, r, b, l) = self.ii_channels();
+        let mut sum = 0.0f32;
+        let mut count = 0u32;
+
+        let energy_total = self.energy_from_internal + self.energy_from_external;
+        if energy_total > f32::EPSILON {
+            sum += e;
+            count += 1;
+        }
+        if self.regulation_total > f32::EPSILON {
+            sum += r;
+            count += 1;
+        }
+        if self.behavior_total > f32::EPSILON {
+            sum += b;
+            count += 1;
+        }
+        if self.lifecycle_total > f32::EPSILON {
+            sum += l;
+            count += 1;
+        }
+
+        if count == 0 {
             0.0
         } else {
-            self.energy_from_internal / total
+            sum / count as f32
         }
     }
 }
