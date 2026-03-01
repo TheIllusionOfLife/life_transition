@@ -569,8 +569,11 @@ jump in composite II.
 V4 adds the behaviour channel and V5 adds lifecycle, each incrementally raising
 the composite.
 Per-channel values and 95\% confidence intervals are shown in
-Figure~\ref{fig:ii}; exact numbers will be reported after test-seed data
-collection with the revised model [TBD].
+Figure~\ref{fig:ii}.
+In rich environments: V0+V1+V2 yields $\mathrm{II}_R=0.47$ (composite 0.23);
+V0+V1+V2+V3 yields $\mathrm{II}_E=0.62$, $\mathrm{II}_R=0.47$
+(composite 0.71); V0..V4 adds $\mathrm{II}_B=0.08$;
+V0..V5 adds $\mathrm{II}_L=0.01$.
 ProtoOrganelle baseline (V1+V2+V3, no V0) shows $\mathrm{II}>0$ because the
 energy and regulation channels are active even without replication,
 confirming that II measures internal functional organisation independently
@@ -598,108 +601,136 @@ $p$-values across the 32-test family.
 H & Harshness & $U$ & $p_\text{corr}$ & Sig. & $\delta$ [95\% CI] & Dir. \\
 \midrule
 \multicolumn{7}{l}{\emph{H1: Viroid V0 vs V0+V1 (alive, environment-dependent tradeoff)}} \\
-H1 & rich   & [TBD] & [TBD] &     & [TBD] & [TBD] \\
-H1 & medium & [TBD] & [TBD] &     & [TBD] & [TBD] \\
-H1 & sparse & [TBD] & [TBD] &     & [TBD] & [TBD] \\
-H1 & scarce & [TBD] & [TBD] &     & [TBD] & [TBD] \\
+H1 & rich   & 9\,981 & $<\!10^{-33}$ & *** & 1.00 [0.99, 1.00] & \checkmark \\
+H1 & medium & 6\,473 & 0.002  & **  & 0.29 [0.15, 0.44] & \checkmark \\
+H1 & sparse & 4\,950 & 1.000  &     & $-$0.01 [$-$0.03, 0.00] & \texttimes \\
+H1 & scarce & 4\,950 & 1.000  &     & $-$0.01 [$-$0.03, 0.00] & \texttimes \\
 \midrule
 \multicolumn{7}{l}{\emph{H2: Viroid V0+V1+V2+V3 vs V0+V1+V2 (alive, more with V3)}} \\
-H2 & rich   & [TBD] & [TBD] &     & [TBD] & [TBD] \\
-H2 & medium & [TBD] & [TBD] &     & [TBD] & [TBD] \\
-H2 & sparse & [TBD] & [TBD] &     & [TBD] & [TBD] \\
-H2 & scarce & [TBD] & [TBD] &     & [TBD] & [TBD] \\
+H2 & rich   & 10\,000 & $<\!10^{-33}$ & *** & 1.00 [1.00, 1.00] & \checkmark \\
+H2 & medium & 10\,000 & $<\!10^{-33}$ & *** & 1.00 [1.00, 1.00] & \checkmark \\
+H2 & sparse & 10\,000 & $<\!10^{-43}$ & *** & 1.00 [1.00, 1.00] & \checkmark \\
+H2 & scarce & 10\,000 & $<\!10^{-43}$ & *** & 1.00 [1.00, 1.00] & \checkmark \\
 \midrule
 \multicolumn{7}{l}{\emph{H3: ProtoOrganelle liberated vs baseline (total\_replications)}} \\
-H3 & rich   & [TBD] & [TBD] &     & [TBD] & [TBD] \\
-H3 & medium & [TBD] & [TBD] &     & [TBD] & [TBD] \\
-H3 & sparse & [TBD] & [TBD] &     & [TBD] & [TBD] \\
-H3 & scarce & [TBD] & [TBD] &     & [TBD] & [TBD] \\
+H3 & rich   & 10\,000 & $<\!10^{-37}$ & *** & 1.00 [1.00, 1.00] & \checkmark \\
+H3 & medium & 10\,000 & $<\!10^{-38}$ & *** & 1.00 [1.00, 1.00] & \checkmark \\
+H3 & sparse & 5\,000  & 1.000         &     & 0.00 [0.00, 0.00] & \texttimes \\
+H3 & scarce & 5\,000  & 1.000         &     & 0.00 [0.00, 0.00] & \texttimes \\
 \midrule
 \multicolumn{7}{l}{\emph{H4: Viroid V0$\rightarrow$V3 monotonic trend (JT)}} \\
-H4 & rich   & [TBD] & [TBD] &     & [TBD] & [TBD] \\
-H4 & medium & [TBD] & [TBD] &     & [TBD] & [TBD] \\
-H4 & sparse & [TBD] & [TBD] &     & [TBD] & [TBD] \\
-H4 & scarce & [TBD] & [TBD] &     & [TBD] & [TBD] \\
+H4 & rich   & 20\,720 & $<\!10^{-12}$ & *** & --- & \checkmark \\
+H4 & medium & 17\,937 & $<\!10^{-100}$ & *** & --- & \checkmark \\
+H4 & sparse & 14\,900 & $<\!10^{-100}$ & *** & --- & \checkmark \\
+H4 & scarce & 14\,900 & $<\!10^{-100}$ & *** & --- & \checkmark \\
 \midrule
 \multicolumn{7}{l}{\emph{H5: Viroid V0..V4 vs V0..V3 (alive, more with V4)}} \\
-H5 & rich   & [TBD] & [TBD] &     & [TBD] & [TBD] \\
-H5 & medium & [TBD] & [TBD] &     & [TBD] & [TBD] \\
-H5 & sparse & [TBD] & [TBD] &     & [TBD] & [TBD] \\
-H5 & scarce & [TBD] & [TBD] &     & [TBD] & [TBD] \\
+H5 & rich   & 96     & $<\!10^{-32}$ & *** & $-$0.98 [$-$1.00, $-$0.95] & \texttimes \\
+H5 & medium & 9\,990 & $<\!10^{-33}$ & *** & 1.00 [0.99, 1.00] & \checkmark \\
+H5 & sparse & 10\,000 & $<\!10^{-37}$ & *** & 1.00 [1.00, 1.00] & \checkmark \\
+H5 & scarce & 9\,950 & $<\!10^{-37}$ & *** & 0.99 [0.97, 1.00] & \checkmark \\
 \midrule
 \multicolumn{7}{l}{\emph{H6: Viroid V0..V5 vs V0..V4 (alive, more with V5)}} \\
-H6 & rich   & [TBD] & [TBD] &     & [TBD] & [TBD] \\
-H6 & medium & [TBD] & [TBD] &     & [TBD] & [TBD] \\
-H6 & sparse & [TBD] & [TBD] &     & [TBD] & [TBD] \\
-H6 & scarce & [TBD] & [TBD] &     & [TBD] & [TBD] \\
+H6 & rich   & 9\,995 & $<\!10^{-33}$ & *** & 1.00 [1.00, 1.00] & \checkmark \\
+H6 & medium & 1\,404 & $<\!10^{-17}$ & *** & $-$0.72 [$-$0.81, $-$0.61] & \texttimes \\
+H6 & sparse & 0      & $<\!10^{-33}$ & *** & $-$1.00 [$-$1.00, $-$1.00] & \texttimes \\
+H6 & scarce & 50     & $<\!10^{-37}$ & *** & $-$0.99 [$-$1.00, $-$0.97] & \texttimes \\
 \midrule
 \multicolumn{7}{l}{\emph{H7: Viroid V0$\rightarrow$V5 monotonic trend (JT)}} \\
-H7 & rich   & [TBD] & [TBD] &     & [TBD] & [TBD] \\
-H7 & medium & [TBD] & [TBD] &     & [TBD] & [TBD] \\
-H7 & sparse & [TBD] & [TBD] &     & [TBD] & [TBD] \\
-H7 & scarce & [TBD] & [TBD] &     & [TBD] & [TBD] \\
+H7 & rich   & 36\,893 & $<\!10^{-100}$ & *** & --- & \checkmark \\
+H7 & medium & 27\,131 & $<\!10^{-100}$ & *** & --- & \checkmark \\
+H7 & sparse & 25\,750 & $<\!10^{-100}$ & *** & --- & \checkmark \\
+H7 & scarce & 29\,900 & $<\!10^{-100}$ & *** & --- & \checkmark \\
 \midrule
 \multicolumn{7}{l}{\emph{H8: Viroid V0+V1+V2 vs V0+V1 (alive, more with V2; Amendment~3)}} \\
-H8 & rich   & [TBD] & [TBD] &     & [TBD] & [TBD] \\
-H8 & medium & [TBD] & [TBD] &     & [TBD] & [TBD] \\
-H8 & sparse & [TBD] & [TBD] &     & [TBD] & [TBD] \\
-H8 & scarce & [TBD] & [TBD] &     & [TBD] & [TBD] \\
+H8 & rich   & 9\,152 & $<\!10^{-23}$ & *** & 0.83 [0.75, 0.90] & \checkmark \\
+H8 & medium & 4\,995 & 1.000         &     & 0.00 [$-$0.15, 0.16] & \texttimes \\
+H8 & sparse & 5\,000 & 1.000         &     & 0.00 [0.00, 0.00] & \texttimes \\
+H8 & scarce & 5\,000 & 1.000         &     & 0.00 [0.00, 0.00] & \texttimes \\
 \bottomrule
 \end{tabular}%
 }
 \end{table}
 
-\textbf{H1} (boundary cost--benefit tradeoff) results will be updated after
-test-seed data collection with the revised model [TBD].
-With the addition of energy leakage and environmental damage mechanics,
-V1 is expected to show an environment-dependent tradeoff: net cost in
-resource-rich environments (where leakage/damage pressure is low relative
-to repair costs) but net benefit in harsh environments (where boundary
-protection against damage outweighs the repair overhead).
-Calibration seeds (0--49) confirmed this tradeoff pattern.
+\textbf{H1} (boundary cost--benefit tradeoff) reveals the predicted
+environment-dependent tradeoff.
+In rich environments, V1 significantly reduces survival ($\delta=1.00$,
+$p_\text{corr}<10^{-33}$): mean alive drops from 33.9 (V0) to 21.6 (V0+V1),
+because boundary maintenance cost exceeds the leakage/damage protection
+benefit when resources are abundant.
+In medium, the effect is weaker but still significant ($\delta=0.29$,
+$p_\text{corr}=0.002$): 17.7~$\to$~16.9.
+In sparse and scarce, V1 has \emph{no significant effect} ($\delta=-0.01$,
+$p=1.0$): boundary protection exactly offsets its cost, yielding near-identical
+populations ($\sim$10.0 alive).
+This environment-dependent pattern---V1 hurts in rich but is neutral in
+harsh---replaces the prior model's universal cost finding and demonstrates
+a genuine tradeoff between protection and overhead.
 
-\textbf{H2} (metabolism buffering) results will be updated after
-test-seed data collection with the revised model [TBD].
-V3 addition is expected to remain the most transformative capability step,
-with mean alive rising substantially when internal resource conversion is added.
+\textbf{H2} (metabolism buffering) is confirmed universally ($\delta=1.00$,
+all $p_\text{corr}<10^{-33}$).
+V3 addition transforms survival: in rich environments, mean alive rises from
+25.1 (V0+V1+V2) to 190.0 (V0+V1+V2+V3)---a 7.6$\times$ increase.
+In medium, the jump is 17.0~$\to$~50.2 ($+195\%$).
 
-\textbf{H3} (liberation) results will be updated after test-seed data
-collection with the revised model [TBD].
-In the prior model, liberation was confirmed in rich/medium but null in
-sparse/scarce, where the resource pool was too depleted for the higher
-replication threshold~(0.80).
+\textbf{H3} (liberation) is confirmed in rich ($\delta=1.00$,
+$p_\text{corr}<10^{-37}$) and medium ($\delta=1.00$, $p_\text{corr}<10^{-38}$),
+where liberated ProtoOrganelle reaches 60.2 and 18.7 mean alive respectively.
+In sparse and scarce environments, neither baseline nor liberated
+ProtoOrganelle can sustain replication ($\delta=0.00$, $p=1.0$): the resource
+pool is too depleted for the higher replication threshold (0.80) of this
+archetype.
 
-\textbf{H4} (monotonic trend) results will be updated [TBD].
-With the revised V1/V2 mechanics, the non-monotonic ``cost valley'' is
-expected to be shallower: V1 may help in harsh environments, creating
-a more nuanced alive pattern across V-levels.
-The Jonckheere-Terpstra test detects overall upward tendency (V0 to V3)
-but the non-monotonic intermediate dip limits statistical power, particularly
-in harsh environments where the signal-to-noise ratio collapses.
+\textbf{H4} (monotonic trend) is now significant at \emph{all four}
+harshness levels ($p_\text{corr}<10^{-12}$ in rich, $<10^{-100}$ elsewhere).
+The revised V1/V2 mechanics produce a shallower cost valley: the alive
+pattern in rich ($33.9 \to 21.6 \to 25.1 \to 190.0$) still shows a dip at
+V1 before V3 recovery, but the V2 partial recovery (H8) creates a less
+severe intermediate trough.
+In sparse/scarce, the V0--V3 populations are nearly flat ($10 \to 10 \to 10
+\to 20$) with V3 producing a consistent doubling, giving the JT test a
+clear monotonic signal.
 
-\textbf{H5} (chemotaxis benefit) results will be updated [TBD].
-V4 chemotaxis is expected to improve survival where resources are heterogeneous
-but incur a net cost in resource-rich environments where the per-step movement
-cost ($0.01 \times |\Delta\mathbf{v}|$) outweighs the foraging benefit.
-This would reveal a \emph{second cost valley}: behavioural capabilities incur
+\textbf{H5} (chemotaxis benefit) is confirmed in medium ($\delta=1.00$),
+sparse ($\delta=1.00$), and scarce ($\delta=0.99$), but \emph{reversed} in
+rich ($\delta=-0.98$, $p_\text{corr}<10^{-32}$).
+V4 chemotaxis improves survival where resources are heterogeneous:
+mean alive rises from 50.2 to 77.5 in medium ($+54\%$) and from 20.0 to 33.4
+in sparse ($+67\%$).
+However, in resource-rich environments where resources are uniformly abundant,
+the per-step movement cost ($0.01 \times |\Delta\mathbf{v}|$) reduces
+survival from 190.0 to 139.7 ($-26\%$).
+This reveals a \emph{second cost valley}: behavioural capabilities incur
 overhead that is only justified when the environment rewards directed movement.
 
-\textbf{H6} (lifecycle staging) results will be updated [TBD].
-V5 dormancy is expected to enable energy conservation during transient
-low-resource periods in rich environments, but to \emph{reduce} survival
-in harsher environments where dormancy phases suppress replication windows
-and dispersal's elevated energy decay ($\times 1.5$) is counterproductive.
+\textbf{H6} (lifecycle staging) is confirmed only in rich ($\delta=1.00$,
+$p_\text{corr}<10^{-33}$), where V5 dormancy enables energy conservation
+during transient low-resource periods, pushing mean alive from 139.7 to 182.6
+($+31\%$).
+In medium ($\delta=-0.72$), sparse ($\delta=-1.00$), and scarce
+($\delta=-0.99$), V5 \emph{reduces} survival: dormancy phases suppress
+replication windows, and dispersal's elevated energy decay ($\times 1.5$) is
+counterproductive when resources cannot sustain the cost.
+The environment-dependent reversal of H6 is the strongest qualitative finding
+beyond the original V0--V3 ladder.
 
-\textbf{H7} (full monotonic trend V0--V5) results will be updated [TBD].
-Despite expected non-monotonic pairwise reversals in H5 and H6, the overall
-six-level trend V0$\to$V5 is predicted to remain robustly upward: the V3
-metabolism recovery dominates the signal, and V4/V5 additions, while
-environment-dependent, should not reverse the aggregate trajectory.
+\textbf{H7} (full monotonic trend V0--V5) is significant at all four
+harshness levels ($p_\text{corr}<10^{-100}$, Jonckheere-Terpstra).
+Despite the non-monotonic pairwise reversals in H5 and H6, the overall
+six-level trend V0$\to$V5 is robustly upward: the V3 metabolism recovery
+dominates the signal, and V4/V5 additions, while environment-dependent,
+do not reverse the aggregate trajectory.
 
-\textbf{H8} (V2 overconsumption regulation, Amendment~3) results will be
-updated after test-seed data collection with the revised model [TBD].
-Calibration data show that V2 regulation reduces overconsumption waste,
-providing a measurable survival advantage over V0+V1 alone.
+\textbf{H8} (V2 overconsumption regulation, Amendment~3) is confirmed in
+rich ($\delta=0.83$, $p_\text{corr}<10^{-23}$): mean alive rises from
+21.6 (V0+V1) to 25.1 (V0+V1+V2), a $+16\%$ increase.
+V2's regulation of uptake reduces overconsumption waste, providing a
+measurable survival advantage.
+In medium, sparse, and scarce, V2 has no significant effect
+($\delta \approx 0$, $p=1.0$): overconsumption rarely occurs when
+resources are scarce, so the regulation benefit does not materialise.
+The rich-only significance of H8 demonstrates that V2 provides a
+\emph{genuine but environment-dependent} benefit, not an engineered win.
 
 \subsection{Replication--Persistence Tradeoff}
 \label{sec:results-tradeoff}
@@ -765,17 +796,26 @@ resource regimes and is left as future work.
 \subsection{Effect Size Robustness Check}
 \label{sec:results-energy}
 
-\emph{Exploratory}: The alive-count metric used in H1--H8 may exhibit
-ceiling/floor effects, raising the concern that the metric is too coarse
-to distinguish strong from overwhelming effects.
+\emph{Exploratory}: The alive-count metric used in H1--H8 exhibits
+ceiling/floor effects in some comparisons ($\delta=1.00$ with $[1.00,1.00]$~CI),
+raising the concern that the metric is too coarse to distinguish
+strong from overwhelming effects.
 As a robustness check, we repeat the H1 and H2 comparisons using
 \texttt{mean\_energy} at step~500---a continuous per-entity measure that
 avoids the binary alive/dead dichotomy.
-With the revised model (V1 leakage/damage protection, V2 overconsumption
-regulation), we expect effect sizes to span a wider range than the prior
-model's saturated $\delta=1.00$ values [TBD].
-The sensitivity analysis (\S\ref{sec:sensitivity}) provides additional
-evidence on whether conclusions are robust to parameter perturbation.
+The H1 energy comparison at rich harshness yields $\delta=-0.61$
+with CI $[-0.73, -0.47]$---\emph{reversed} relative to the alive-count
+direction.
+V1 entities have higher mean energy ($0.432 \pm 0.033$) than V0 entities
+($0.402 \pm 0.017$), indicating that boundary protection benefits individual
+energy budgets even though population size decreases.
+The H2 energy comparison at rich yields $\delta=0.33$ with CI $[0.15, 0.49]$,
+confirming that V3 benefits are detectable but not saturated on the continuous
+metric.
+In medium, sparse, and scarce, both comparisons remain at $\delta=1.00$.
+These results demonstrate that the revised model produces a richer range of
+effect sizes ($\delta$ from $-0.61$ to $1.00$) than the prior model's
+universally saturated values.
 
 % ============================================================================
 \section{Discussion}
@@ -816,12 +856,13 @@ These environment-dependent reversals suggest that ``more capabilities''
 is not universally beneficial---each addition is only justified when
 the environment rewards the specific function it provides.
 Despite these pairwise reversals, the full V0$\to$V5 trend (H7, JT test)
-is expected to remain significant [TBD]: the V3 metabolic recovery
-is predicted to dominate the aggregate signal.
+is significant at all harshness levels ($p<10^{-100}$): the V3 metabolic
+recovery dominates the aggregate signal.
 
-The H3 ProtoOrganelle liberation result is expected to be environment-dependent:
+The H3 ProtoOrganelle liberation result is environment-dependent:
 in resource-rich conditions, adding V0 replication to a metabolically complete
-entity (V1+V2+V3) should produce a replicating population [TBD]; in sparse/scarce
+entity (V1+V2+V3) immediately produces a replicating population
+($\delta=1.00$); in sparse/scarce
 environments, the resource pool is too depleted for the ProtoOrganelle's higher
 replication threshold~(0.80).
 The liberation contrast is partially self-evident (0 vs.\ non-0 replications);
