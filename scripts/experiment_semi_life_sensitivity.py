@@ -1,8 +1,8 @@
 """EXPLORATORY: Parameter sensitivity sweep for SemiLife model.
 
-One-at-a-time sweep: 8 parameters × 5 multipliers (0.5×, 0.75×, 1.0×, 1.5×, 2.0×),
+One-at-a-time sweep: 6 parameters × 5 multipliers (0.5×, 0.75×, 1.0×, 1.5×, 2.0×),
 Viroid archetype, 2 harshness levels (rich + sparse), 30 seeds (0–29).
-Total: 8 × 5 × 2 × 30 = 2,400 runs.
+Total: 6 × 5 × 2 × 30 = 1,800 runs.
 
 This analysis is labeled EXPLORATORY per pre-registration Amendment 3.
 

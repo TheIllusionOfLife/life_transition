@@ -285,27 +285,16 @@ impl SemiLifeRuntime {
     /// from agent counts, not from II, to avoid circularity.
     pub fn internalization_index(&self) -> f32 {
         let (e, r, b, l) = self.ii_channels();
-        let mut sum = 0.0f32;
-        let mut count = 0u32;
-
-        let energy_total = self.energy_from_internal + self.energy_from_external;
-        if energy_total > f32::EPSILON {
-            sum += e;
-            count += 1;
-        }
-        if self.regulation_total > f32::EPSILON {
-            sum += r;
-            count += 1;
-        }
-        if self.behavior_total > f32::EPSILON {
-            sum += b;
-            count += 1;
-        }
-        if self.lifecycle_total > f32::EPSILON {
-            sum += l;
-            count += 1;
-        }
-
+        let channels = [
+            (e, self.energy_from_internal + self.energy_from_external),
+            (r, self.regulation_total),
+            (b, self.behavior_total),
+            (l, self.lifecycle_total),
+        ];
+        let (sum, count) = channels
+            .iter()
+            .filter(|(_, total)| *total > f32::EPSILON)
+            .fold((0.0f32, 0u32), |(s, c), (val, _)| (s + val, c + 1));
         if count == 0 {
             0.0
         } else {

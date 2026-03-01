@@ -1,3 +1,10 @@
+> **Historical snapshot** (2026-02-28): This review was written against the pre-Amendment 3 model.
+> Several concerns have been addressed in the subsequent revision (PR #10).
+>
+> **Summary (EN)**: Minor Revision. Key issues: Table 1 missing V4/V5 parameters; Figure 3
+> legend unclear; V4 unused sensor dims; slow shock not in Figure 4; entity interaction absent;
+> II effectively a V3 step function; n_init=10 / T=500 too small for robustness.
+
 # Peer Review: Semi-Life: A Capability Ladder for the Virus-to-Life Transition
 
 **Venue:** ALife 2026 (Full Paper)  

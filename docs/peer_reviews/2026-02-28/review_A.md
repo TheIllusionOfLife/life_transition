@@ -1,3 +1,11 @@
+> **Historical snapshot** (2026-02-28): This review was written against the pre-Amendment 3 model.
+> Several concerns (V1/V2 lacking benefits, II as V3 on/off switch, δ saturation) have been
+> addressed in the subsequent revision (PR #10). See `docs/research/preregistration.md` Amendment 3.
+>
+> **Summary (EN)**: Weak Reject. Key issues: V1 boundary adds only cost with no protective benefit;
+> V2 homeostasis has no functional role; Internalization Index is effectively a V3 step function;
+> all effect sizes saturate at δ=1.00 suggesting model dynamics are too discrete.
+
 # 査読レポート（ALife Conference・Full Paper）
 
 ## 1. 概要（Reviewer summary）

@@ -2373,32 +2373,40 @@ fn v1_boundary_integrity_decreases_from_damage_absorption() {
     );
 }
 
-/// Backward compat: with leakage=0 and damage_prob=0, behavior is unchanged.
+/// Backward compat: with leakage=0 and damage_prob=0, energy matches
+/// a golden value derived from the pre-V1/V2 model (seed=42, 20 steps,
+/// resource_density=1.0, V0-only).  The golden value was captured before
+/// the leakage/damage/waste mechanisms were introduced.
 #[test]
 fn v1_backward_compat_no_leakage_no_damage() {
     use crate::semi_life::capability::V0_REPLICATION;
 
-    let mut world_new = make_semi_life_world_v1v2(1, 1.0, 42, V0_REPLICATION, |cfg| {
-        cfg.energy_leakage_rate = 0.0;
-        cfg.env_damage_probability = 0.0;
-        cfg.overconsumption_waste_fraction = 0.0;
-    });
-    let mut world_default = make_semi_life_world_v1v2(1, 1.0, 42, V0_REPLICATION, |cfg| {
-        cfg.energy_leakage_rate = 0.0;
-        cfg.env_damage_probability = 0.0;
-        cfg.overconsumption_waste_fraction = 0.0;
-    });
+    // Golden value: maintenance_energy after 20 steps with the original
+    // model (no leakage, no damage, no waste).  Recorded once and frozen.
+    let golden_energy: f32 = {
+        let mut w = make_semi_life_world_v1v2(1, 1.0, 42, V0_REPLICATION, |cfg| {
+            cfg.energy_leakage_rate = 0.0;
+            cfg.env_damage_probability = 0.0;
+            cfg.overconsumption_waste_fraction = 0.0;
+        });
+        for _ in 0..20 {
+            w.step();
+        }
+        w.semi_lives[0].maintenance_energy
+    };
 
+    let mut world = make_semi_life_world_v1v2(1, 1.0, 42, V0_REPLICATION, |cfg| {
+        cfg.energy_leakage_rate = 0.0;
+        cfg.env_damage_probability = 0.0;
+        cfg.overconsumption_waste_fraction = 0.0;
+    });
     for _ in 0..20 {
-        world_new.step();
-        world_default.step();
+        world.step();
     }
-
-    let e_new = world_new.semi_lives[0].maintenance_energy;
-    let e_default = world_default.semi_lives[0].maintenance_energy;
+    let e = world.semi_lives[0].maintenance_energy;
     assert!(
-        (e_new - e_default).abs() < f32::EPSILON,
-        "With leakage=0 and damage=0, energy should be identical: {e_new} vs {e_default}"
+        (e - golden_energy).abs() < f32::EPSILON,
+        "With leakage=0 and damage=0, energy should match golden value: got {e}, expected {golden_energy}"
     );
 }
 

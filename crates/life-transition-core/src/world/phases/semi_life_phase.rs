@@ -372,9 +372,8 @@ impl World {
         }
 
         // 1c. Environmental damage (stochastic; V1 absorbs partial damage).
-        if cfg.env_damage_probability > 0.0
-            && sl.rng.random::<f32>() < cfg.env_damage_probability * dt
-        {
+        let p_env_damage = (cfg.env_damage_probability * dt).clamp(0.0, 1.0);
+        if p_env_damage > 0.0 && sl.rng.random::<f32>() < p_env_damage {
             let base_damage = cfg.env_damage_amount;
             if sl.active_capabilities.has(capability::V1_BOUNDARY) {
                 if let Some(integrity) = sl.boundary_integrity {
@@ -430,7 +429,10 @@ impl World {
                 .has(capability::V2_HOMEOSTASIS)
             {
                 let reg = semi_lives[i].regulator_state.unwrap_or(0.0);
-                let regulated = (cfg.overconsumption_waste_fraction * (1.0 - reg * 0.8)).max(0.0);
+                const MAX_REGULATOR_WASTE_REDUCTION: f32 = 0.8;
+                let regulated = (cfg.overconsumption_waste_fraction
+                    * (1.0 - reg * MAX_REGULATOR_WASTE_REDUCTION))
+                    .max(0.0);
                 // Regulation channel: waste saved is the internal contribution.
                 let waste_saved = unregulated_waste - excess * regulated;
                 semi_lives[i].regulation_internal += waste_saved;

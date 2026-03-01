@@ -1,6 +1,6 @@
 """Recovery figure: alive count time series through shock events per capability level.
 
-Two-panel: with shocks (period=50) vs. no-shock baseline.
+Three-panel: with shocks (period=50), shocks (period=200), and no-shock baseline.
 Shows V3 entities maintain higher populations through periodic resource crashes.
 """
 

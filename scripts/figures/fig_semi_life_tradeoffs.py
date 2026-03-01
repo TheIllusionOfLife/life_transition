@@ -5,6 +5,7 @@ One point per condition × harshness. Color = archetype; marker shape = capabili
 
 import numpy as np
 from figures._shared import *
+from matplotlib.lines import Line2D
 
 _ARCHETYPE_COLORS = {
     "viroid": "#E69F00",
@@ -102,7 +103,6 @@ def generate_fig_semi_life_tradeoffs(data_tsv: Path, out_dir: Path) -> None:
     ax.set_title("Replication Rate vs. Persistence Tradeoff", fontsize=9)
 
     # Dual legend: archetype colors (left) + capability markers (right)
-    from matplotlib.lines import Line2D
 
     arch_handles = [
         Line2D(
@@ -120,6 +120,7 @@ def generate_fig_semi_life_tradeoffs(data_tsv: Path, out_dir: Path) -> None:
         ("o", "V0 (1 cap)"),
         ("s", "2 caps"),
         ("^", "3 caps"),
+        ("P", "3 caps (no V0)"),
         ("D", "4 caps"),
         ("h", "5 caps"),
         ("*", "6 caps"),

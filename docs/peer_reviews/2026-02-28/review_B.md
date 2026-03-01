@@ -1,3 +1,10 @@
+> **Historical snapshot** (2026-02-28): This review was written against the pre-Amendment 3 model.
+> Several concerns have been addressed in the subsequent revision (PR #10).
+>
+> **Summary (EN)**: Weak Reject. Key issues: V1/V2 add only costs with no benefits (H1 result
+> is structurally inevitable); II is a V3 on/off switch; δ=1.00 saturation; H1 pre-registration
+> scope concern; H3 liberation is trivially true; JT test interpretation needs caution.
+
 # ALIFE 2026 Full Paper Review: "Semi-Life: A Capability Ladder for the Virus-to-Life Transition"
 
 ## 要約
