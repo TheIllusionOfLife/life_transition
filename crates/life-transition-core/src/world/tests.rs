@@ -2374,26 +2374,15 @@ fn v1_boundary_integrity_decreases_from_damage_absorption() {
 }
 
 /// Backward compat: with leakage=0 and damage_prob=0, energy matches
-/// a golden value derived from the pre-V1/V2 model (seed=42, 20 steps,
-/// resource_density=1.0, V0-only).  The golden value was captured before
+/// a frozen golden value (seed=42, 20 steps, resource_density=1.0, V0-only).
+/// The golden value 0.537999212 was captured from a known-good commit before
 /// the leakage/damage/waste mechanisms were introduced.
 #[test]
 fn v1_backward_compat_no_leakage_no_damage() {
     use crate::semi_life::capability::V0_REPLICATION;
 
-    // Golden value: maintenance_energy after 20 steps with the original
-    // model (no leakage, no damage, no waste).  Recorded once and frozen.
-    let golden_energy: f32 = {
-        let mut w = make_semi_life_world_v1v2(1, 1.0, 42, V0_REPLICATION, |cfg| {
-            cfg.energy_leakage_rate = 0.0;
-            cfg.env_damage_probability = 0.0;
-            cfg.overconsumption_waste_fraction = 0.0;
-        });
-        for _ in 0..20 {
-            w.step();
-        }
-        w.semi_lives[0].maintenance_energy
-    };
+    // Frozen golden value — do NOT recompute from the same code path.
+    let golden_energy: f32 = 0.537_999_2;
 
     let mut world = make_semi_life_world_v1v2(1, 1.0, 42, V0_REPLICATION, |cfg| {
         cfg.energy_leakage_rate = 0.0;
@@ -2405,7 +2394,7 @@ fn v1_backward_compat_no_leakage_no_damage() {
     }
     let e = world.semi_lives[0].maintenance_energy;
     assert!(
-        (e - golden_energy).abs() < f32::EPSILON,
+        (e - golden_energy).abs() < 1e-5,
         "With leakage=0 and damage=0, energy should match golden value: got {e}, expected {golden_energy}"
     );
 }

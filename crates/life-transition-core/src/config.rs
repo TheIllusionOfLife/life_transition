@@ -66,9 +66,11 @@ pub struct SemiLifeConfig {
     /// Per-step resource uptake rate drawn from the resource field.
     pub resource_uptake_rate: f32,
     // V1 — Boundary
-    /// Per-step energy leakage rate for entities WITHOUT V1 boundary (diffusion loss).
+    /// Energy leakage rate (per time unit) for entities WITHOUT V1 boundary.
+    /// Actual per-step loss = `energy_leakage_rate * dt`.
     pub energy_leakage_rate: f32,
-    /// Per-step probability of a stochastic environmental damage event.
+    /// Rate of stochastic environmental damage events (per time unit).
+    /// Per-step probability = `clamp(env_damage_probability * dt, 0, 1)`.
     pub env_damage_probability: f32,
     /// Base energy lost per environmental damage event (without V1 protection).
     pub env_damage_amount: f32,

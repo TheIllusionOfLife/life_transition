@@ -323,6 +323,11 @@ def test_v4_without_v3_has_behavior_ii_channel():
     assert all(s["ii_energy"] == pytest.approx(0.0) for s in alive), (
         "ii_energy should be 0.0 without V3"
     )
+    # Behavior channel should be active with V4
+    ii_behavior_vals = [s["ii_behavior"] for s in alive]
+    assert any(v > 0.0 for v in ii_behavior_vals), (
+        f"ii_behavior should be > 0 for at least some V4 entities, got {ii_behavior_vals[:5]}"
+    )
 
 
 # ---------------------------------------------------------------------------

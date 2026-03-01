@@ -177,7 +177,7 @@ pub struct SemiLifeRuntime {
     // Multi-channel II accumulators (reset each step).
     /// V2 regulation channel: waste reduction achieved by regulator this step.
     pub regulation_internal: f32,
-    /// V2 regulation channel: baseline (1.0 per step if V2 active, for normalization).
+    /// V2 regulation channel: total unregulated waste (event-gated; >0 only when overconsumption fires).
     pub regulation_total: f32,
     /// V4 behavior channel: policy-driven movement fraction this step.
     pub behavior_internal: f32,

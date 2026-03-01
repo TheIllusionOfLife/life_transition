@@ -143,7 +143,8 @@ enough to trigger overconsumption but the waste penalty is non-trivial.
 > - Holm-Bonferroni family expanded from 28 to 32 tests (H8 × 4 added).
 >
 > **Exploratory analyses** (not in confirmatory family):
-> - Parameter sensitivity sweep: 8 parameters × 5 multipliers × 2 harshness × 30 seeds
+> - Parameter sensitivity sweep: 6 parameters × 5 multipliers × 2 harshness × 30 seeds
+>   (V4/V5 parameters excluded because sweep runs V0+V1+V2+V3 only)
 > - Robustness runs: n_init=50, T=2000 for key conditions
 > - V4 policy weight drift analysis across generations
 
@@ -170,7 +171,7 @@ enough to trigger overconsumption but the waste penalty is non-trivial.
 - Recovery advantage of V3 over V0 under shocks is exploratory — not in H1–H8 family.
 - V4/V5 survival advantage in *rich* environments is exploratory only — gradient-following
   and lifecycle staging are predicted to matter primarily in resource-scarce conditions.
-- Parameter sensitivity sweep (8 params × 5 multipliers) is EXPLORATORY — tests qualitative
+- Parameter sensitivity sweep (6 params × 5 multipliers) is EXPLORATORY — tests qualitative
   robustness of conclusions, not directional hypotheses.
 - Robustness runs (n_init=50, T=2000) are EXPLORATORY — tests scale sensitivity.
 - V4 policy weight drift analysis is EXPLORATORY — tests whether evolution occurs at
