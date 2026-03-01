@@ -91,7 +91,7 @@ def parse_args() -> argparse.Namespace:
 def build_metadata(args: argparse.Namespace) -> dict:
     """Build metadata payload from parsed args (testable without I/O)."""
     artifacts = []
-    for path in sorted(args.files):
+    for path in args.files:  # preserve CLI argument order (matches metadata_generation_argv)
         resolved = path.resolve()
         if not resolved.exists():
             raise FileNotFoundError(f"not found: {path}")

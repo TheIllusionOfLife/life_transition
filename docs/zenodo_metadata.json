@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "generated_at_utc": "2026-03-01T03:16:21.518826+00:00",
+  "generated_at_utc": "2026-03-01T03:51:14.134340+00:00",
   "experiment_name": "semi_life_capability_ladder",
-  "artifact_source_commit": "1200e73fb4a9b8eaae58bfdaa0eb291d707fc9ef",
+  "artifact_source_commit": "0f91eac284324e38b90b9b9c010be418dc800015",
   "entrypoint": null,
   "metadata_generation_argv": [
     "zenodo_staging/semi_life_calibration_data.tar.gz",
@@ -53,14 +53,14 @@
       "sha256": "482470f06bfdf89d9a7c992f0e1d0bc70497ee66462f7d54975b439fccaf5b47"
     },
     {
-      "path": "zenodo_staging/semi_life_sensitivity_data.tar.gz",
-      "size_bytes": 17508,
-      "sha256": "17a1fdc53643bc8b8712be3cea0570cc9404d377280c8c8983c76f13166137d5"
-    },
-    {
       "path": "zenodo_staging/semi_life_shock_data.tar.gz",
       "size_bytes": 190066,
       "sha256": "6808ccde187e4b4cc66e40fc7796317f3dd777b2af46b1203541db9c170cc021"
+    },
+    {
+      "path": "zenodo_staging/semi_life_sensitivity_data.tar.gz",
+      "size_bytes": 17508,
+      "sha256": "17a1fdc53643bc8b8712be3cea0570cc9404d377280c8c8983c76f13166137d5"
     }
   ],
   "paper_bindings": [
