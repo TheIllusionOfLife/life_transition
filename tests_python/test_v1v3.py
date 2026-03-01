@@ -107,8 +107,12 @@ def test_capability_overrides_appears_in_config():
 def test_capability_overrides_passes_rust_validation():
     """All valid V0–V5 capability combinations must pass Rust validation."""
     for bits in [
-        V0, V0 | V1, V0 | V1 | V2, V0 | V1 | V2 | V3,
-        V0 | V1 | V2 | V3 | V4, V0 | V1 | V2 | V3 | V4 | V5,
+        V0,
+        V0 | V1,
+        V0 | V1 | V2,
+        V0 | V1 | V2 | V3,
+        V0 | V1 | V2 | V3 | V4,
+        V0 | V1 | V2 | V3 | V4 | V5,
     ]:
         cfg_str = make_config("viroid", bits, 0.1, seed=0)
         assert life_transition.validate_config_json(cfg_str) is True, f"Failed for bits={bits}"
@@ -150,24 +154,29 @@ def test_v3_produces_positive_internalization_index():
     assert mean_ii > 0.0, f"V3 entities must have II > 0; got mean_ii={mean_ii}"
 
 
-def test_v1_boundary_reduces_population_in_scarce():
-    """V0+V1 must produce a smaller population than V0 in scarce resources.
+def test_v1_boundary_has_energy_tradeoff():
+    """V0+V1 mean energy differs from V0 — boundary has a cost-benefit tradeoff.
 
-    Boundary maintenance adds per-step energy drain; in resource-scarce environments
-    this overhead reduces the equilibrium population compared with V0-only.
+    After model redesign (Amendment 3): V1 protects against leakage and
+    environmental damage but incurs repair cost. The net effect is
+    environment-dependent. We check that V1 produces a measurable energy
+    difference (more sensitive than alive count at small population sizes).
     """
 
-    def alive_at_500(cap_bits: int) -> int:
-        cfg_str = make_config("viroid", cap_bits, 0.1, seed=0)
+    def mean_energy_at_500(cap_bits: int) -> float:
+        cfg_str = make_config("viroid", cap_bits, 0.3, seed=0)
         result = json.loads(life_transition.run_semi_life_v0_experiment_json(cfg_str, 500, 500))
         last = result["samples"][-1]["snapshots"]
-        return sum(1 for s in last if s["alive"] and s["archetype"] == "viroid")
+        alive = [s for s in last if s["alive"] and s["archetype"] == "viroid"]
+        if not alive:
+            return 0.0
+        return sum(s["maintenance_energy"] for s in alive) / len(alive)
 
-    alive_v0 = alive_at_500(V0)
-    alive_v0v1 = alive_at_500(V0 | V1)
-    assert alive_v0v1 < alive_v0, (
-        f"V0+V1 ({alive_v0v1}) should have fewer entities than V0 ({alive_v0}) "
-        "in scarce resources due to boundary overhead"
+    energy_v0 = mean_energy_at_500(V0)
+    energy_v0v1 = mean_energy_at_500(V0 | V1)
+    assert abs(energy_v0v1 - energy_v0) > 0.001, (
+        f"V0+V1 energy ({energy_v0v1:.4f}) should differ from V0 ({energy_v0:.4f}) — "
+        "boundary has measurable cost-benefit tradeoff"
     )
 
 
@@ -299,14 +308,26 @@ def test_v4_active_capabilities_in_snapshot():
     assert cap_values == {bits}, f"Expected active_capabilities == {bits}, got {cap_values}"
 
 
-def test_v4_without_v3_has_zero_ii():
-    """V4 without V3 must have II=0 (response adds no internal metabolism)."""
+def test_v4_without_v3_has_behavior_ii_channel():
+    """V4 without V3 should have ii_energy=0 but may have ii_behavior>0.
+
+    With multi-channel II (Amendment 3), V4 contributes a behavior channel
+    to the composite II. The energy channel should still be zero without V3.
+    """
     cfg_str = make_config("viroid", V0 | V1 | V2 | V4, 0.3, seed=0)
     result = json.loads(life_transition.run_semi_life_v0_experiment_json(cfg_str, 100, 100))
     last = result["samples"][-1]["snapshots"]
     alive = [s for s in last if s["alive"] and s["archetype"] == "viroid"]
     assert alive, "No alive viroid entities"
-    assert all(s["internalization_index"] == pytest.approx(0.0) for s in alive)
+    # Energy channel must be zero without V3
+    assert all(s["ii_energy"] == pytest.approx(0.0) for s in alive), (
+        "ii_energy should be 0.0 without V3"
+    )
+    # Behavior channel should be active with V4
+    ii_behavior_vals = [s["ii_behavior"] for s in alive]
+    assert any(v > 0.0 for v in ii_behavior_vals), (
+        f"ii_behavior should be > 0 for at least some V4 entities, got {ii_behavior_vals[:5]}"
+    )
 
 
 # ---------------------------------------------------------------------------

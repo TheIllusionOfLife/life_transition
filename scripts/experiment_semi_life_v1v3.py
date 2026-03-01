@@ -90,6 +90,10 @@ TSV_COLUMNS = [
     "alive",
     "mean_energy",
     "mean_ii",
+    "mean_ii_energy",
+    "mean_ii_regulation",
+    "mean_ii_behavior",
+    "mean_ii_lifecycle",
     "total_replications",
     "total_failed",
     "world_replications_total",
@@ -171,10 +175,20 @@ def _aggregate(snapshots: list[dict], archetype: str) -> dict:
     n_active = sum(1 for s in stages if s == "active")
     n_dispersal = sum(1 for s in stages if s == "dispersal")
 
+    # Per-channel II means (Amendment 3: multi-channel composite).
+    def _mean_field(field: str) -> float:
+        if not alive:
+            return 0.0
+        return sum(e.get(field, 0.0) for e in alive) / len(alive)
+
     return {
         "alive": len(alive),
-        "mean_energy": (sum(e["maintenance_energy"] for e in alive) / len(alive) if alive else 0.0),
-        "mean_ii": (sum(e["internalization_index"] for e in alive) / len(alive) if alive else 0.0),
+        "mean_energy": _mean_field("maintenance_energy"),
+        "mean_ii": _mean_field("internalization_index"),
+        "mean_ii_energy": _mean_field("ii_energy"),
+        "mean_ii_regulation": _mean_field("ii_regulation"),
+        "mean_ii_behavior": _mean_field("ii_behavior"),
+        "mean_ii_lifecycle": _mean_field("ii_lifecycle"),
         "total_replications": sum(e["replications"] for e in entities),
         "total_failed": sum(e["failed_replications"] for e in entities),
         "capability_bits": caps,
@@ -216,6 +230,10 @@ def run_one(
             str(agg["alive"]),
             f"{agg['mean_energy']:.4f}",
             f"{agg['mean_ii']:.4f}",
+            f"{agg['mean_ii_energy']:.4f}",
+            f"{agg['mean_ii_regulation']:.4f}",
+            f"{agg['mean_ii_behavior']:.4f}",
+            f"{agg['mean_ii_lifecycle']:.4f}",
             str(agg["total_replications"]),
             str(agg["total_failed"]),
             str(world_rep),

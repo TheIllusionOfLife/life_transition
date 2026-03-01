@@ -66,6 +66,18 @@ pub struct SemiLifeConfig {
     /// Per-step resource uptake rate drawn from the resource field.
     pub resource_uptake_rate: f32,
     // V1 — Boundary
+    /// Energy leakage rate (per time unit) for entities WITHOUT V1 boundary.
+    /// Actual per-step loss = `energy_leakage_rate * dt`.
+    pub energy_leakage_rate: f32,
+    /// Rate of stochastic environmental damage events (per time unit).
+    /// Per-step probability = `clamp(env_damage_probability * dt, 0, 1)`.
+    pub env_damage_probability: f32,
+    /// Base energy lost per environmental damage event (without V1 protection).
+    pub env_damage_amount: f32,
+    /// Fraction of environmental damage absorbed by V1 boundary (0.0–1.0).
+    pub boundary_damage_absorption: f32,
+    /// Boundary integrity cost per damage absorption event.
+    pub boundary_damage_integrity_cost: f32,
     /// Per-step boundary decay rate (V1 entities).
     pub boundary_decay_rate: f32,
     /// Per-step boundary repair rate (V1 entities; costs energy).
@@ -75,6 +87,10 @@ pub struct SemiLifeConfig {
     /// Minimum boundary required for V0 replication (V1 entities).
     pub boundary_replication_min: f32,
     // V2 — Homeostasis
+    /// Fraction of excess uptake wasted when intake exceeds optimal rate (overconsumption penalty).
+    pub overconsumption_waste_fraction: f32,
+    /// Uptake threshold per step above which overconsumption waste applies.
+    pub optimal_uptake_rate: f32,
     /// Initial regulator state (V2 entities).
     pub regulator_init: f32,
     /// Multiplier: regulator_state scales resource uptake (V2 entities).
@@ -151,10 +167,17 @@ impl Default for SemiLifeConfig {
             replication_cost: 0.3,
             replication_spawn_radius: 3.0,
             resource_uptake_rate: 0.02,
+            energy_leakage_rate: 0.005,
+            env_damage_probability: 0.05,
+            env_damage_amount: 0.05,
+            boundary_damage_absorption: 0.8,
+            boundary_damage_integrity_cost: 0.02,
             boundary_decay_rate: 0.002,
             boundary_repair_rate: 0.01,
             boundary_death_threshold: 0.1,
             boundary_replication_min: 0.5,
+            overconsumption_waste_fraction: 0.3,
+            optimal_uptake_rate: 0.015,
             regulator_init: 1.0,
             regulator_uptake_scale: 1.0,
             regulator_cost_per_step: 0.0005,
@@ -484,6 +507,14 @@ define_sim_config_error! {
     InvalidSemiLifePrionContactRadius => "semi_life_config.prion_contact_radius must be finite and non-negative";
     InvalidResourceInitialValue => "resource_initial_value must be finite and non-negative";
     InvalidSemiLifeCapabilityOverride => "semi_life_config.capability_overrides: bitmask bits above V5 (0x3F) are reserved";
+    InvalidSemiLifeEnergyLeakageRate => "semi_life_config.energy_leakage_rate must be finite and non-negative";
+    InvalidSemiLifeEnvDamageProbability => "semi_life_config.env_damage_probability must be finite and non-negative";
+    InvalidSemiLifeEnvDamageAmount => "semi_life_config.env_damage_amount must be finite and non-negative";
+    InvalidSemiLifeBoundaryDamageAbsorption => "semi_life_config.boundary_damage_absorption must be finite and within [0, 1]";
+    InvalidSemiLifeBoundaryDamageIntegrityCost => "semi_life_config.boundary_damage_integrity_cost must be finite and non-negative";
+    InvalidSemiLifeOverconsumptionWasteFraction => "semi_life_config.overconsumption_waste_fraction must be finite and within [0, 1]";
+    InvalidSemiLifeOptimalUptakeRate => "semi_life_config.optimal_uptake_rate must be finite and non-negative";
+    InvalidSemiLifeRegulatorInit => "semi_life_config.regulator_init must be finite and within [0, 1.25]";
 }
 
 impl std::error::Error for SimConfigError {}
@@ -795,6 +826,44 @@ impl SimConfig {
         }
         if !(cfg.prion_contact_radius.is_finite() && cfg.prion_contact_radius >= 0.0) {
             return Err(SimConfigError::InvalidSemiLifePrionContactRadius);
+        }
+        // V1 protective-benefit parameters.
+        if !(cfg.energy_leakage_rate.is_finite() && cfg.energy_leakage_rate >= 0.0) {
+            return Err(SimConfigError::InvalidSemiLifeEnergyLeakageRate);
+        }
+        if !(cfg.env_damage_probability.is_finite() && cfg.env_damage_probability >= 0.0) {
+            return Err(SimConfigError::InvalidSemiLifeEnvDamageProbability);
+        }
+        if !(cfg.env_damage_amount.is_finite() && cfg.env_damage_amount >= 0.0) {
+            return Err(SimConfigError::InvalidSemiLifeEnvDamageAmount);
+        }
+        if !(cfg.boundary_damage_absorption.is_finite()
+            && cfg.boundary_damage_absorption >= 0.0
+            && cfg.boundary_damage_absorption <= 1.0)
+        {
+            return Err(SimConfigError::InvalidSemiLifeBoundaryDamageAbsorption);
+        }
+        if !(cfg.boundary_damage_integrity_cost.is_finite()
+            && cfg.boundary_damage_integrity_cost >= 0.0)
+        {
+            return Err(SimConfigError::InvalidSemiLifeBoundaryDamageIntegrityCost);
+        }
+        // V2 overconsumption parameters.
+        if !(cfg.overconsumption_waste_fraction.is_finite()
+            && cfg.overconsumption_waste_fraction >= 0.0
+            && cfg.overconsumption_waste_fraction <= 1.0)
+        {
+            return Err(SimConfigError::InvalidSemiLifeOverconsumptionWasteFraction);
+        }
+        if !(cfg.optimal_uptake_rate.is_finite() && cfg.optimal_uptake_rate >= 0.0) {
+            return Err(SimConfigError::InvalidSemiLifeOptimalUptakeRate);
+        }
+        // Regulator init: capped at 1.25 so waste multiplier (1 - reg * 0.8) stays ≥ 0.
+        if !(cfg.regulator_init.is_finite()
+            && cfg.regulator_init >= 0.0
+            && cfg.regulator_init <= 1.25)
+        {
+            return Err(SimConfigError::InvalidSemiLifeRegulatorInit);
         }
         // Capability bitmasks must only use V0–V5 bits (0x01–0x20 → all fit in 0x3F).
         for bits in cfg.capability_overrides.values() {

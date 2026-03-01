@@ -1,6 +1,6 @@
 """Recovery figure: alive count time series through shock events per capability level.
 
-Two-panel: with shocks (period=50) vs. no-shock baseline.
+Three-panel: with shocks (period=50), shocks (period=200), and no-shock baseline.
 Shows V3 entities maintain higher populations through periodic resource crashes.
 """
 
@@ -37,21 +37,23 @@ def _mean_alive_by_step(rows: list[dict], condition: str) -> tuple[list[int], li
 
 
 def generate_fig_semi_life_recovery(shock_tsv: Path, baseline_tsv: Path, out_dir: Path) -> None:
-    """Two-panel: alive time series with shock (period=50) vs. no-shock baseline."""
+    """Three-panel: alive time series with shocks (period=50, 200) vs. no-shock baseline."""
     out_dir.mkdir(parents=True, exist_ok=True)
     shock_rows = parse_semi_life_tsv(shock_tsv)
     baseline_rows = parse_semi_life_tsv(baseline_tsv)
 
-    # Use shock period 50 (more frequent shocks → clearer dynamics)
+    # Shock periods: 50 (frequent) and 200 (slow)
     shock_p50 = [r for r in shock_rows if str(r.get("shock_period", "")) == "50"]
+    shock_p200 = [r for r in shock_rows if str(r.get("shock_period", "")) == "200"]
     # Baseline: sparse harshness matches shock experiment primary harshness
     baseline_sparse = [r for r in baseline_rows if r.get("harshness") == "sparse"]
 
-    fig, axes = plt.subplots(1, 2, figsize=(7.2, 3.0), sharey=True)
+    fig, axes = plt.subplots(1, 3, figsize=(7.2, 2.8), sharey=True)
 
     panels = [
-        (shock_p50, "With Shocks (cycle period = 50)"),
-        (baseline_sparse, "No Shocks (baseline, sparse)"),
+        (shock_p50, "Shocks (period = 50)"),
+        (shock_p200, "Shocks (period = 200)"),
+        (baseline_sparse, "No Shocks (baseline)"),
     ]
 
     for ax, (panel_rows, title) in zip(axes, panels, strict=True):

@@ -1,7 +1,7 @@
 """Statistical analysis of the SemiLife capability ladder experiment.
 
 Reads the test-seed TSV (experiment_semi_life_v1v3.py, seeds 100–199) and
-runs pre-registered hypothesis tests H1–H7.
+runs pre-registered hypothesis tests H1–H8.
 
 Usage:
     uv run python scripts/analyze_semi_life_capability_ladder.py \\
@@ -122,7 +122,7 @@ def analyze_h1(rows: list[dict]) -> list[dict]:
                 "harshness": harshness,
                 "comparison": "viroid_v0 vs viroid_v0v1",
                 "metric": "alive",
-                "pre_registered_direction": "V0 > V0+V1 (boundary overhead in scarce)",
+                "pre_registered_direction": "V0 vs V0+V1 (environment-dependent tradeoff)",
             }
         )
         results.append(result)
@@ -305,6 +305,27 @@ def analyze_h7(rows: list[dict]) -> list[dict]:
     return results
 
 
+def analyze_h8(rows: list[dict]) -> list[dict]:
+    """H8: Viroid V0+V1+V2 vs V0+V1 — V2 overconsumption regulation benefit."""
+    results = []
+    for harshness in RESOURCE_INITIAL_VALUES:
+        a = get_alive_at_final(rows, "viroid_v0v1v2", harshness)
+        b = get_alive_at_final(rows, "viroid_v0v1", harshness)
+        result = run_mannwhitney(a, b)
+        result.update(
+            {
+                "hypothesis": "H8",
+                "archetype": "viroid",
+                "harshness": harshness,
+                "comparison": "viroid_v0v1v2 vs viroid_v0v1",
+                "metric": "alive",
+                "pre_registered_direction": "V2 > V1 (overconsumption regulation benefit)",
+            }
+        )
+        results.append(result)
+    return results
+
+
 _ENERGY_COMPARISONS: list[tuple[str, str, str]] = [
     ("H1_energy", "viroid_v0", "viroid_v0v1"),
     ("H2_energy", "viroid_v0v1v2v3", "viroid_v0v1v2"),
@@ -337,14 +358,14 @@ def analyze_mean_energy_supplement(rows: list[dict]) -> list[dict]:
     return results
 
 
-_EXPECTED_PREREGISTERED_TESTS = 28  # H1–H7 × 4 harshness levels
+_EXPECTED_PREREGISTERED_TESTS = 32  # H1–H8 × 4 harshness levels
 
 
 def apply_holm_bonferroni(all_results: list[dict]) -> list[dict]:
-    """Apply Holm-Bonferroni correction across all 28 pre-registered tests.
+    """Apply Holm-Bonferroni correction across all 32 pre-registered tests.
 
     Raises ValueError if the number of valid p-values differs from the
-    pre-registered family size (28), which would silently weaken the correction.
+    pre-registered family size (32), which would silently weaken the correction.
     """
     with_p = [r for r in all_results if r.get("p_raw") is not None]
     if 0 < len(with_p) != _EXPECTED_PREREGISTERED_TESTS:
@@ -360,6 +381,42 @@ def apply_holm_bonferroni(all_results: list[dict]) -> list[dict]:
     for result, p_corr in zip(with_p, corrected, strict=True):
         result["p_corrected"] = float(p_corr)
     return all_results
+
+
+def _summarize_multi_channel_ii(rows: list[dict], ii_channels: list[str]) -> list[dict]:
+    """Compute per-condition, per-harshness mean of each II channel at final step.
+
+    Returns a list of dicts, one per (condition, harshness) pair, with
+    mean and std for each channel across seeds.
+    """
+    from itertools import groupby
+
+    # Group by (condition, harshness), take final step per seed
+    def keyfn(r: dict) -> tuple[str, str]:
+        return (r["condition"], r["harshness"])
+
+    sorted_rows = sorted(rows, key=keyfn)
+    summary = []
+    for (condition, harshness), group in groupby(sorted_rows, key=keyfn):
+        group_list = list(group)
+        max_step = max(float(r["step"]) for r in group_list)
+        final = [r for r in group_list if float(r["step"]) == max_step]
+        entry: dict = {
+            "condition": condition,
+            "harshness": harshness,
+            "n_seeds": len(final),
+        }
+        for ch in ii_channels:
+            vals = [float(r[ch]) for r in final if ch in r]
+            if vals:
+                arr = np.array(vals)
+                entry[f"{ch}_mean"] = float(np.mean(arr))
+                entry[f"{ch}_std"] = float(np.std(arr))
+            else:
+                entry[f"{ch}_mean"] = None
+                entry[f"{ch}_std"] = None
+        summary.append(entry)
+    return summary
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -383,6 +440,7 @@ def main(argv: list[str] | None = None) -> None:
     all_results.extend(analyze_h5(rows))
     all_results.extend(analyze_h6(rows))
     all_results.extend(analyze_h7(rows))
+    all_results.extend(analyze_h8(rows))
     all_results = apply_holm_bonferroni(all_results)
 
     out_path = _EXPERIMENTS_DIR / "semi_life_capability_stats.json"
@@ -399,6 +457,24 @@ def main(argv: list[str] | None = None) -> None:
         print(f"  Exploratory mean_energy comparisons: {len(supplement)}", file=sys.stderr)
     else:
         print("Skipping mean_energy supplement: column not in TSV", file=sys.stderr)
+
+    # Exploratory: multi-channel II summary at final step
+    ii_channels = [
+        "mean_ii",
+        "mean_ii_energy",
+        "mean_ii_regulation",
+        "mean_ii_behavior",
+        "mean_ii_lifecycle",
+    ]
+    has_ii_channels = rows and all(c in rows[0] for c in ii_channels)
+    if has_ii_channels:
+        ii_summary = _summarize_multi_channel_ii(rows, ii_channels)
+        ii_path = _EXPERIMENTS_DIR / "semi_life_ii_channels.json"
+        ii_path.write_text(json.dumps(ii_summary, indent=2), encoding="utf-8")
+        print(f"Wrote {ii_path}", file=sys.stderr)
+        print(f"  Multi-channel II conditions: {len(ii_summary)}", file=sys.stderr)
+    else:
+        print("Skipping multi-channel II summary: columns not in TSV", file=sys.stderr)
 
 
 if __name__ == "__main__":

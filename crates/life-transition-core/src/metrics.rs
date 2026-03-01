@@ -80,8 +80,16 @@ pub struct SemiLifeSnapshot {
     pub failed_replications: u32,
     pub age_steps: usize,
     pub alive: bool,
-    /// Fraction of energy obtained internally this step. 0.0 for V0-only entities.
+    /// Composite multi-channel Internalization Index (mean of active channels).
     pub internalization_index: f32,
+    /// Per-channel II: energy (V3 internal conversion fraction).
+    pub ii_energy: f32,
+    /// Per-channel II: regulation (V2 waste reduction fraction).
+    pub ii_regulation: f32,
+    /// Per-channel II: behavior (V4 policy-driven movement fraction).
+    pub ii_behavior: f32,
+    /// Per-channel II: lifecycle (V5 internal-state-driven transitions).
+    pub ii_lifecycle: f32,
     /// L2 magnitude of the V4 policy weight vector (0.0 if V4 absent).
     pub policy_magnitude: f32,
     /// V5 lifecycle stage as string ("dormant"/"active"/"dispersal"), null if V5 absent.
@@ -99,6 +107,7 @@ impl SemiLifeSnapshot {
             crate::semi_life::SemiLifeStage::Active => "active".to_owned(),
             crate::semi_life::SemiLifeStage::Dispersal => "dispersal".to_owned(),
         });
+        let (ii_energy, ii_regulation, ii_behavior, ii_lifecycle) = sl.ii_channels();
         Self {
             id: sl.id,
             stable_id: sl.stable_id,
@@ -110,6 +119,10 @@ impl SemiLifeSnapshot {
             age_steps: sl.age_steps,
             alive: sl.alive,
             internalization_index: sl.internalization_index(),
+            ii_energy,
+            ii_regulation,
+            ii_behavior,
+            ii_lifecycle,
             policy_magnitude,
             stage,
         }

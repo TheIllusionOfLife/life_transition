@@ -253,11 +253,13 @@ def _build_metadata(args: argparse.Namespace) -> dict:
     if args.keyword:
         meta["keywords"] = args.keyword
     if args.github_url:
-        meta["related_identifiers"] = [{
-            "identifier": args.github_url,
-            "relation": "isSupplementTo",
-            "scheme": "url",
-        }]
+        meta["related_identifiers"] = [
+            {
+                "identifier": args.github_url,
+                "relation": "isSupplementTo",
+                "scheme": "url",
+            }
+        ]
     if args.conference_title:
         meta["conference_title"] = args.conference_title
     if args.conference_url:
@@ -278,8 +280,7 @@ def _load_and_verify(args: argparse.Namespace, meta: dict) -> list[Path]:
         p = Path(entry["path"])
         if p.name in seen_basenames:
             print(
-                f"ERROR: duplicate basename '{p.name}': "
-                f"{seen_basenames[p.name]} and {p}",
+                f"ERROR: duplicate basename '{p.name}': {seen_basenames[p.name]} and {p}",
                 file=sys.stderr,
             )
             sys.exit(1)

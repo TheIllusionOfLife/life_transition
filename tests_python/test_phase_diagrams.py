@@ -229,7 +229,7 @@ def test_phase_diagram_figure_renders(tmp_path):
 
 def test_internalization_monotonic_across_v_levels():
     """mean_ii must be non-decreasing V0→V3 when given crafted monotonic data."""
-    from figures.fig_semi_life_internalization import _mean_ii_at_final
+    from figures.fig_semi_life_internalization import _get_final_values
 
     conds = ["viroid_v0", "viroid_v0v1", "viroid_v0v1v2", "viroid_v0v1v2v3"]
     ii_values = [0.0, 0.15, 0.30, 0.50]
@@ -254,7 +254,11 @@ def test_internalization_monotonic_across_v_levels():
                 }
             )
 
-    ii_by_level = [_mean_ii_at_final(rows, cond, "sparse") for cond in conds]
+    import numpy as np
+
+    ii_by_level = [
+        float(np.mean(_get_final_values(rows, cond, "sparse", "mean_ii"))) for cond in conds
+    ]
     for i in range(1, len(ii_by_level)):
         assert ii_by_level[i] >= ii_by_level[i - 1], (
             f"II not monotonic: level {i} = {ii_by_level[i]:.3f} < "
@@ -361,16 +365,37 @@ def test_analyze_h4_schema_includes_cliffs_delta_fields():
 
 
 # ---------------------------------------------------------------------------
+# Test 7b: analyze_h8 output schema (V2 overconsumption regulation)
+# ---------------------------------------------------------------------------
+
+
+def test_analyze_h8_output_schema():
+    """analyze_h8 must return 4 results with required schema fields."""
+    from analyze_semi_life_capability_ladder import analyze_h8
+
+    rows = _make_rows_for_h234(["rich", "medium", "sparse", "scarce"])
+    required = {"hypothesis", "comparison", "harshness", "metric", "p_raw"}
+    results = analyze_h8(rows)
+    assert len(results) == 4, f"H8: expected 4 results, got {len(results)}"
+    for r in results:
+        missing = required - r.keys()
+        assert not missing, f"H8 result missing fields: {missing}"
+    assert all(r["hypothesis"] == "H8" for r in results)
+    assert all(r["metric"] == "alive" for r in results)
+    assert all("viroid_v0v1v2 vs viroid_v0v1" in r["comparison"] for r in results)
+
+
+# ---------------------------------------------------------------------------
 # Test 8: Holm-Bonferroni correction never reduces p-values
 # ---------------------------------------------------------------------------
 
 
 def test_holm_bonferroni_never_reduces_p_values():
-    """apply_holm_bonferroni must produce p_corrected >= p_raw for all 28 results."""
+    """apply_holm_bonferroni must produce p_corrected >= p_raw for all 32 results."""
     from analyze_semi_life_capability_ladder import apply_holm_bonferroni
 
-    # Build exactly 28 results to match pre-registered family size.
-    results = [{"hypothesis": f"H{i}", "p_raw": 0.01 + i * 0.001} for i in range(28)]
+    # Build exactly 32 results to match pre-registered family size (H1–H8 × 4).
+    results = [{"hypothesis": f"H{i}", "p_raw": 0.01 + i * 0.001} for i in range(32)]
     corrected = apply_holm_bonferroni(results)
     for r in corrected:
         assert r["p_corrected"] >= r["p_raw"], (
@@ -379,7 +404,7 @@ def test_holm_bonferroni_never_reduces_p_values():
 
 
 def test_holm_bonferroni_rejects_wrong_family_size():
-    """apply_holm_bonferroni must reject if family size != 28."""
+    """apply_holm_bonferroni must reject if family size != 32."""
     from analyze_semi_life_capability_ladder import apply_holm_bonferroni
 
     results = [
@@ -387,7 +412,7 @@ def test_holm_bonferroni_rejects_wrong_family_size():
         {"hypothesis": "H2", "p_raw": 0.04},
         {"hypothesis": "H3", "p_raw": 0.10},
     ]
-    with pytest.raises(ValueError, match="Expected 28"):
+    with pytest.raises(ValueError, match="Expected 32"):
         apply_holm_bonferroni(results)
 
 

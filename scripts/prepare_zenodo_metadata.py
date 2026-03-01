@@ -59,17 +59,26 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("files", type=Path, nargs="+", help="artifact files to include")
     parser.add_argument("--experiment-name", required=True, help="name of the experiment")
     parser.add_argument(
-        "--steps", type=int, required=True, help="simulation timesteps (>0)",
+        "--steps",
+        type=int,
+        required=True,
+        help="simulation timesteps (>0)",
     )
     parser.add_argument("--seed-start", type=int, required=True, help="first seed")
     parser.add_argument("--seed-end", type=int, required=True, help="last seed")
     parser.add_argument("--entrypoint", default=None, help="experiment command")
     parser.add_argument(
-        "--paper-binding", action="append", default=[], help="REF=PATH binding",
+        "--paper-binding",
+        action="append",
+        default=[],
+        help="REF=PATH binding",
     )
     parser.add_argument("--zenodo-doi", default=None, help="pre-reserved DOI")
     parser.add_argument(
-        "--output", type=Path, default=Path("zenodo_metadata.json"), help="output path",
+        "--output",
+        type=Path,
+        default=Path("zenodo_metadata.json"),
+        help="output path",
     )
     args = parser.parse_args()
     if args.steps <= 0:
@@ -86,11 +95,13 @@ def build_metadata(args: argparse.Namespace) -> dict:
         resolved = path.resolve()
         if not resolved.exists():
             raise FileNotFoundError(f"not found: {path}")
-        artifacts.append({
-            "path": str(path),
-            "size_bytes": resolved.stat().st_size,
-            "sha256": _sha256(resolved),
-        })
+        artifacts.append(
+            {
+                "path": str(path),
+                "size_bytes": resolved.stat().st_size,
+                "sha256": _sha256(resolved),
+            }
+        )
 
     payload: dict = {
         "schema_version": 1,

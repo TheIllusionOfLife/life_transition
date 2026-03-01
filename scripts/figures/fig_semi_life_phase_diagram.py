@@ -47,13 +47,16 @@ _HARSHNESS_LABELS = {
 _INITIAL_POP = 10
 
 
-def _mean_alive_at_final(rows: list[dict], condition: str, harshness: str) -> float:
+def _alive_at_final(rows: list[dict], condition: str, harshness: str) -> tuple[float, float]:
+    """Return (mean, std) of alive count at the final step."""
     cond_rows = [r for r in rows if r["condition"] == condition and r["harshness"] == harshness]
     if not cond_rows:
-        return 0.0
+        return 0.0, 0.0
     max_step = max(float(r["step"]) for r in cond_rows)
     final = [float(r["alive"]) for r in cond_rows if float(r["step"]) == max_step]
-    return float(np.mean(final)) if final else 0.0
+    if not final:
+        return 0.0, 0.0
+    return float(np.mean(final)), float(np.std(final))
 
 
 def generate_fig_semi_life_phase_diagram(data_tsv: Path, out_dir: Path) -> None:
@@ -64,7 +67,7 @@ def generate_fig_semi_life_phase_diagram(data_tsv: Path, out_dir: Path) -> None:
     fig, axes = plt.subplots(1, 3, figsize=(7.2, 2.8))
 
     global_max = max(
-        _mean_alive_at_final(rows, cond, h)
+        _alive_at_final(rows, cond, h)[0]
         for panel in _PANELS.values()
         for cond in panel["conditions"]
         for h in _HARSHNESS_ORDER
@@ -77,11 +80,14 @@ def generate_fig_semi_life_phase_diagram(data_tsv: Path, out_dir: Path) -> None:
         n_caps = len(conditions)
         n_harsh = len(_HARSHNESS_ORDER)
 
-        # data[i, j] = mean alive; i=harshness row, j=capability column
+        # data[i, j] = mean alive; std_data for annotation
         data = np.zeros((n_harsh, n_caps))
+        std_data = np.zeros((n_harsh, n_caps))
         for j, cond in enumerate(conditions):
             for i, harshness in enumerate(_HARSHNESS_ORDER):
-                data[i, j] = _mean_alive_at_final(rows, cond, harshness)
+                mean, std = _alive_at_final(rows, cond, harshness)
+                data[i, j] = mean
+                std_data[i, j] = std
 
         im = ax.imshow(
             data,
@@ -91,6 +97,24 @@ def generate_fig_semi_life_phase_diagram(data_tsv: Path, out_dir: Path) -> None:
             vmin=0,
             vmax=vmax,
         )
+
+        # Annotate cells with mean ± std
+        for i in range(n_harsh):
+            for j in range(n_caps):
+                val = data[i, j]
+                sd = std_data[i, j]
+                # Use dark text on light cells, white on dark
+                text_color = "white" if val > vmax * 0.6 else "black"
+                ax.text(
+                    j,
+                    i,
+                    f"{val:.0f}\n±{sd:.0f}",
+                    ha="center",
+                    va="center",
+                    fontsize=5.5,
+                    color=text_color,
+                    fontweight="bold",
+                )
 
         # Phase boundary: 50% of initial population
         if data.max() > 0 and n_caps >= 2 and n_harsh >= 2:
