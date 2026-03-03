@@ -1,6 +1,14 @@
-.PHONY: all figures semi_life_figures paper clean
+.PHONY: all figures semi_life_figures paper clean reproduce
 
 all: semi_life_figures paper
+
+# Full reproducibility pipeline: experiments → analysis → figures → paper
+reproduce:
+	cd .. && uv run python scripts/experiment_semi_life_v1v3.py > experiments/semi_life_v1v5_test.tsv
+	cd .. && uv run python scripts/experiment_semi_life_shocks.py > experiments/semi_life_shocks.tsv
+	cd .. && uv run python scripts/analyze_semi_life_capability_ladder.py
+	cd .. && uv run python scripts/generate_latex_macros.py
+	$(MAKE) all
 
 figures:
 	cd .. && uv run python scripts/generate_figures.py
