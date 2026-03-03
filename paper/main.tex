@@ -26,6 +26,7 @@
 \author{Anonymous}
 
 \begin{document}
+\InputIfFileExists{auto_macros}{}{}
 \maketitle
 
 % ============================================================================
@@ -848,9 +849,17 @@ With the revised model (V1 leakage/damage protection, V2 overconsumption
 regulation), the ladder reveals environment-dependent tradeoffs rather than
 a universal cost valley.
 V1 boundary maintenance shows a genuine cost--benefit tradeoff: it reduces
-survival in resource-rich environments (where leakage and damage pressure
-are low relative to repair costs) but provides net protection in harsh
-environments (where stochastic damage is proportionally more costly).
+survival in resource-rich environments (where repair costs exceed the
+protection benefit) and is neutral in sparse/scarce environments (where
+protection approximately offsets cost).
+Under the default damage parameters, V1 does not produce a net positive
+effect at any harshness level; higher damage regimes may shift this
+balance (a V1 protection-regime sweep is planned as future work).
+However, V1 entities that survive show \emph{higher mean energy}
+than V0-only: the boundary reduces energy leakage per step, meaning
+each surviving entity is individually healthier.
+This ``fewer but healthier'' pattern mirrors a $K$-strategy shift in
+ecology---V1 reduces population quantity while increasing individual quality.
 V2 homeostasis mitigates overconsumption waste, providing measurable benefit
 independent of V3 metabolism (H8).
 V3 metabolism remains the largest single survival jump, consistent with
