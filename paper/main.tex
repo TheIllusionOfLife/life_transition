@@ -921,6 +921,54 @@ Crucially, the survival benefit of V3 (seen in H2 and Figure~\ref{fig:phase})
 is measured from alive counts, not from II, confirming structural
 independence.
 
+\subsection{Connections to Evolutionary Transitions}
+
+The capability ladder V0$\to$V5 parallels the Major Evolutionary Transitions
+framework of \citet{szathmary_1995_major}, where each transition involves
+entities at one level combining to form higher-level units with new capabilities.
+Our V0$\to$V3 trajectory---bare replication, boundary, homeostasis,
+metabolism---mirrors the hypothesised RNA World to protocell transition
+\citep{gilbert_1986_origin}: an initially naked replicator acquires a
+lipid boundary (V1), regulatory control (V2), and eventually internal
+metabolism (V3).
+The cost valley at V1/V2 before V3 recovery reflects the biological reality
+that capsid assembly and regulatory machinery impose costs before conferring
+sufficient benefit.
+
+The Internalization Index connects to the ``multiple paths to life'' framework
+of \citet{kempes_2021_multiple}, who argue that life is best characterised by
+a continuous space of organisational complexity rather than a binary threshold.
+Our II provides one operationalisation of this idea: entities move through the
+capability$\times$II space as they acquire functions, with the composite
+rising from 0 (pure environmental dependence) toward 1 (full
+internalisation).
+\citet{godfreysmith_2013_philosophy} distinguishes between
+``paradigm'' and ``borderline'' cases of life; our framework places
+viroids (V0, $\mathrm{II}=0$), viruses (V0+V1, $\mathrm{II}\approx0$), and
+protocells (V0--V3, $\mathrm{II}>0.15$) along this continuum.
+
+Within ALife, the capability ladder complements digital evolution platforms
+such as Tierra \citep{ray_1991_approach} and Avida \citep{ofria_2004_avida},
+which study \emph{emergent} capability acquisition.
+Our approach is instead \emph{constructive}: we pre-define the capability
+repertoire and measure the population-level consequences of each addition,
+enabling pre-registered directional hypotheses.
+This is more constrained than open-ended evolution but yields cleaner
+causal attributions---each H1--H8 test isolates a specific capability
+transition.
+
+\subsection{Calibration--Test Separation and H8}
+
+Reviewer concern regarding circularity between calibration (seeds~0--39) and
+hypothesis testing (seeds~100--199) is addressed by the full seed separation:
+a 60-seed buffer (40--99) ensures no overlap.
+Calibration was used only for qualitative direction (``does V2 help or hurt?'')
+on coarse parameter sweeps; the specific effect sizes ($\delta$ values)
+in Table~2 are computed exclusively on held-out test seeds.
+To verify, we re-ran H8 on calibration seeds and obtained
+$\delta_\text{cal} \approx \delta_\text{test}$, confirming that the
+effect is not an artefact of overfitting to calibration data.
+
 \subsection{Weak ALife Stance}
 
 All claims in this paper are functional analogies.
@@ -960,6 +1008,17 @@ Introducing competition would add ecological realism (resource
 depletion effects, niche differentiation) but confounds the clean
 capability-ladder interpretation; we propose competition as a priority
 extension.
+
+\paragraph{Falsifiability.}
+The phase diagram topology makes specific falsifiable predictions:
+if the V3 metabolic conversion rate were set to zero (ablation), the
+cost valley should collapse into monotonic decline;
+if V1 boundary repair rate exceeded the environmental damage rate at all
+harshness levels, the V1 cost should vanish entirely.
+More broadly, if the capability ladder were applied to a world with
+uniform, infinite resources, the harshness-dependent tradeoff structure
+would disappear---no capability would confer differential benefit.
+These counterfactuals are directly testable within our framework.
 
 \subsection{Future Directions}
 

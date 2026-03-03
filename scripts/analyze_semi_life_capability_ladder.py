@@ -329,11 +329,15 @@ def analyze_h8(rows: list[dict]) -> list[dict]:
 _ENERGY_COMPARISONS: list[tuple[str, str, str]] = [
     ("H1_energy", "viroid_v0", "viroid_v0v1"),
     ("H2_energy", "viroid_v0v1v2v3", "viroid_v0v1v2"),
+    ("H3_energy", "proto_liberated", "proto_baseline"),
+    ("H5_energy", "viroid_v0v1v2v3v4", "viroid_v0v1v2v3"),
+    ("H6_energy", "viroid_v0v1v2v3v4v5", "viroid_v0v1v2v3v4"),
+    ("H8_energy", "viroid_v0v1v2", "viroid_v0v1"),
 ]
 
 
 def analyze_mean_energy_supplement(rows: list[dict]) -> list[dict]:
-    """Exploratory: H1/H2 comparisons using mean_energy instead of alive count.
+    """Exploratory: H1–H8 comparisons using mean_energy instead of alive count.
 
     Addresses the δ=1.00 ceiling/floor concern by providing a finer-grained
     continuous metric.  These are explicitly labelled 'exploratory'.
@@ -355,6 +359,121 @@ def analyze_mean_energy_supplement(rows: list[dict]) -> list[dict]:
                 }
             )
             results.append(result)
+    return results
+
+
+def _compute_alive_auc(rows: list[dict], condition: str, harshness: str) -> dict[int, float]:
+    """Compute alive-count AUC (trapezoidal) per seed for a condition.
+
+    Returns {seed: auc} mapping.
+    """
+    cond_rows = [r for r in rows if r["condition"] == condition and r["harshness"] == harshness]
+    if not cond_rows:
+        return {}
+
+    # Group by seed
+    by_seed: dict[int, list[tuple[int, float]]] = {}
+    for r in cond_rows:
+        seed = int(r["seed"])
+        step = int(float(r["step"]))
+        alive = float(r["alive"])
+        by_seed.setdefault(seed, []).append((step, alive))
+
+    result = {}
+    for seed, series in by_seed.items():
+        series.sort()
+        auc = 0.0
+        for i in range(1, len(series)):
+            dt = series[i][0] - series[i - 1][0]
+            auc += 0.5 * (series[i - 1][1] + series[i][1]) * dt
+        result[seed] = auc
+    return result
+
+
+def _compute_time_to_extinction(
+    rows: list[dict], condition: str, harshness: str, max_step: int = 500
+) -> dict[int, int]:
+    """Compute time-to-extinction per seed (first step where alive=0, or max_step)."""
+    cond_rows = [r for r in rows if r["condition"] == condition and r["harshness"] == harshness]
+    if not cond_rows:
+        return {}
+
+    by_seed: dict[int, list[tuple[int, float]]] = {}
+    for r in cond_rows:
+        seed = int(r["seed"])
+        step = int(float(r["step"]))
+        alive = float(r["alive"])
+        by_seed.setdefault(seed, []).append((step, alive))
+
+    result = {}
+    for seed, series in by_seed.items():
+        series.sort()
+        tte = max_step
+        for step, alive in series:
+            if alive == 0:
+                tte = step
+                break
+        result[seed] = tte
+    return result
+
+
+def analyze_floor_resistant_metrics(rows: list[dict]) -> list[dict]:
+    """Compute floor-resistant metrics for all conditions and harshness levels.
+
+    Addresses sparse/scarce 10±0 floor effect by using AUC and time-to-extinction
+    instead of alive count at final step.
+    """
+    conditions = [
+        "viroid_v0",
+        "viroid_v0v1",
+        "viroid_v0v1v2",
+        "viroid_v0v1v2v3",
+        "viroid_v0v1v2v3v4",
+        "viroid_v0v1v2v3v4v5",
+        "proto_baseline",
+        "proto_liberated",
+        "virus_baseline",
+        "virus_v0v1v2",
+        "virus_v0v1v2v3",
+    ]
+    results = []
+    for condition in conditions:
+        for harshness in RESOURCE_INITIAL_VALUES:
+            auc_by_seed = _compute_alive_auc(rows, condition, harshness)
+            tte_by_seed = _compute_time_to_extinction(rows, condition, harshness)
+            alive = get_alive_at_final(rows, condition, harshness)
+            rep = get_total_replications_at_final(rows, condition, harshness)
+
+            if not auc_by_seed:
+                continue
+
+            auc_vals = np.array(list(auc_by_seed.values()))
+            tte_vals = np.array(list(tte_by_seed.values()))
+            alive_arr = np.array(alive) if alive else np.array([0.0])
+            rep_arr = np.array(rep) if rep else np.array([0.0])
+
+            # Per-capita replication rate = total_rep / auc (avoid div by 0)
+            eps = 1e-6
+            per_cap_rep = rep_arr / (auc_vals + eps) if len(rep_arr) == len(auc_vals) else None
+
+            entry = {
+                "condition": condition,
+                "harshness": harshness,
+                "n_seeds": len(auc_by_seed),
+                "alive_mean": float(np.mean(alive_arr)),
+                "alive_std": float(np.std(alive_arr)),
+                "auc_mean": float(np.mean(auc_vals)),
+                "auc_std": float(np.std(auc_vals)),
+                "tte_mean": float(np.mean(tte_vals)),
+                "tte_std": float(np.std(tte_vals)),
+                "total_rep_mean": float(np.mean(rep_arr)),
+                "total_rep_std": float(np.std(rep_arr)),
+            }
+            if per_cap_rep is not None:
+                entry["per_capita_rep_mean"] = float(np.mean(per_cap_rep))
+                entry["per_capita_rep_std"] = float(np.std(per_cap_rep))
+
+            results.append(entry)
     return results
 
 
@@ -457,6 +576,13 @@ def main(argv: list[str] | None = None) -> None:
         print(f"  Exploratory mean_energy comparisons: {len(supplement)}", file=sys.stderr)
     else:
         print("Skipping mean_energy supplement: column not in TSV", file=sys.stderr)
+
+    # Exploratory: floor-resistant metrics (AUC, TTE, per-capita replication)
+    floor_metrics = analyze_floor_resistant_metrics(rows)
+    floor_path = _EXPERIMENTS_DIR / "semi_life_floor_resistant_metrics.json"
+    floor_path.write_text(json.dumps(floor_metrics, indent=2), encoding="utf-8")
+    print(f"Wrote {floor_path}", file=sys.stderr)
+    print(f"  Floor-resistant metrics: {len(floor_metrics)} entries", file=sys.stderr)
 
     # Exploratory: multi-channel II summary at final step
     ii_channels = [
