@@ -279,11 +279,22 @@ impl SemiLifeRuntime {
 
     /// Compute the composite multi-channel InternalizationIndex for this step.
     ///
-    /// Composite = mean of active channels (channels with total > ε).
+    /// **Fixed 4-channel formula** (Amendment 4): `(IIE + IIR + IIB + IIL) / 4`.
+    /// Inactive channels contribute 0 to the numerator and 4 to the denominator,
+    /// making II comparable across capability levels.
     /// Returns 0.0 when no channels are active (V0-only entities).
     /// **Independence**: survival metrics (lifespan, persistence) are measured
     /// from agent counts, not from II, to avoid circularity.
     pub fn internalization_index(&self) -> f32 {
+        let (e, r, b, l) = self.ii_channels();
+        (e + r + b + l) / 4.0
+    }
+
+    /// Compute the composite II using the old active-channel-mean formula.
+    ///
+    /// Retained for supplementary reporting (side-by-side transparency).
+    /// Composite = mean of channels with total > ε; returns 0.0 if none active.
+    pub fn internalization_index_active_mean(&self) -> f32 {
         let (e, r, b, l) = self.ii_channels();
         let channels = [
             (e, self.energy_from_internal + self.energy_from_external),
@@ -300,6 +311,103 @@ impl SemiLifeRuntime {
         } else {
             sum / count as f32
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn make_test_entity(caps: u8) -> SemiLifeRuntime {
+        let mut rt = SemiLifeRuntime::new(0, 1, SemiLifeArchetype::Viroid, 0.5, 42, 1.0, 0.5);
+        rt.active_capabilities = CapabilitySet(caps);
+        rt
+    }
+
+    #[test]
+    fn ii_fixed_v3_only_returns_quarter() {
+        // V3-only: ii_energy=0.6, others=0 → fixed composite = 0.6/4 = 0.15
+        let mut rt = make_test_entity(capability::V0_REPLICATION | capability::V3_METABOLISM);
+        rt.energy_from_internal = 0.6;
+        rt.energy_from_external = 0.4;
+        let ii = rt.internalization_index();
+        let expected = 0.6 / 4.0; // 0.15
+        assert!(
+            (ii - expected).abs() < 1e-5,
+            "V3-only fixed 4-channel: expected {expected}, got {ii}"
+        );
+    }
+
+    #[test]
+    fn ii_fixed_all_four_channels_active() {
+        // All 4 channels active: composite = mean of all 4
+        let mut rt = make_test_entity(
+            capability::V0_REPLICATION
+                | capability::V1_BOUNDARY
+                | capability::V2_HOMEOSTASIS
+                | capability::V3_METABOLISM
+                | capability::V4_RESPONSE
+                | capability::V5_LIFECYCLE,
+        );
+        rt.energy_from_internal = 0.8;
+        rt.energy_from_external = 0.2;
+        rt.regulation_internal = 0.6;
+        rt.regulation_total = 1.0;
+        rt.behavior_internal = 0.4;
+        rt.behavior_total = 1.0;
+        rt.lifecycle_internal = 0.2;
+        rt.lifecycle_total = 1.0;
+        let ii = rt.internalization_index();
+        let expected = (0.8 + 0.6 + 0.4 + 0.2) / 4.0; // 0.5
+        assert!(
+            (ii - expected).abs() < 1e-5,
+            "All channels active: expected {expected}, got {ii}"
+        );
+    }
+
+    #[test]
+    fn ii_fixed_v0_only_returns_zero() {
+        // V0-only: no channels active → all contribute 0 → composite = 0
+        let rt = make_test_entity(capability::V0_REPLICATION);
+        assert_eq!(rt.internalization_index(), 0.0);
+    }
+
+    #[test]
+    fn ii_active_mean_preserves_old_behavior() {
+        // Active-channel mean (old formula) for V3-only: 0.6/1 = 0.6
+        let mut rt = make_test_entity(capability::V0_REPLICATION | capability::V3_METABOLISM);
+        rt.energy_from_internal = 0.6;
+        rt.energy_from_external = 0.4;
+        let ii_active = rt.internalization_index_active_mean();
+        assert!(
+            (ii_active - 0.6).abs() < 1e-5,
+            "Active-mean V3-only: expected 0.6, got {ii_active}"
+        );
+    }
+
+    #[test]
+    fn ii_fixed_is_comparable_across_levels() {
+        // Key property: adding capabilities with low II should DECREASE composite
+        // under old formula but correctly reflect total internalization under fixed.
+        let mut v3_only = make_test_entity(capability::V0_REPLICATION | capability::V3_METABOLISM);
+        v3_only.energy_from_internal = 0.6;
+        v3_only.energy_from_external = 0.4;
+
+        let mut v3_v4 = make_test_entity(
+            capability::V0_REPLICATION | capability::V3_METABOLISM | capability::V4_RESPONSE,
+        );
+        v3_v4.energy_from_internal = 0.6;
+        v3_v4.energy_from_external = 0.4;
+        v3_v4.behavior_internal = 0.1;
+        v3_v4.behavior_total = 1.0;
+
+        // Fixed formula: V3+V4 should be higher than V3-only (added behavior channel)
+        assert!(
+            v3_v4.internalization_index() > v3_only.internalization_index(),
+            "Fixed formula: V3+V4 ({}) should exceed V3-only ({})",
+            v3_v4.internalization_index(),
+            v3_only.internalization_index()
+        );
     }
 }
 

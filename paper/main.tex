@@ -41,8 +41,9 @@ at a time.
 V1 boundary protects against energy leakage and environmental damage;
 V2 homeostasis mitigates overconsumption waste.
 Progress is quantified by a multi-channel \emph{Internalization Index}~(II)
-averaging energy, regulation, behaviour, and lifecycle channels---a continuous
-axis from virus-like ($\mathrm{II}\approx0$) to life-like ($\mathrm{II}>0$).
+combining energy, regulation, behaviour, and lifecycle channels with a fixed
+4-channel denominator---a continuous, comparable axis from virus-like
+($\mathrm{II}\approx0$) to life-like ($\mathrm{II}>0$).
 Eight directional hypotheses~(H1--H8) were pre-registered with
 Holm-Bonferroni correction across 32~tests.
 Using $n\!=\!100$ held-out test seeds across a four-level resource harshness
@@ -352,19 +353,23 @@ All accumulators reset at the start of each step.
   Measures lifecycle self-control.
 \end{itemize}
 
-The composite Internalization Index is the mean of active channels:
+The composite Internalization Index uses a fixed 4-channel denominator:
 \begin{equation}
-  \mathrm{II} = \frac{1}{|C|}\sum_{c \in C} \mathrm{II}_c
-  \quad\text{where } C = \{c : \text{total}_c > \epsilon\}.
+  \mathrm{II} = \frac{\mathrm{II}_E + \mathrm{II}_R + \mathrm{II}_B + \mathrm{II}_L}{4}.
   \label{eq:ii}
 \end{equation}
-V0-only entities have $|C|=0$ and $\mathrm{II}=0$.
+Inactive channels contribute 0 to the numerator and 4 to the denominator,
+ensuring that~II is \emph{comparable across capability levels}: a V3-only
+entity with $\mathrm{II}_E\!=\!0.6$ gets composite $0.15$, not $0.6$.
+V0-only entities have all channels at zero and $\mathrm{II}=0$.
 As capabilities are added, new channels activate: V2 adds regulation,
 V3 adds energy, V4 adds behaviour, V5 adds lifecycle.
 This ensures II rises \emph{gradually} across the ladder rather than as a
 V3 step function.
 Per-channel values are reported alongside the composite to enable
 independent validation.
+The old active-channel-mean formula is reported in supplement for
+transparency.
 Crucially, \emph{survival metrics} (alive count, total replications) are
 computed from entity counts, not from~$\mathrm{II}$, eliminating circularity.
 
@@ -562,36 +567,35 @@ Viroid across V-levels and harshness conditions.
 \label{fig:ii}
 \end{figure}
 
-With multi-channel II, the picture changes qualitatively from the single-channel
-version.
-V0-only yields $\mathrm{II}=0$ ($|C|=0$, no active channels).
+With the fixed 4-channel formula~(Eq.~\ref{eq:ii}), the composite~II rises
+gradually across the capability ladder.
+V0-only yields $\mathrm{II}=0$ (all channels inactive).
 V0+V1 still yields $\mathrm{II}=0$ (V1 does not contribute a channel).
 V0+V1+V2 activates the regulation channel ($\mathrm{II}_R \geq 0$): $\mathrm{II}_R > 0$
 when uptake exceeds the optimal rate (i.e., the overconsumption penalty fires),
 which depends on resource availability and entity density.
 In resource-poor environments where uptake rarely exceeds the optimal threshold,
 $\mathrm{II}_R$ may remain near zero even with V2 active.
-When $\mathrm{II}_R > 0$, this produces the first non-zero composite II---a key
-difference from the prior single-channel formulation where V0--V2 all had
-$\mathrm{II}=0$.
+When $\mathrm{II}_R > 0$, the fixed denominator yields composite
+$\mathrm{II}=\mathrm{II}_R/4$---a small but non-zero value, representing the
+first step toward internalization.
 V3 addition activates the energy channel ($\mathrm{II}_E$), producing a larger
-jump in composite II.
+composite jump.
 V4 adds the behaviour channel and V5 adds lifecycle, each incrementally raising
 the composite.
 Per-channel values and 95\% confidence intervals are shown in
 Figure~\ref{fig:ii}.
-In rich environments: V0+V1+V2 yields $\mathrm{II}_R=0.47$
-(composite 0.23, one active channel).
-V0+V1+V2+V3 yields $\mathrm{II}_E=0.62$, $\mathrm{II}_R=0.47$
-(composite 0.71; higher than the channel mean because entities whose
-regulation channel is inactive contribute only $\mathrm{II}_E$ to their
-per-entity composite).
-V0..V4 adds $\mathrm{II}_B=0.08$;
-V0..V5 adds $\mathrm{II}_L=0.01$.
+Because each channel is divided by 4 regardless of how many are active,
+composite values are directly comparable across capability levels.
 ProtoOrganelle baseline (V1+V2+V3, no V0) shows $\mathrm{II}>0$ because the
 energy and regulation channels are active even without replication,
 confirming that II measures internal functional organisation independently
 of reproductive success.
+Note: $\mathrm{II}_B$ (behaviour) measures movement activity rather than
+strict resource internalization, and $\mathrm{II}_L$ (lifecycle) $\approx 0.01$
+with current deterministic transitions.
+We treat these as \emph{exploratory} channels and centre main claims on
+$\mathrm{II}_E$ (energy) and $\mathrm{II}_R$ (regulation).
 
 \subsection{Pre-registered Hypothesis Tests}
 \label{sec:results-stats}

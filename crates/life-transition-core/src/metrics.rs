@@ -80,7 +80,7 @@ pub struct SemiLifeSnapshot {
     pub failed_replications: u32,
     pub age_steps: usize,
     pub alive: bool,
-    /// Composite multi-channel Internalization Index (mean of active channels).
+    /// Composite multi-channel Internalization Index (fixed 4-channel: (E+R+B+L)/4).
     pub internalization_index: f32,
     /// Per-channel II: energy (V3 internal conversion fraction).
     pub ii_energy: f32,

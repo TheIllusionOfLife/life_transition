@@ -2628,10 +2628,11 @@ fn ii_v3_energy_channel_active() {
 
 /// Old single-channel II should match ii_energy when only energy channel is active.
 #[test]
-fn ii_composite_matches_energy_when_single_channel() {
+fn ii_composite_is_quarter_of_energy_when_single_channel() {
     use crate::semi_life::capability::{V0_REPLICATION, V3_METABOLISM};
 
     // V0+V3 only (no V2/V4/V5 → only energy channel active)
+    // Fixed 4-channel formula: composite = ii_energy / 4
     let caps = V0_REPLICATION | V3_METABOLISM;
     let mut world = make_semi_life_world_v1v2(1, 1.0, 42, caps, |cfg| {
         cfg.energy_leakage_rate = 0.0;
@@ -2644,11 +2645,12 @@ fn ii_composite_matches_energy_when_single_channel() {
 
     let snaps = world.semi_life_snapshots();
     let snap = &snaps[0];
+    let expected = snap.ii_energy / 4.0;
     assert!(
-        (snap.internalization_index - snap.ii_energy).abs() < 0.001,
-        "With only energy channel, composite ({}) should equal ii_energy ({})",
+        (snap.internalization_index - expected).abs() < 0.001,
+        "Fixed 4-channel: composite ({}) should equal ii_energy/4 ({})",
         snap.internalization_index,
-        snap.ii_energy
+        expected
     );
 }
 
