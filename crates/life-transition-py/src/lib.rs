@@ -62,17 +62,24 @@ fn step_once(
 }
 
 #[pyfunction]
-fn run_experiment_json(config_json: &str, steps: usize, sample_every: usize) -> PyResult<String> {
-    run_experiment_json_impl(config_json, steps, sample_every).map_err(PyValueError::new_err)
+fn run_experiment_json(
+    py: Python<'_>,
+    config_json: String,
+    steps: usize,
+    sample_every: usize,
+) -> PyResult<String> {
+    py.detach(|| run_experiment_json_impl(&config_json, steps, sample_every))
+        .map_err(PyValueError::new_err)
 }
 
 #[pyfunction]
 fn run_evolution_experiment_json(
-    config_json: &str,
+    py: Python<'_>,
+    config_json: String,
     steps: usize,
     sample_every: usize,
 ) -> PyResult<String> {
-    run_evolution_experiment_json_impl(config_json, steps, sample_every)
+    py.detach(|| run_evolution_experiment_json_impl(&config_json, steps, sample_every))
         .map_err(PyValueError::new_err)
 }
 
@@ -97,23 +104,27 @@ fn run_experiment_json_impl(
 
 #[pyfunction]
 fn run_semi_life_v0_experiment_json(
-    config_json: &str,
+    py: Python<'_>,
+    config_json: String,
     steps: usize,
     sample_every: usize,
 ) -> PyResult<String> {
-    run_semi_life_v0_experiment_json_impl(config_json, steps, sample_every)
+    py.detach(|| run_semi_life_v0_experiment_json_impl(&config_json, steps, sample_every))
         .map_err(PyValueError::new_err)
 }
 
 #[pyfunction]
 fn run_niche_experiment_json(
-    config_json: &str,
+    py: Python<'_>,
+    config_json: String,
     steps: usize,
     sample_every: usize,
-    snapshot_steps_json: &str,
+    snapshot_steps_json: String,
 ) -> PyResult<String> {
-    run_niche_experiment_json_impl(config_json, steps, sample_every, snapshot_steps_json)
-        .map_err(PyValueError::new_err)
+    py.detach(|| {
+        run_niche_experiment_json_impl(&config_json, steps, sample_every, &snapshot_steps_json)
+    })
+    .map_err(PyValueError::new_err)
 }
 
 fn run_niche_experiment_json_impl(
