@@ -527,18 +527,19 @@ contour marks the 50\% survival boundary (5 of 10 initial entities).
 \end{figure*}
 
 The Viroid panel reveals a non-monotonic capability ladder.
-V0-only Viroid achieves mean alive counts of 93.0 (rich) and 38.1 (medium),
-but adding V1 (boundary maintenance) \emph{reduces} survival to 33.1 and 17.6
+V0-only Viroid achieves mean alive counts of \aliveVzeroRich{} (rich) and \aliveVzeroMedium{} (medium),
+but adding V1 (boundary maintenance) \emph{reduces} survival to \aliveVzeroVoneRich{} and \aliveVzeroVoneMedium{}
 respectively---boundary repair costs outweigh protective benefit.
-V2 (homeostasis) adds negligible benefit (32.2 and 17.3).
-V3 (metabolism) produces a dramatic recovery: 199.1 (rich) and 53.4 (medium),
+V2 (homeostasis) adds a partial recovery (\aliveVzeroVoneVtwoRich{} and \aliveVzeroVoneVtwoMedium{}).
+V3 (metabolism) produces a dramatic jump: \aliveVzeroVoneVtwoVthreeRich{} (rich) and \aliveVzeroVoneVtwoVthreeMedium{} (medium),
 exceeding even the V0-only baseline.
 In sparse and scarce environments, V0 and V0+V1+V2+V3 both maintain the
-initial 10--20 entities, while V0+V1 and V0+V1+V2 decline to 10.
+initial 10--20 entities, while V0+V1 and V0+V1+V2 remain at $\sim$10.
 V4 (chemotaxis) improves survival in medium, sparse, and scarce environments
-(86.0, 35.9, 24.8 mean alive) but reduces it in rich (152.2 vs.\ V3's 199.1)
+(\aliveVzeroToVfourMedium{}, \aliveVzeroToVfourSparse{}, \aliveVzeroToVfourScarce{} mean alive)
+but reduces it in rich (\aliveVzeroToVfourRich{} vs.\ V3's \aliveVzeroVoneVtwoVthreeRich{})
 due to unnecessary movement cost.
-V5 (lifecycle) recovers the rich-environment loss (204.7) through dormancy
+V5 (lifecycle) recovers the rich-environment loss (\aliveVzeroToVfiveRich{}) through dormancy
 but hurts in sparse/scarce environments where dormancy suppresses replication.
 
 The Virus panel mirrors the Viroid V0+V1 starting point (identical
@@ -547,7 +548,7 @@ archetype-independent.
 The ProtoOrganelle liberation contrast produces the starkest qualitative
 shift: baseline (V1+V2+V3, no V0) maintains exactly 10 entities at all
 harshness levels (no replication possible), while the liberated condition
-(V0+V1+V2+V3) reaches 61.6 (rich) and 18.9 (medium).
+(V0+V1+V2+V3) reaches \aliveProtoLibRich{} (rich) and \aliveProtoLibMedium{} (medium).
 
 \subsection{InternalizationIndex}
 \label{sec:results-ii}
@@ -644,14 +645,14 @@ H4 & sparse & 14\,900 & $<\!10^{-100}$ & *** & --- & \checkmark \\
 H4 & scarce & 14\,900 & $<\!10^{-100}$ & *** & --- & \checkmark \\
 \midrule
 \multicolumn{7}{l}{\emph{H5: Viroid V0..V4 vs V0..V3 (alive, more with V4)}} \\
-H5 & rich   & 96     & $<\!10^{-32}$ & *** & $-$0.98 [$-$1.00, $-$0.95] & \texttimes \\
-H5 & medium & 9\,990 & $<\!10^{-33}$ & *** & 1.00 [0.99, 1.00] & \checkmark \\
+H5 & rich   & 95     & $<\!10^{-32}$ & *** & $-$0.98 [$-$1.00, $-$0.95] & \texttimes \\
+H5 & medium & 9\,989 & $<\!10^{-33}$ & *** & 1.00 [0.99, 1.00] & \checkmark \\
 H5 & sparse & 10\,000 & $<\!10^{-37}$ & *** & 1.00 [1.00, 1.00] & \checkmark \\
 H5 & scarce & 9\,950 & $<\!10^{-37}$ & *** & 0.99 [0.97, 1.00] & \checkmark \\
 \midrule
 \multicolumn{7}{l}{\emph{H6: Viroid V0..V5 vs V0..V4 (alive, more with V5)}} \\
-H6 & rich   & 9\,995 & $<\!10^{-33}$ & *** & 1.00 [1.00, 1.00] & \checkmark \\
-H6 & medium & 1\,404 & $<\!10^{-17}$ & *** & $-$0.72 [$-$0.81, $-$0.61] & \texttimes \\
+H6 & rich   & 9\,994 & $<\!10^{-33}$ & *** & 1.00 [1.00, 1.00] & \checkmark \\
+H6 & medium & 1\,403 & $<\!10^{-17}$ & *** & $-$0.72 [$-$0.81, $-$0.61] & \texttimes \\
 H6 & sparse & 0      & $<\!10^{-33}$ & *** & $-$1.00 [$-$1.00, $-$1.00] & \texttimes \\
 H6 & scarce & 50     & $<\!10^{-37}$ & *** & $-$0.99 [$-$1.00, $-$0.97] & \texttimes \\
 \midrule
@@ -663,7 +664,7 @@ H7 & scarce & 29\,900 & $<\!10^{-100}$ & *** & --- & \checkmark \\
 \midrule
 \multicolumn{7}{l}{\emph{H8: Viroid V0+V1+V2 vs V0+V1 (alive, more with V2; Amendment~3)}} \\
 H8 & rich   & 9\,152 & $<\!10^{-23}$ & *** & 0.83 [0.75, 0.90] & \checkmark \\
-H8 & medium & 4\,995 & 1.000         &     & 0.00 [$-$0.15, 0.16] & \texttimes \\
+H8 & medium & 4\,994 & 1.000         &     & $-$0.00 [$-$0.15, 0.16] & \texttimes \\
 H8 & sparse & 5\,000 & 1.000         &     & 0.00 [0.00, 0.00] & \texttimes \\
 H8 & scarce & 5\,000 & 1.000         &     & 0.00 [0.00, 0.00] & \texttimes \\
 \bottomrule
@@ -673,14 +674,14 @@ H8 & scarce & 5\,000 & 1.000         &     & 0.00 [0.00, 0.00] & \texttimes \\
 
 \textbf{H1} (boundary cost--benefit tradeoff) reveals the predicted
 environment-dependent tradeoff.
-In rich environments, V1 significantly reduces survival ($\delta=1.00$,
-$p_\text{corr}<10^{-33}$): mean alive drops from 33.9 (V0) to 21.6 (V0+V1),
+In rich environments, V1 significantly reduces survival ($\delta=\statDeltaHoneRich{}$,
+$p_\text{corr}\statPHoneRich{}$): mean alive drops from \aliveVzeroRich{} (V0) to \aliveVzeroVoneRich{} (V0+V1),
 because boundary maintenance cost exceeds the leakage/damage protection
 benefit when resources are abundant.
-In medium, the effect is weaker but still significant ($\delta=0.29$,
-$p_\text{corr}=0.002$): 17.7~$\to$~16.9.
-In sparse and scarce, V1 has \emph{no significant effect} ($\delta=-0.01$,
-$p=1.0$): boundary protection exactly offsets its cost, yielding near-identical
+In medium, the effect is weaker but still significant ($\delta=\statDeltaHoneMedium{}$,
+$p_\text{corr}=\statPHoneMedium{}$): \aliveVzeroMedium{}~$\to$~\aliveVzeroVoneMedium{}.
+In sparse and scarce, V1 has \emph{no significant effect} ($\delta=\statDeltaHoneSparse{}$,
+$p=\statPHoneSparse{}$): boundary protection exactly offsets its cost, yielding near-identical
 populations ($\sim$10.0 alive).
 This environment-dependent pattern---V1 hurts in rich but is neutral in
 harsh---replaces the prior model's universal cost finding and demonstrates
@@ -689,12 +690,12 @@ a genuine tradeoff between protection and overhead.
 \textbf{H2} (metabolism buffering) is confirmed universally ($\delta=1.00$,
 all $p_\text{corr}<10^{-33}$).
 V3 addition transforms survival: in rich environments, mean alive rises from
-25.1 (V0+V1+V2) to 190.0 (V0+V1+V2+V3)---a 7.6$\times$ increase.
-In medium, the jump is 17.0~$\to$~50.2 ($+195\%$).
+\aliveVzeroVoneVtwoRich{} (V0+V1+V2) to \aliveVzeroVoneVtwoVthreeRich{} (V0+V1+V2+V3).
+In medium, the jump is \aliveVzeroVoneVtwoMedium{}~$\to$~\aliveVzeroVoneVtwoVthreeMedium{}.
 
 \textbf{H3} (liberation) is confirmed in rich ($\delta=1.00$,
 $p_\text{corr}<10^{-37}$) and medium ($\delta=1.00$, $p_\text{corr}<10^{-38}$),
-where liberated ProtoOrganelle reaches 60.2 and 18.7 mean alive respectively.
+where liberated ProtoOrganelle reaches \aliveProtoLibRich{} and \aliveProtoLibMedium{} mean alive respectively.
 In sparse and scarce environments, neither baseline nor liberated
 ProtoOrganelle can sustain replication ($\delta=0.00$, $p=1.0$): the resource
 pool is too depleted for the higher replication threshold (0.80) of this
@@ -703,7 +704,7 @@ archetype.
 \textbf{H4} (monotonic trend) is now significant at \emph{all four}
 harshness levels ($p_\text{corr}<10^{-12}$ in rich, $<10^{-100}$ elsewhere).
 The revised V1/V2 mechanics produce a shallower cost valley: the alive
-pattern in rich ($33.9 \to 21.6 \to 25.1 \to 190.0$) still shows a dip at
+pattern in rich ($\aliveVzeroRich{} \to \aliveVzeroVoneRich{} \to \aliveVzeroVoneVtwoRich{} \to \aliveVzeroVoneVtwoVthreeRich{}$) still shows a dip at
 V1 before V3 recovery, but the V2 partial recovery (H8) creates a less
 severe intermediate trough.
 In sparse/scarce, the V0--V3 populations are nearly flat ($10 \to 10 \to 10
@@ -714,20 +715,19 @@ clear monotonic signal.
 sparse ($\delta=1.00$), and scarce ($\delta=0.99$), but \emph{reversed} in
 rich ($\delta=-0.98$, $p_\text{corr}<10^{-32}$).
 V4 chemotaxis improves survival where resources are heterogeneous:
-mean alive rises from 50.2 to 77.5 in medium ($+54\%$) and from 20.0 to 33.4
-in sparse ($+67\%$).
+mean alive rises from \aliveVzeroVoneVtwoVthreeMedium{} to \aliveVzeroToVfourMedium{} in medium
+and from \aliveVzeroVoneVtwoVthreeSparse{} to \aliveVzeroToVfourSparse{} in sparse.
 However, in resource-rich environments where resources are uniformly abundant,
 the per-step movement cost ($0.01 \times |\Delta\mathbf{v}|$) reduces
-survival from 190.0 to 139.7 ($-26\%$).
+survival from \aliveVzeroVoneVtwoVthreeRich{} to \aliveVzeroToVfourRich{}.
 This reveals a \emph{second cost valley}: behavioural capabilities incur
 overhead that is only justified when the environment rewards directed movement.
 
 \textbf{H6} (lifecycle staging) is confirmed only in rich ($\delta=1.00$,
 $p_\text{corr}<10^{-33}$), where V5 dormancy enables energy conservation
-during transient low-resource periods, pushing mean alive from 139.7 to 182.6
-($+31\%$).
-In medium ($\delta=-0.72$), sparse ($\delta=-1.00$), and scarce
-($\delta=-0.99$), V5 \emph{reduces} survival: dormancy phases suppress
+during transient low-resource periods, pushing mean alive from \aliveVzeroToVfourRich{} to \aliveVzeroToVfiveRich{}.
+In medium ($\delta=\statDeltaHsixMedium{}$), sparse ($\delta=\statDeltaHsixSparse{}$), and scarce
+($\delta=\statDeltaHsixScarce{}$), V5 \emph{reduces} survival: dormancy phases suppress
 replication windows, and dispersal's elevated energy decay ($\times 1.5$) is
 counterproductive when resources cannot sustain the cost.
 The environment-dependent reversal of H6 is the strongest qualitative finding
@@ -741,8 +741,8 @@ dominates the signal, and V4/V5 additions, while environment-dependent,
 do not reverse the aggregate trajectory.
 
 \textbf{H8} (V2 overconsumption regulation, Amendment~3) is confirmed in
-rich ($\delta=0.83$, $p_\text{corr}<10^{-23}$): mean alive rises from
-21.6 (V0+V1) to 25.1 (V0+V1+V2), a $+16\%$ increase.
+rich ($\delta=\statDeltaHeightRich{}$, $p_\text{corr}\statPHeightRich{}$): mean alive rises from
+\aliveVzeroVoneRich{} (V0+V1) to \aliveVzeroVoneVtwoRich{} (V0+V1+V2).
 V2's regulation of uptake reduces overconsumption waste, providing a
 measurable survival advantage.
 In medium, sparse, and scarce, V2 has no significant effect

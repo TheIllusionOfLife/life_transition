@@ -43,9 +43,30 @@ def get_alive_at_final(rows: list[dict], condition: str, harshness: str) -> np.n
     return np.array([float(r["alive"]) for r in cond_rows if float(r["step"]) == max_step])
 
 
+_DIGIT_WORDS = {
+    "0": "zero",
+    "1": "one",
+    "2": "two",
+    "3": "three",
+    "4": "four",
+    "5": "five",
+    "6": "six",
+    "7": "seven",
+    "8": "eight",
+    "9": "nine",
+}
+
+
 def _safe_name(s: str) -> str:
-    """Convert condition/harshness to a LaTeX-safe macro name component."""
-    return s.replace("_", "").replace("+", "").replace(".", "")
+    """Convert condition/harshness to a LaTeX-safe macro name component.
+
+    LaTeX command names must contain only ASCII letters — no digits allowed.
+    """
+    s = s.replace("_", "").replace("+", "").replace(".", "")
+    # Replace each digit with its word form
+    for digit, word in _DIGIT_WORDS.items():
+        s = s.replace(digit, word)
+    return s
 
 
 def _fmt(val: float, decimals: int = 1) -> str:
@@ -59,7 +80,7 @@ def generate_phase_diagram_macros(rows: list[dict]) -> list[str]:
     macros.append("% === Phase diagram alive counts (mean at step 500) ===")
 
     conditions = [
-        ("viroid_v0", "V0"),
+        ("viroid_v0", "Vzero"),
         ("viroid_v0v1", "VzeroVone"),
         ("viroid_v0v1v2", "VzeroVoneVtwo"),
         ("viroid_v0v1v2v3", "VzeroVoneVtwoVthree"),
@@ -98,7 +119,7 @@ def generate_stats_macros(stats: list[dict]) -> list[str]:
             continue
 
         h_cap = h.capitalize()
-        prefix = f"{hyp}{h_cap}"
+        prefix = f"{_safe_name(hyp)}{h_cap}"
 
         # U statistic
         u_val = result.get("U")
@@ -110,10 +131,10 @@ def generate_stats_macros(stats: list[dict]) -> list[str]:
         p_corr = result.get("p_corrected")
         if p_corr is not None:
             if p_corr < 1e-100:
-                p_str = "$<\\!10^{-100}$"
+                p_str = "<\\!10^{-100}"
             elif p_corr < 0.001:
                 exp = int(np.floor(np.log10(p_corr)))
-                p_str = f"$<\\!10^{{{exp}}}$"
+                p_str = f"<\\!10^{{{exp}}}"
             else:
                 p_str = f"{p_corr:.3f}"
             macros.append(f"\\newcommand{{\\statP{prefix}}}{{{p_str}}}")
