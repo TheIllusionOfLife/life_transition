@@ -28,7 +28,7 @@ import json
 from pathlib import Path
 
 import life_transition
-from experiment_common import log, make_config_dict
+from experiment_common import DEFAULT_MAX_WORKERS, log, make_config_dict, run_parallel
 
 STEPS = 500
 SAMPLE_EVERY = 50
@@ -206,8 +206,8 @@ def run_one(
     cap_bits: int | None,
     resource_initial: float,
     seed: int,
-) -> None:
-    """Run one condition/seed pair and print TSV rows."""
+) -> list[str]:
+    """Run one condition/seed pair and return TSV row strings."""
     config_json = make_config(archetype, cap_bits, resource_initial, seed)
     result = json.loads(
         life_transition.run_semi_life_v0_experiment_json(config_json, STEPS, SAMPLE_EVERY)
@@ -216,6 +216,7 @@ def run_one(
     sidecar = _EXPERIMENTS_DIR / f"semi_life_v1v3_{condition}_{harshness}_{seed}.json"
     sidecar.write_text(json.dumps(result), encoding="utf-8")
 
+    rows: list[str] = []
     for sample in result["samples"]:
         step = sample["step"]
         world_rep = sample.get("replications_total", 0)
@@ -242,7 +243,8 @@ def run_one(
             str(agg["n_active"]),
             str(agg["n_dispersal"]),
         ]
-        print("\t".join(row), flush=True)
+        rows.append("\t".join(row))
+    return rows
 
 
 def main() -> None:
@@ -255,19 +257,27 @@ def main() -> None:
     log(f"Harshness: {list(RESOURCE_INITIAL_VALUES.keys())} (resource_initial_value)")
     total = len(ARCHETYPE_CONDITIONS) * len(RESOURCE_INITIAL_VALUES) * len(SEEDS)
     log(f"Total runs: {total}")
+    log(f"Workers: {DEFAULT_MAX_WORKERS}")
     log("")
 
     print("\t".join(TSV_COLUMNS))
 
     _EXPERIMENTS_DIR.mkdir(exist_ok=True)
-    done = 0
+
+    # Build task list in deterministic order
+    tasks: list[tuple] = []
     for condition, archetype, cap_bits in ARCHETYPE_CONDITIONS:
         for harshness, resource_initial in RESOURCE_INITIAL_VALUES.items():
             for seed in SEEDS:
-                run_one(condition, harshness, archetype, cap_bits, resource_initial, seed)
-                done += 1
-                if done % 50 == 0 or done == total:
-                    log(f"  {done}/{total} runs done")
+                tasks.append((condition, harshness, archetype, cap_bits, resource_initial, seed))
+
+    # Run in parallel; results collected in submission order
+    all_results = run_parallel(tasks, run_one, description="capability ladder runs")
+
+    # Write TSV rows in deterministic order
+    for rows in all_results:
+        for row in rows:
+            print(row)
 
     log("\nDone.")
 

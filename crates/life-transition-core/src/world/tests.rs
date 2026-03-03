@@ -2707,3 +2707,84 @@ fn ii_channel_count_increases_with_capabilities() {
         s2.ii_regulation
     );
 }
+
+/// Static resource field mode: resources are consumed but never regenerate.
+#[test]
+fn static_resource_field_prevents_regeneration() {
+    use crate::config::{ResourceFieldMode, SemiLifeConfig};
+    use crate::semi_life::SemiLifeArchetype::Viroid;
+
+    let steps = 50;
+
+    // Dynamic mode: resources regenerate after consumption
+    let mut world_dynamic = make_semi_life_world(vec![Viroid], 3, 1.0, 42);
+    assert_eq!(
+        world_dynamic.config().resource_field_mode,
+        ResourceFieldMode::Dynamic
+    );
+    let total_before_dynamic = world_dynamic.resource_field().total();
+    world_dynamic.run_experiment(steps, steps);
+    let total_after_dynamic = world_dynamic.resource_field().total();
+
+    // Static mode: resources never regenerate
+    let mut config = SimConfig {
+        seed: 42,
+        world_size: 100.0,
+        num_organisms: 1,
+        agents_per_organism: 10,
+        resource_regeneration_rate: 0.01,
+        resource_field_mode: ResourceFieldMode::Static,
+        enable_semi_life: true,
+        semi_life_config: SemiLifeConfig {
+            enabled_archetypes: vec![Viroid],
+            num_per_archetype: 3,
+            initial_energy: 0.5,
+            energy_capacity: 1.0,
+            maintenance_cost: 0.001,
+            replication_threshold: 0.8,
+            replication_cost: 0.3,
+            resource_uptake_rate: 0.02,
+            ..SemiLifeConfig::default()
+        },
+        ..SimConfig::default()
+    };
+    config.resource_field_mode = ResourceFieldMode::Static;
+    let nn = NeuralNet::from_weights(std::iter::repeat_n(0.1f32, NeuralNet::WEIGHT_COUNT));
+    let agents: Vec<Agent> = (0..10)
+        .map(|i| Agent::new(i as u32, 0, [50.0, 50.0]))
+        .collect();
+    let mut world_static = World::new(agents, vec![nn], config).unwrap();
+    // Pre-fill same as dynamic
+    for x in 0..100 {
+        for y in 0..100 {
+            world_static
+                .resource_field_mut()
+                .set(x as f64, y as f64, 1.0);
+        }
+    }
+    let total_before_static = world_static.resource_field().total();
+    world_static.run_experiment(steps, steps);
+    let total_after_static = world_static.resource_field().total();
+
+    // Both should have consumption (total decreases or stays same)
+    // Static mode should have strictly less resources than dynamic after same steps
+    // because dynamic regenerates but static doesn't
+    assert!(
+        total_after_static <= total_before_static,
+        "Static field should not increase: before={total_before_static}, after={total_after_static}"
+    );
+    assert!(
+        total_after_static < total_after_dynamic,
+        "Static field ({total_after_static}) should have less resources than dynamic ({total_after_dynamic}) after {steps} steps"
+    );
+    // Dynamic should have regenerated at least partially
+    assert!(
+        total_after_dynamic > total_after_static,
+        "Dynamic mode should regenerate; dynamic={total_after_dynamic} static={total_after_static}"
+    );
+    // Verify starting totals were the same
+    assert!(
+        (total_before_dynamic - total_before_static).abs() < 1.0,
+        "Starting totals should be similar: dynamic={total_before_dynamic} static={total_before_static}"
+    );
+}
