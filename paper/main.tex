@@ -311,7 +311,10 @@ Each movement step costs \texttt{v4\_move\_cost}~$=0.01 \times |\Delta\mathbf{v}
 Offspring inherit the parental policy with per-weight Gaussian noise
 ($\sigma\!=\!0.05$), enabling heritable variation.
 Default initialisation ($w_1\!=\!w_2\!=\!0.5$, others zero) produces
-gradient-following chemotaxis.
+gradient-following chemotaxis.%
+\footnote{The initial weights are a starting condition, not a fixed policy;
+offspring inherit with Gaussian noise $\sigma\!=\!0.05$, enabling
+heritable variation and potential policy evolution over generations.}
 Dimensions $s_6$ and $s_7$ are reserved for future sensory extensions
 (e.g., resource memory, social signals) and are currently zero.
 
@@ -379,9 +382,10 @@ The regeneration rate is fixed at 0.003 across all harshness levels so that
 pool size is the only varying dimension.
 
 \paragraph{Calibration objective.}
-Parameters were calibrated on seeds 0--99 targeting non-trivial population
-dynamics (neither universal extinction nor unbounded growth) across all four
-harshness levels.
+Parameters were calibrated on seeds 0--39 (Phase~1 coarse screen: seeds 0--9;
+Phase~2 fine re-evaluation: seeds 10--39; buffer 40--99 unused) targeting
+non-trivial population dynamics (neither universal extinction nor unbounded
+growth) across all four harshness levels.
 Specific criteria: (i)~V0-only Viroid achieves $\sim$50--100 alive at step~500
 in rich; (ii)~V0+V1 shows an environment-dependent tradeoff (hurts in rich,
 helps or neutral in sparse/scarce); (iii)~V0+V1+V2 measurably better than
@@ -447,7 +451,10 @@ by the existing V1--V3 infrastructure.
 \noindent\textbf{H4} (\emph{Monotonic trend V0--V3}, all harshness):
 Alive count at step~500 increases monotonically across Viroid V0, V0$+$V1,
 V0$+$V1$+$V2, V0$+$V1$+$V2$+$V3 (Jonckheere-Terpstra test
-\citep{jonckheere_1954_distribution}).
+\citep{jonckheere_1954_distribution}).%
+\footnote{The JT test detects a dominant upward trend; pairwise reversals
+at intermediate V-levels (e.g., V0$\to$V0+V1 dip) are present and
+discussed in Section~\ref{sec:results-phase}.}
 
 \vspace{0.2em}
 \noindent\textbf{H5} (\emph{Chemotaxis benefit}, all harshness):
@@ -464,7 +471,10 @@ enables colonisation of resource patches, both improving population persistence.
 \vspace{0.2em}
 \noindent\textbf{H7} (\emph{Full monotonic trend V0--V5}, all harshness):
 Alive count at step~500 increases monotonically across the full six-level Viroid
-ladder V0 through V0..V5 (Jonckheere-Terpstra test).
+ladder V0 through V0..V5 (Jonckheere-Terpstra test).%
+\footnote{As with H4, ``monotonic'' refers to the dominant aggregate trend
+detected by JT; pairwise reversals at V4 and V5 are present
+(Section~\ref{sec:discussion}).}
 
 \vspace{0.2em}
 \noindent\textbf{H8} (\emph{V2 overconsumption regulation}, all harshness,
@@ -481,8 +491,8 @@ bootstrap 95\%~CI \citep{cliff_1993_dominance}, and Jonckheere-Terpstra trend
 test for H4 and H7.
 All $p$-values are Holm-Bonferroni corrected across the 32-test family
 \citep{holm_1979_simple}.
-Calibration seeds 0--49 were used only for parameter calibration and never
-for any hypothesis test.
+Calibration seeds 0--39 were used only for parameter calibration and never
+for any hypothesis test; seeds 40--99 are an unused buffer.
 Any analysis not in the pre-registration is explicitly labelled
 \emph{Exploratory} in the text.
 
@@ -870,9 +880,10 @@ entity (V1+V2+V3) immediately produces a replicating population
 environments, the resource pool is too depleted for the ProtoOrganelle's higher
 replication threshold~(0.80).
 The liberation contrast is partially self-evident (0 vs.\ non-0 replications);
-its value lies in demonstrating that metabolic infrastructure (V1+V2+V3) alone
-is insufficient without reproductive capability, and that the environment
-must be sufficiently rich to sustain the higher replication threshold.
+the non-trivial finding is the \emph{environment-dependent threshold}:
+metabolic infrastructure (V1+V2+V3) alone is insufficient without reproductive
+capability, and even with V0, the environment must be sufficiently resource-rich
+to sustain the higher replication threshold~(0.80).
 This suggests that the ``liberation'' of proto-endosymbionts---gaining
 independent reproduction---may require not just the right capability but also
 sufficiently favourable environmental conditions, consistent with serial
