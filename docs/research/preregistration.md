@@ -2,7 +2,7 @@
 
 **Filed**: 2026-02-27 (before test-seed data collection)
 **Test seeds**: 100–199 (reserved, unused until this pre-registration is committed)
-**Calibration seeds**: 0–49 (used in PRs #3–#4 for parameter calibration only)
+**Calibration seeds**: 0–39 (used in PRs #3–#4 for parameter calibration only)
 
 ---
 
@@ -148,14 +148,61 @@ enough to trigger overconsumption but the waste penalty is non-trivial.
 > - Robustness runs: n_init=50, T=2000 for key conditions
 > - V4 policy weight drift analysis across generations
 
+> **Amendment 4 (2026-03-03, after peer review, before any new simulation data with revised
+> metrics)**: Metric and formula changes in response to peer review feedback. All changes
+> documented here before re-running any experiments. Prior test-seed results are invalidated
+> by the II formula change and will be re-collected.
+>
+> **Internalization Index formula change**:
+> - Old formula: composite II = mean of active channels only (channels with total > ε).
+>   Problem: composites are not comparable across capability levels because the denominator
+>   changes (V3-only entity averages 1 channel; V3+V4+V5 averages 3 channels).
+> - New formula: composite II = fixed 4-channel mean: (IIE + IIR + IIB + IIL) / 4.
+>   Inactive channels contribute 0 to the numerator and 4 to the denominator.
+>   This makes II comparable across all capability levels.
+> - Old active-channel formula retained as `internalization_index_active_mean()` and
+>   reported side-by-side in supplement for transparency.
+>
+> **II channel roles**:
+> - Primary channels: IIE (energy internalization, V3) and IIR (regulation internalization, V2).
+>   These have clear internalization semantics: fraction of energy/regulation obtained
+>   internally vs externally.
+> - Exploratory channels: IIB (behavioral autonomy, V4) and IIL (lifecycle self-control, V5).
+>   IIB measures movement activity (|Δv|/v_max), which captures behavioral autonomy but
+>   is not strictly "internalization" of a resource. IIL ≈ 0.01 with current deterministic
+>   transitions, contributing negligibly. Both channels are reported in supplement with
+>   honest discussion of limitations, not in main contribution claims.
+>
+> **Seed range correction**:
+> - Calibration seeds corrected from "0–49" to "0–39" (matching actual script:
+>   Phase 1 coarse screen seeds 0–9, Phase 2 fine re-eval seeds 10–39).
+> - Buffer expanded from "50–99" to "40–99".
+>
+> **Additional outcome metrics** (secondary, floor-resistant):
+> - Alive-count AUC: area under alive-vs-time curve (trapezoidal rule over sampled steps).
+>   Addresses floor effect in sparse/scarce where alive count at step 500 = 10 ± 0.
+> - Time-to-extinction: step when alive count first reaches 0, or 500 if population persists.
+> - Per-capita replication rate: total_replications / (alive_count_AUC + ε) over the run.
+> - These are EXPLORATORY secondary metrics, not in the Holm-Bonferroni family.
+>
+> **New exploratory experiments** (not in confirmatory family):
+> - V1 protection regime sweep: env_damage_probability × env_damage_amount × harshness
+>   grid to identify conditions where V1 boundary provides net survival benefit.
+>   Decision rule: positive delta in contiguous hazard band with CI excluding 0.
+> - Extended sensitivity analysis: V4 (v4_move_cost) and V5 (v5_dormant_decay_mult)
+>   parameter sweeps at ±20–50% perturbations.
+> - Static resource field comparison: factorial design (2 world types × 13 conditions ×
+>   4 harshness levels × 100 seeds) testing world_type × capability_level interaction.
+
 ---
 
 ## Seed Plan
 
 | Split | Seeds | Purpose |
 |-------|-------|---------|
-| Calibration | 0–49 | Parameter sweep (PRs #3–#4) |
-| Buffer | 50–99 | Reserved (unused) |
+| Calibration Phase 1 | 0–9 | Coarse parameter screen (10 seeds) |
+| Calibration Phase 2 | 10–39 | Fine re-evaluation of top candidates (30 seeds) |
+| Buffer | 40–99 | Reserved (unused) |
 | Test | 100–199 | Pre-registered hypothesis testing (this PR) |
 
 *Test seeds are never used for parameter decisions before this pre-registration is committed.*
