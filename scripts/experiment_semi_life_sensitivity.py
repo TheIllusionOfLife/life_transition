@@ -27,10 +27,15 @@ V0 = 0x01
 V1 = 0x02
 V2 = 0x04
 V3 = 0x08
+V4 = 0x10
+V5 = 0x20
 
-# Only Viroid V0+V1+V2+V3 (full ladder through V3) — this is the key condition
+# Primary sweep: V0+V1+V2+V3 (full ladder through V3) — this is the key condition
 # where all new mechanisms (leakage, damage, waste, metabolism) interact.
 CAPABILITY_BITS = V0 | V1 | V2 | V3
+
+# Extended sweep: V0..V5 for V4/V5-specific parameters.
+CAPABILITY_BITS_FULL = V0 | V1 | V2 | V3 | V4 | V5
 
 HARSHNESS = {
     "rich": 1.0,
@@ -40,16 +45,19 @@ HARSHNESS = {
 RESOURCE_REGEN_RATE = 0.003
 
 # Parameters to sweep, with their config key and default value.
-SWEEP_PARAMS: list[tuple[str, str, float]] = [
-    ("energy_leakage_rate", "energy_leakage_rate", 0.005),
-    ("boundary_decay_rate", "boundary_decay_rate", 0.002),
-    ("env_damage_probability", "env_damage_probability", 0.05),
-    ("overconsumption_waste_fraction", "overconsumption_waste_fraction", 0.3),
-    ("regulator_cost_per_step", "regulator_cost_per_step", 0.0005),
-    ("internal_conversion_rate", "internal_conversion_rate", 0.05),
+# (param_name, config_key, default_value, capability_bits)
+# V0–V3 params use CAPABILITY_BITS; V4/V5 params use CAPABILITY_BITS_FULL.
+SWEEP_PARAMS: list[tuple[str, str, float, int]] = [
+    ("energy_leakage_rate", "energy_leakage_rate", 0.005, CAPABILITY_BITS),
+    ("boundary_decay_rate", "boundary_decay_rate", 0.002, CAPABILITY_BITS),
+    ("env_damage_probability", "env_damage_probability", 0.05, CAPABILITY_BITS),
+    ("overconsumption_waste_fraction", "overconsumption_waste_fraction", 0.3, CAPABILITY_BITS),
+    ("regulator_cost_per_step", "regulator_cost_per_step", 0.0005, CAPABILITY_BITS),
+    ("internal_conversion_rate", "internal_conversion_rate", 0.05, CAPABILITY_BITS),
+    # V4/V5 params (Amendment 4): require full ladder to be active.
+    ("v4_move_cost", "v4_move_cost", 0.01, CAPABILITY_BITS_FULL),
+    ("v5_dormant_decay_mult", "v5_dormant_decay_mult", 0.2, CAPABILITY_BITS_FULL),
 ]
-# Note: v4_move_cost and v5_dormant_decay_mult are excluded because the sweep
-# runs V0+V1+V2+V3 only (CAPABILITY_BITS above); V4/V5 are inactive.
 
 MULTIPLIERS = [0.5, 0.75, 1.0, 1.5, 2.0]
 
@@ -84,6 +92,7 @@ def run_one(
     harshness: str,
     resource_initial: float,
     seed: int,
+    cap_bits: int = CAPABILITY_BITS,
 ) -> None:
     """Run one condition and print a TSV row."""
     base_params = _load_archetype_config()
@@ -94,7 +103,7 @@ def run_one(
 
     sl: dict = {**base_params}
     sl["enabled_archetypes"] = ["viroid"]
-    sl["capability_overrides"] = {"viroid": CAPABILITY_BITS}
+    sl["capability_overrides"] = {"viroid": cap_bits}
     sl[param_key] = value
     config["semi_life_config"] = sl
 
@@ -136,7 +145,7 @@ def main() -> None:
     _EXPERIMENTS_DIR.mkdir(exist_ok=True)
 
     done = 0
-    for param_name, param_key, default_val in SWEEP_PARAMS:
+    for param_name, param_key, default_val, cap_bits in SWEEP_PARAMS:
         for mult in MULTIPLIERS:
             value = default_val * mult
             for harshness, resource_initial in HARSHNESS.items():
@@ -149,6 +158,7 @@ def main() -> None:
                         harshness,
                         resource_initial,
                         seed,
+                        cap_bits,
                     )
                     done += 1
                     if done % 100 == 0 or done == total:
