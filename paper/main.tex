@@ -852,11 +852,12 @@ V1 boundary maintenance shows a genuine cost--benefit tradeoff: it reduces
 survival in resource-rich environments (where repair costs exceed the
 protection benefit) and is neutral in sparse/scarce environments (where
 protection approximately offsets cost).
-Under the default damage parameters (zero environmental damage), V1 does not
-produce a net positive effect.
+Under the default damage parameters (Table~\ref{tab:params}; composite hazard
+$0.05 \times 0.05 = 0.0025$), V1 does not produce a net positive effect.
 However, a supplementary V1 protection-regime sweep across 84 grid points
 (7~damage probabilities $\times$ 4~damage amounts $\times$ 3~harshness levels,
-seeds~0--39) reveals that \textbf{69 of 84 conditions show a net V1 survival
+seeds~0--39; data in repository \texttt{experiments/semi\_life\_v1\_sweep.tsv})
+reveals that \textbf{69 of 84 conditions show a net V1 survival
 benefit} when environmental damage is present (measured by alive-count AUC).
 The protection regime emerges above a composite hazard threshold of
 $\sim$0.005 ($p_\text{damage} \times \text{damage\_amount}$): below this,
@@ -963,7 +964,8 @@ internalisation).
 \citet{godfreysmith_2013_philosophy} distinguishes between
 ``paradigm'' and ``borderline'' cases of life; our framework places
 viroids (V0, $\mathrm{II}=0$), viruses (V0+V1, $\mathrm{II}\approx0$), and
-protocells (V0--V3, $\mathrm{II}>0.15$) along this continuum.
+protocells (V0--V3, $\mathrm{II}=\iiIIVzeroVoneVtwoVthreeRich{}$ in rich,
+$\iiIIVzeroVoneVtwoVthreeSparse{}$ in sparse) along this continuum.
 
 Within ALife, the capability ladder complements digital evolution platforms
 such as Tierra \citep{ray_1991_approach} and Avida \citep{ofria_2004_avida},

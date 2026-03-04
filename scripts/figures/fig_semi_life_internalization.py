@@ -74,7 +74,8 @@ def generate_fig_semi_life_internalization(data_tsv: Path, out_dir: Path) -> Non
             means = []
             for cond in _VIROID_CONDITIONS:
                 vals = _get_final_values(rows, cond, harshness, col)
-                means.append(float(np.mean(vals)) if vals else 0.0)
+                # Divide by 4 so stacked bars sum to composite II = (E+R+B+L)/4
+                means.append(float(np.mean(vals)) / 4.0 if vals else 0.0)
             ax_bars.bar(
                 x,
                 means,

@@ -133,7 +133,7 @@ def generate_stats_macros(stats: list[dict]) -> list[str]:
             if p_corr < 1e-100:
                 p_str = "<\\!10^{-100}"
             elif p_corr < 0.001:
-                exp = int(np.floor(np.log10(p_corr)))
+                exp = int(np.ceil(np.log10(p_corr)))
                 p_str = f"<\\!10^{{{exp}}}"
             else:
                 p_str = f"{p_corr:.3f}"

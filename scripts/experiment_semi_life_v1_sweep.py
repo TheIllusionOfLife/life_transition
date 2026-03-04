@@ -130,6 +130,10 @@ def run_one(
 
     # AUC via trapezoidal rule
     alive_auc = 0.0
+    # Account for [0, first_sample] interval (Rust samples start at step sample_every)
+    if steps_series and steps_series[0] > 0:
+        initial_alive = base_params.get("num_per_archetype", 10)
+        alive_auc += 0.5 * (initial_alive + alive_series[0]) * steps_series[0]
     for i in range(1, len(steps_series)):
         dt = steps_series[i] - steps_series[i - 1]
         alive_auc += 0.5 * (alive_series[i - 1] + alive_series[i]) * dt

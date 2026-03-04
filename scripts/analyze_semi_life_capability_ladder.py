@@ -61,6 +61,21 @@ def get_total_replications_at_final(
     return [float(r["total_replications"]) for r in cond_rows if float(r["step"]) == max_step]
 
 
+def _get_total_replications_by_seed(
+    rows: list[dict], condition: str, harshness: str
+) -> dict[int, float]:
+    """Extract total_replications at the final step, keyed by seed."""
+    cond_rows = [r for r in rows if r["condition"] == condition and r["harshness"] == harshness]
+    if not cond_rows:
+        return {}
+    max_step = max(float(r["step"]) for r in cond_rows)
+    return {
+        int(r["seed"]): float(r["total_replications"])
+        for r in cond_rows
+        if float(r["step"]) == max_step
+    }
+
+
 def get_mean_ii_at_final(rows: list[dict], condition: str, harshness: str) -> list[float]:
     """Extract mean_ii at the final step per seed."""
     cond_rows = [r for r in rows if r["condition"] == condition and r["harshness"] == harshness]
@@ -326,13 +341,13 @@ def analyze_h8(rows: list[dict]) -> list[dict]:
     return results
 
 
-_ENERGY_COMPARISONS: list[tuple[str, str, str]] = [
-    ("H1_energy", "viroid_v0", "viroid_v0v1"),
-    ("H2_energy", "viroid_v0v1v2v3", "viroid_v0v1v2"),
-    ("H3_energy", "proto_liberated", "proto_baseline"),
-    ("H5_energy", "viroid_v0v1v2v3v4", "viroid_v0v1v2v3"),
-    ("H6_energy", "viroid_v0v1v2v3v4v5", "viroid_v0v1v2v3v4"),
-    ("H8_energy", "viroid_v0v1v2", "viroid_v0v1"),
+_ENERGY_COMPARISONS: list[tuple[str, str, str, str]] = [
+    ("H1_energy", "viroid_v0", "viroid_v0v1", "viroid"),
+    ("H2_energy", "viroid_v0v1v2v3", "viroid_v0v1v2", "viroid"),
+    ("H3_energy", "proto_liberated", "proto_baseline", "proto_organelle"),
+    ("H5_energy", "viroid_v0v1v2v3v4", "viroid_v0v1v2v3", "viroid"),
+    ("H6_energy", "viroid_v0v1v2v3v4v5", "viroid_v0v1v2v3v4", "viroid"),
+    ("H8_energy", "viroid_v0v1v2", "viroid_v0v1", "viroid"),
 ]
 
 
@@ -344,14 +359,14 @@ def analyze_mean_energy_supplement(rows: list[dict]) -> list[dict]:
     """
     results = []
     for harshness in RESOURCE_INITIAL_VALUES:
-        for hypothesis, cond_a, cond_b in _ENERGY_COMPARISONS:
+        for hypothesis, cond_a, cond_b, archetype in _ENERGY_COMPARISONS:
             a = get_mean_energy_at_final(rows, cond_a, harshness)
             b = get_mean_energy_at_final(rows, cond_b, harshness)
             result = run_mannwhitney(a, b)
             result.update(
                 {
                     "hypothesis": hypothesis,
-                    "archetype": "viroid",
+                    "archetype": archetype,
                     "harshness": harshness,
                     "comparison": f"{cond_a} vs {cond_b}",
                     "metric": "mean_energy",
@@ -379,10 +394,16 @@ def _compute_alive_auc(rows: list[dict], condition: str, harshness: str) -> dict
         alive = float(r["alive"])
         by_seed.setdefault(seed, []).append((step, alive))
 
+    # Initial alive count (before any steps): num_per_archetype default = 10
+    initial_alive = 10
+
     result = {}
     for seed, series in by_seed.items():
         series.sort()
         auc = 0.0
+        # Account for [0, first_sample] interval (step 0 not in data)
+        if series and series[0][0] > 0:
+            auc += 0.5 * (initial_alive + series[0][1]) * series[0][0]
         for i in range(1, len(series)):
             dt = series[i][0] - series[i - 1][0]
             auc += 0.5 * (series[i - 1][1] + series[i][1]) * dt
@@ -435,6 +456,8 @@ def analyze_floor_resistant_metrics(rows: list[dict]) -> list[dict]:
         "virus_baseline",
         "virus_v0v1v2",
         "virus_v0v1v2v3",
+        "viroid_v4_sham",
+        "viroid_v5_sham",
     ]
     results = []
     for condition in conditions:
@@ -442,7 +465,7 @@ def analyze_floor_resistant_metrics(rows: list[dict]) -> list[dict]:
             auc_by_seed = _compute_alive_auc(rows, condition, harshness)
             tte_by_seed = _compute_time_to_extinction(rows, condition, harshness)
             alive = get_alive_at_final(rows, condition, harshness)
-            rep = get_total_replications_at_final(rows, condition, harshness)
+            rep_by_seed = _get_total_replications_by_seed(rows, condition, harshness)
 
             if not auc_by_seed:
                 continue
@@ -450,11 +473,20 @@ def analyze_floor_resistant_metrics(rows: list[dict]) -> list[dict]:
             auc_vals = np.array(list(auc_by_seed.values()))
             tte_vals = np.array(list(tte_by_seed.values()))
             alive_arr = np.array(alive) if alive else np.array([0.0])
-            rep_arr = np.array(rep) if rep else np.array([0.0])
+            rep_arr = (
+                np.array([rep_by_seed[s] for s in rep_by_seed]) if rep_by_seed else np.array([0.0])
+            )
 
             # Per-capita replication rate = total_rep / auc (avoid div by 0)
+            # Align by seed to ensure correct pairing
             eps = 1e-6
-            per_cap_rep = rep_arr / (auc_vals + eps) if len(rep_arr) == len(auc_vals) else None
+            shared_seeds = sorted(set(auc_by_seed) & set(rep_by_seed))
+            if shared_seeds:
+                aligned_rep = np.array([rep_by_seed[s] for s in shared_seeds])
+                aligned_auc = np.array([auc_by_seed[s] for s in shared_seeds])
+                per_cap_rep = aligned_rep / (aligned_auc + eps)
+            else:
+                per_cap_rep = None
 
             entry = {
                 "condition": condition,

@@ -284,9 +284,12 @@ def run_parallel(
     """
     if max_workers is None:
         max_workers = DEFAULT_MAX_WORKERS
-    max_workers = min(max_workers, len(tasks))
 
     total = len(tasks)
+    if total == 0:
+        return []
+
+    max_workers = min(max_workers, total)
     log(f"Parallel {description}: {total} tasks, {max_workers} workers")
 
     results = [None] * total

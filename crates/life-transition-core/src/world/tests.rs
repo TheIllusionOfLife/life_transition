@@ -2727,7 +2727,7 @@ fn static_resource_field_prevents_regeneration() {
     let total_after_dynamic = world_dynamic.resource_field().total();
 
     // Static mode: resources never regenerate
-    let mut config = SimConfig {
+    let config = SimConfig {
         seed: 42,
         world_size: 100.0,
         num_organisms: 1,
@@ -2748,7 +2748,6 @@ fn static_resource_field_prevents_regeneration() {
         },
         ..SimConfig::default()
     };
-    config.resource_field_mode = ResourceFieldMode::Static;
     let nn = NeuralNet::from_weights(std::iter::repeat_n(0.1f32, NeuralNet::WEIGHT_COUNT));
     let agents: Vec<Agent> = (0..10)
         .map(|i| Agent::new(i as u32, 0, [50.0, 50.0]))
@@ -2776,11 +2775,6 @@ fn static_resource_field_prevents_regeneration() {
     assert!(
         total_after_static < total_after_dynamic,
         "Static field ({total_after_static}) should have less resources than dynamic ({total_after_dynamic}) after {steps} steps"
-    );
-    // Dynamic should have regenerated at least partially
-    assert!(
-        total_after_dynamic > total_after_static,
-        "Dynamic mode should regenerate; dynamic={total_after_dynamic} static={total_after_static}"
     );
     // Verify starting totals were the same
     assert!(
