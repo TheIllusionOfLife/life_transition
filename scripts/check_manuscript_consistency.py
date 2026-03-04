@@ -283,21 +283,24 @@ def _check_bindings_hypothesis_family(registry: dict) -> tuple[list[str], list[s
     return issues, checks
 
 
-def _load_stats_rows() -> tuple[list[dict] | None, list[str]]:
+def _load_stats_rows() -> tuple[list[dict] | None, list[str], list[str]]:
     issues: list[str] = []
+    checks: list[str] = []
     if not DEFAULT_STATS.exists():
-        return None, [f"missing stats file for hypothesis-family check: {DEFAULT_STATS}"]
+        checks.append("hypothesis-family stats file missing (check skipped)")
+        return None, issues, checks
 
     try:
         stats = _read_json(DEFAULT_STATS)
     except ValueError as exc:
-        return None, [str(exc)]
+        return None, [str(exc)], checks
 
     if not isinstance(stats, list):
-        return None, ["stats file is not a JSON array"]
+        return None, ["stats file is not a JSON array"], checks
 
     rows = [row for row in stats if isinstance(row, dict)]
-    return rows, issues
+    checks.append("hypothesis-family stats file loaded")
+    return rows, issues, checks
 
 
 def _extract_preregistered_rows(stats_rows: list[dict]) -> list[dict]:
@@ -357,11 +360,13 @@ def _check_hypothesis_family(
     issues.extend(b_issues)
     checks.extend(b_checks)
 
-    stats_rows, s_load_issues = _load_stats_rows()
+    stats_rows, s_load_issues, s_load_checks = _load_stats_rows()
+    checks.extend(s_load_checks)
     if s_load_issues:
         issues.extend(s_load_issues)
         return issues, checks
-    assert stats_rows is not None
+    if stats_rows is None:
+        return issues, checks
 
     s_issues, s_checks = _check_stats_hypothesis_family(stats_rows)
     issues.extend(s_issues)

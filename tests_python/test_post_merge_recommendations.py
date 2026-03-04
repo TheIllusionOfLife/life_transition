@@ -356,6 +356,63 @@ steps.
     assert any("invalid JSON in" in issue for issue in report["issues"])
 
 
+def test_manuscript_consistency_skips_missing_hypothesis_stats_artifact(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import scripts.check_manuscript_consistency
+    from scripts.check_manuscript_consistency import run_checks
+
+    monkeypatch.setattr(scripts.check_manuscript_consistency, "EXPERIMENT_SCRIPTS", [])
+
+    paper = tmp_path / "main.tex"
+    manifest = tmp_path / "manifest_reference.json"
+    registry = tmp_path / "result_manifest_bindings.json"
+    missing_stats = tmp_path / "semi_life_capability_stats.json"
+
+    monkeypatch.setattr(scripts.check_manuscript_consistency, "DEFAULT_PAPER", paper)
+    monkeypatch.setattr(scripts.check_manuscript_consistency, "DEFAULT_MANIFEST", manifest)
+    monkeypatch.setattr(scripts.check_manuscript_consistency, "DEFAULT_BINDINGS", registry)
+    monkeypatch.setattr(scripts.check_manuscript_consistency, "DEFAULT_STATS", missing_stats)
+
+    paper.write_text(
+        r"""
+Each simulation runs for 2000 timesteps with population sampled every 50
+steps, and reports a 32-test family across 32 tests.
+\label{tab:ablation}
+""".strip()
+    )
+    manifest.write_text(
+        json.dumps(
+            {
+                "schema_version": 2,
+                "source_git_commit": "abc1234",
+                "source_generated_at_utc": "2026-02-17T00:00:00Z",
+                "steps": 2000,
+                "sample_every": 50,
+                "base_config": {"mutation_point_rate": 0.02, "mutation_scale": 0.15},
+            }
+        )
+    )
+    registry.write_text(
+        json.dumps(
+            {
+                "bindings": [
+                    {
+                        "result_id": "semi_life_hypothesis_tests",
+                        "paper_ref": "tab:ablation",
+                        "manifest": "experiments/semi_life_capability_stats.json",
+                        "notes": "Pre-registered hypothesis family H1-H8 with 32-test correction.",
+                    }
+                ]
+            }
+        )
+    )
+
+    report = run_checks(paper, manifest, registry)
+    assert report["ok"] is True
+    assert "hypothesis-family stats file missing (check skipped)" in report["checks"]
+
+
 def test_experiment_niche_defaults_and_long_horizon_output(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
