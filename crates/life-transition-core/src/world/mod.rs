@@ -985,6 +985,8 @@ impl World {
         }
 
         self.step_environment_phase(&post_step_tree);
+        // Cache remains valid for next step because this tree indexes ORGANISM agents only.
+        // step_semi_life_phase mutates SemiLife entities, not organism positions/liveness.
         self.spatial_tree_cache = Some(post_step_tree);
 
         let state_update_us = t2.elapsed().as_micros() as u64;
