@@ -36,8 +36,7 @@ build/
 !/experiments/final_graph_statistics.json
 !/experiments/final_statistics.json
 
-# Generated paper artifacts
-paper/main.pdf
+# Generated paper artifacts (figures only; main.pdf is tracked)
 paper/figures/*.pdf
 
 # LaTeX build artifacts

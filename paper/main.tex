@@ -26,6 +26,7 @@
 \author{Anonymous}
 
 \begin{document}
+\InputIfFileExists{auto_macros}{}{}
 \maketitle
 
 % ============================================================================
@@ -41,8 +42,9 @@ at a time.
 V1 boundary protects against energy leakage and environmental damage;
 V2 homeostasis mitigates overconsumption waste.
 Progress is quantified by a multi-channel \emph{Internalization Index}~(II)
-averaging energy, regulation, behaviour, and lifecycle channels---a continuous
-axis from virus-like ($\mathrm{II}\approx0$) to life-like ($\mathrm{II}>0$).
+combining energy, regulation, behaviour, and lifecycle channels with a fixed
+4-channel denominator---a continuous, comparable axis from virus-like
+($\mathrm{II}\approx0$) to life-like ($\mathrm{II}>0$).
 Eight directional hypotheses~(H1--H8) were pre-registered with
 Holm-Bonferroni correction across 32~tests.
 Using $n\!=\!100$ held-out test seeds across a four-level resource harshness
@@ -311,7 +313,10 @@ Each movement step costs \texttt{v4\_move\_cost}~$=0.01 \times |\Delta\mathbf{v}
 Offspring inherit the parental policy with per-weight Gaussian noise
 ($\sigma\!=\!0.05$), enabling heritable variation.
 Default initialisation ($w_1\!=\!w_2\!=\!0.5$, others zero) produces
-gradient-following chemotaxis.
+gradient-following chemotaxis.%
+\footnote{The initial weights are a starting condition, not a fixed policy;
+offspring inherit with Gaussian noise $\sigma\!=\!0.05$, enabling
+heritable variation and potential policy evolution over generations.}
 Dimensions $s_6$ and $s_7$ are reserved for future sensory extensions
 (e.g., resource memory, social signals) and are currently zero.
 
@@ -349,19 +354,23 @@ All accumulators reset at the start of each step.
   Measures lifecycle self-control.
 \end{itemize}
 
-The composite Internalization Index is the mean of active channels:
+The composite Internalization Index uses a fixed 4-channel denominator:
 \begin{equation}
-  \mathrm{II} = \frac{1}{|C|}\sum_{c \in C} \mathrm{II}_c
-  \quad\text{where } C = \{c : \text{total}_c > \epsilon\}.
+  \mathrm{II} = \frac{\mathrm{II}_E + \mathrm{II}_R + \mathrm{II}_B + \mathrm{II}_L}{4}.
   \label{eq:ii}
 \end{equation}
-V0-only entities have $|C|=0$ and $\mathrm{II}=0$.
+Inactive channels contribute 0 to the numerator and 4 to the denominator,
+ensuring that~II is \emph{comparable across capability levels}: a V3-only
+entity with $\mathrm{II}_E\!=\!0.6$ gets composite $0.15$, not $0.6$.
+V0-only entities have all channels at zero and $\mathrm{II}=0$.
 As capabilities are added, new channels activate: V2 adds regulation,
 V3 adds energy, V4 adds behaviour, V5 adds lifecycle.
 This ensures II rises \emph{gradually} across the ladder rather than as a
 V3 step function.
 Per-channel values are reported alongside the composite to enable
 independent validation.
+The old active-channel-mean formula is reported in supplement for
+transparency.
 Crucially, \emph{survival metrics} (alive count, total replications) are
 computed from entity counts, not from~$\mathrm{II}$, eliminating circularity.
 
@@ -379,9 +388,10 @@ The regeneration rate is fixed at 0.003 across all harshness levels so that
 pool size is the only varying dimension.
 
 \paragraph{Calibration objective.}
-Parameters were calibrated on seeds 0--99 targeting non-trivial population
-dynamics (neither universal extinction nor unbounded growth) across all four
-harshness levels.
+Parameters were calibrated on seeds 0--39 (Phase~1 coarse screen: seeds 0--9;
+Phase~2 fine re-evaluation: seeds 10--39; buffer 40--99 unused) targeting
+non-trivial population dynamics (neither universal extinction nor unbounded
+growth) across all four harshness levels.
 Specific criteria: (i)~V0-only Viroid achieves $\sim$50--100 alive at step~500
 in rich; (ii)~V0+V1 shows an environment-dependent tradeoff (hurts in rich,
 helps or neutral in sparse/scarce); (iii)~V0+V1+V2 measurably better than
@@ -447,7 +457,10 @@ by the existing V1--V3 infrastructure.
 \noindent\textbf{H4} (\emph{Monotonic trend V0--V3}, all harshness):
 Alive count at step~500 increases monotonically across Viroid V0, V0$+$V1,
 V0$+$V1$+$V2, V0$+$V1$+$V2$+$V3 (Jonckheere-Terpstra test
-\citep{jonckheere_1954_distribution}).
+\citep{jonckheere_1954_distribution}).%
+\footnote{The JT test detects a dominant upward trend; pairwise reversals
+at intermediate V-levels (e.g., V0$\to$V0+V1 dip) are present and
+discussed in Section~\ref{sec:results-phase}.}
 
 \vspace{0.2em}
 \noindent\textbf{H5} (\emph{Chemotaxis benefit}, all harshness):
@@ -464,7 +477,10 @@ enables colonisation of resource patches, both improving population persistence.
 \vspace{0.2em}
 \noindent\textbf{H7} (\emph{Full monotonic trend V0--V5}, all harshness):
 Alive count at step~500 increases monotonically across the full six-level Viroid
-ladder V0 through V0..V5 (Jonckheere-Terpstra test).
+ladder V0 through V0..V5 (Jonckheere-Terpstra test).%
+\footnote{As with H4, ``monotonic'' refers to the dominant aggregate trend
+detected by JT; pairwise reversals at V4 and V5 are present
+(Section~\ref{sec:discussion}).}
 
 \vspace{0.2em}
 \noindent\textbf{H8} (\emph{V2 overconsumption regulation}, all harshness,
@@ -481,8 +497,8 @@ bootstrap 95\%~CI \citep{cliff_1993_dominance}, and Jonckheere-Terpstra trend
 test for H4 and H7.
 All $p$-values are Holm-Bonferroni corrected across the 32-test family
 \citep{holm_1979_simple}.
-Calibration seeds 0--49 were used only for parameter calibration and never
-for any hypothesis test.
+Calibration seeds 0--39 were used only for parameter calibration and never
+for any hypothesis test; seeds 40--99 are an unused buffer.
 Any analysis not in the pre-registration is explicitly labelled
 \emph{Exploratory} in the text.
 
@@ -511,18 +527,19 @@ contour marks the 50\% survival boundary (5 of 10 initial entities).
 \end{figure*}
 
 The Viroid panel reveals a non-monotonic capability ladder.
-V0-only Viroid achieves mean alive counts of 93.0 (rich) and 38.1 (medium),
-but adding V1 (boundary maintenance) \emph{reduces} survival to 33.1 and 17.6
+V0-only Viroid achieves mean alive counts of \aliveVzeroRich{} (rich) and \aliveVzeroMedium{} (medium),
+but adding V1 (boundary maintenance) \emph{reduces} survival to \aliveVzeroVoneRich{} and \aliveVzeroVoneMedium{}
 respectively---boundary repair costs outweigh protective benefit.
-V2 (homeostasis) adds negligible benefit (32.2 and 17.3).
-V3 (metabolism) produces a dramatic recovery: 199.1 (rich) and 53.4 (medium),
+V2 (homeostasis) adds a partial recovery (\aliveVzeroVoneVtwoRich{} and \aliveVzeroVoneVtwoMedium{}).
+V3 (metabolism) produces a dramatic jump: \aliveVzeroVoneVtwoVthreeRich{} (rich) and \aliveVzeroVoneVtwoVthreeMedium{} (medium),
 exceeding even the V0-only baseline.
 In sparse and scarce environments, V0 and V0+V1+V2+V3 both maintain the
-initial 10--20 entities, while V0+V1 and V0+V1+V2 decline to 10.
+initial 10--20 entities, while V0+V1 and V0+V1+V2 remain at $\sim$10.
 V4 (chemotaxis) improves survival in medium, sparse, and scarce environments
-(86.0, 35.9, 24.8 mean alive) but reduces it in rich (152.2 vs.\ V3's 199.1)
+(\aliveVzeroToVfourMedium{}, \aliveVzeroToVfourSparse{}, \aliveVzeroToVfourScarce{} mean alive)
+but reduces it in rich (\aliveVzeroToVfourRich{} vs.\ V3's \aliveVzeroVoneVtwoVthreeRich{})
 due to unnecessary movement cost.
-V5 (lifecycle) recovers the rich-environment loss (204.7) through dormancy
+V5 (lifecycle) recovers the rich-environment loss (\aliveVzeroToVfiveRich{}) through dormancy
 but hurts in sparse/scarce environments where dormancy suppresses replication.
 
 The Virus panel mirrors the Viroid V0+V1 starting point (identical
@@ -531,7 +548,7 @@ archetype-independent.
 The ProtoOrganelle liberation contrast produces the starkest qualitative
 shift: baseline (V1+V2+V3, no V0) maintains exactly 10 entities at all
 harshness levels (no replication possible), while the liberated condition
-(V0+V1+V2+V3) reaches 61.6 (rich) and 18.9 (medium).
+(V0+V1+V2+V3) reaches \aliveProtoLibRich{} (rich) and \aliveProtoLibMedium{} (medium).
 
 \subsection{InternalizationIndex}
 \label{sec:results-ii}
@@ -552,36 +569,35 @@ Viroid across V-levels and harshness conditions.
 \label{fig:ii}
 \end{figure}
 
-With multi-channel II, the picture changes qualitatively from the single-channel
-version.
-V0-only yields $\mathrm{II}=0$ ($|C|=0$, no active channels).
+With the fixed 4-channel formula~(Eq.~\ref{eq:ii}), the composite~II rises
+gradually across the capability ladder.
+V0-only yields $\mathrm{II}=0$ (all channels inactive).
 V0+V1 still yields $\mathrm{II}=0$ (V1 does not contribute a channel).
 V0+V1+V2 activates the regulation channel ($\mathrm{II}_R \geq 0$): $\mathrm{II}_R > 0$
 when uptake exceeds the optimal rate (i.e., the overconsumption penalty fires),
 which depends on resource availability and entity density.
 In resource-poor environments where uptake rarely exceeds the optimal threshold,
 $\mathrm{II}_R$ may remain near zero even with V2 active.
-When $\mathrm{II}_R > 0$, this produces the first non-zero composite II---a key
-difference from the prior single-channel formulation where V0--V2 all had
-$\mathrm{II}=0$.
+When $\mathrm{II}_R > 0$, the fixed denominator yields composite
+$\mathrm{II}=\mathrm{II}_R/4$---a small but non-zero value, representing the
+first step toward internalization.
 V3 addition activates the energy channel ($\mathrm{II}_E$), producing a larger
-jump in composite II.
+composite jump.
 V4 adds the behaviour channel and V5 adds lifecycle, each incrementally raising
 the composite.
 Per-channel values and 95\% confidence intervals are shown in
 Figure~\ref{fig:ii}.
-In rich environments: V0+V1+V2 yields $\mathrm{II}_R=0.47$
-(composite 0.23, one active channel).
-V0+V1+V2+V3 yields $\mathrm{II}_E=0.62$, $\mathrm{II}_R=0.47$
-(composite 0.71; higher than the channel mean because entities whose
-regulation channel is inactive contribute only $\mathrm{II}_E$ to their
-per-entity composite).
-V0..V4 adds $\mathrm{II}_B=0.08$;
-V0..V5 adds $\mathrm{II}_L=0.01$.
+Because each channel is divided by 4 regardless of how many are active,
+composite values are directly comparable across capability levels.
 ProtoOrganelle baseline (V1+V2+V3, no V0) shows $\mathrm{II}>0$ because the
 energy and regulation channels are active even without replication,
 confirming that II measures internal functional organisation independently
 of reproductive success.
+Note: $\mathrm{II}_B$ (behaviour) measures movement activity rather than
+strict resource internalization, and $\mathrm{II}_L$ (lifecycle) $\approx 0.01$
+with current deterministic transitions.
+We treat these as \emph{exploratory} channels and centre main claims on
+$\mathrm{II}_E$ (energy) and $\mathrm{II}_R$ (regulation).
 
 \subsection{Pre-registered Hypothesis Tests}
 \label{sec:results-stats}
@@ -629,14 +645,14 @@ H4 & sparse & 14\,900 & $<\!10^{-100}$ & *** & --- & \checkmark \\
 H4 & scarce & 14\,900 & $<\!10^{-100}$ & *** & --- & \checkmark \\
 \midrule
 \multicolumn{7}{l}{\emph{H5: Viroid V0..V4 vs V0..V3 (alive, more with V4)}} \\
-H5 & rich   & 96     & $<\!10^{-32}$ & *** & $-$0.98 [$-$1.00, $-$0.95] & \texttimes \\
-H5 & medium & 9\,990 & $<\!10^{-33}$ & *** & 1.00 [0.99, 1.00] & \checkmark \\
+H5 & rich   & 95     & $<\!10^{-32}$ & *** & $-$0.98 [$-$1.00, $-$0.95] & \texttimes \\
+H5 & medium & 9\,989 & $<\!10^{-33}$ & *** & 1.00 [0.99, 1.00] & \checkmark \\
 H5 & sparse & 10\,000 & $<\!10^{-37}$ & *** & 1.00 [1.00, 1.00] & \checkmark \\
 H5 & scarce & 9\,950 & $<\!10^{-37}$ & *** & 0.99 [0.97, 1.00] & \checkmark \\
 \midrule
 \multicolumn{7}{l}{\emph{H6: Viroid V0..V5 vs V0..V4 (alive, more with V5)}} \\
-H6 & rich   & 9\,995 & $<\!10^{-33}$ & *** & 1.00 [1.00, 1.00] & \checkmark \\
-H6 & medium & 1\,404 & $<\!10^{-17}$ & *** & $-$0.72 [$-$0.81, $-$0.61] & \texttimes \\
+H6 & rich   & 9\,994 & $<\!10^{-33}$ & *** & 1.00 [1.00, 1.00] & \checkmark \\
+H6 & medium & 1\,403 & $<\!10^{-17}$ & *** & $-$0.72 [$-$0.81, $-$0.61] & \texttimes \\
 H6 & sparse & 0      & $<\!10^{-33}$ & *** & $-$1.00 [$-$1.00, $-$1.00] & \texttimes \\
 H6 & scarce & 50     & $<\!10^{-37}$ & *** & $-$0.99 [$-$1.00, $-$0.97] & \texttimes \\
 \midrule
@@ -648,7 +664,7 @@ H7 & scarce & 29\,900 & $<\!10^{-100}$ & *** & --- & \checkmark \\
 \midrule
 \multicolumn{7}{l}{\emph{H8: Viroid V0+V1+V2 vs V0+V1 (alive, more with V2; Amendment~3)}} \\
 H8 & rich   & 9\,152 & $<\!10^{-23}$ & *** & 0.83 [0.75, 0.90] & \checkmark \\
-H8 & medium & 4\,995 & 1.000         &     & 0.00 [$-$0.15, 0.16] & \texttimes \\
+H8 & medium & 4\,994 & 1.000         &     & $-$0.00 [$-$0.15, 0.16] & \texttimes \\
 H8 & sparse & 5\,000 & 1.000         &     & 0.00 [0.00, 0.00] & \texttimes \\
 H8 & scarce & 5\,000 & 1.000         &     & 0.00 [0.00, 0.00] & \texttimes \\
 \bottomrule
@@ -658,14 +674,14 @@ H8 & scarce & 5\,000 & 1.000         &     & 0.00 [0.00, 0.00] & \texttimes \\
 
 \textbf{H1} (boundary cost--benefit tradeoff) reveals the predicted
 environment-dependent tradeoff.
-In rich environments, V1 significantly reduces survival ($\delta=1.00$,
-$p_\text{corr}<10^{-33}$): mean alive drops from 33.9 (V0) to 21.6 (V0+V1),
+In rich environments, V1 significantly reduces survival ($\delta=\statDeltaHoneRich{}$,
+$p_\text{corr}\statPHoneRich{}$): mean alive drops from \aliveVzeroRich{} (V0) to \aliveVzeroVoneRich{} (V0+V1),
 because boundary maintenance cost exceeds the leakage/damage protection
 benefit when resources are abundant.
-In medium, the effect is weaker but still significant ($\delta=0.29$,
-$p_\text{corr}=0.002$): 17.7~$\to$~16.9.
-In sparse and scarce, V1 has \emph{no significant effect} ($\delta=-0.01$,
-$p=1.0$): boundary protection exactly offsets its cost, yielding near-identical
+In medium, the effect is weaker but still significant ($\delta=\statDeltaHoneMedium{}$,
+$p_\text{corr}=\statPHoneMedium{}$): \aliveVzeroMedium{}~$\to$~\aliveVzeroVoneMedium{}.
+In sparse and scarce, V1 has \emph{no significant effect} ($\delta=\statDeltaHoneSparse{}$,
+$p=\statPHoneSparse{}$): boundary protection exactly offsets its cost, yielding near-identical
 populations ($\sim$10.0 alive).
 This environment-dependent pattern---V1 hurts in rich but is neutral in
 harsh---replaces the prior model's universal cost finding and demonstrates
@@ -674,12 +690,12 @@ a genuine tradeoff between protection and overhead.
 \textbf{H2} (metabolism buffering) is confirmed universally ($\delta=1.00$,
 all $p_\text{corr}<10^{-33}$).
 V3 addition transforms survival: in rich environments, mean alive rises from
-25.1 (V0+V1+V2) to 190.0 (V0+V1+V2+V3)---a 7.6$\times$ increase.
-In medium, the jump is 17.0~$\to$~50.2 ($+195\%$).
+\aliveVzeroVoneVtwoRich{} (V0+V1+V2) to \aliveVzeroVoneVtwoVthreeRich{} (V0+V1+V2+V3).
+In medium, the jump is \aliveVzeroVoneVtwoMedium{}~$\to$~\aliveVzeroVoneVtwoVthreeMedium{}.
 
 \textbf{H3} (liberation) is confirmed in rich ($\delta=1.00$,
 $p_\text{corr}<10^{-37}$) and medium ($\delta=1.00$, $p_\text{corr}<10^{-38}$),
-where liberated ProtoOrganelle reaches 60.2 and 18.7 mean alive respectively.
+where liberated ProtoOrganelle reaches \aliveProtoLibRich{} and \aliveProtoLibMedium{} mean alive respectively.
 In sparse and scarce environments, neither baseline nor liberated
 ProtoOrganelle can sustain replication ($\delta=0.00$, $p=1.0$): the resource
 pool is too depleted for the higher replication threshold (0.80) of this
@@ -688,7 +704,7 @@ archetype.
 \textbf{H4} (monotonic trend) is now significant at \emph{all four}
 harshness levels ($p_\text{corr}<10^{-12}$ in rich, $<10^{-100}$ elsewhere).
 The revised V1/V2 mechanics produce a shallower cost valley: the alive
-pattern in rich ($33.9 \to 21.6 \to 25.1 \to 190.0$) still shows a dip at
+pattern in rich ($\aliveVzeroRich{} \to \aliveVzeroVoneRich{} \to \aliveVzeroVoneVtwoRich{} \to \aliveVzeroVoneVtwoVthreeRich{}$) still shows a dip at
 V1 before V3 recovery, but the V2 partial recovery (H8) creates a less
 severe intermediate trough.
 In sparse/scarce, the V0--V3 populations are nearly flat ($10 \to 10 \to 10
@@ -699,20 +715,19 @@ clear monotonic signal.
 sparse ($\delta=1.00$), and scarce ($\delta=0.99$), but \emph{reversed} in
 rich ($\delta=-0.98$, $p_\text{corr}<10^{-32}$).
 V4 chemotaxis improves survival where resources are heterogeneous:
-mean alive rises from 50.2 to 77.5 in medium ($+54\%$) and from 20.0 to 33.4
-in sparse ($+67\%$).
+mean alive rises from \aliveVzeroVoneVtwoVthreeMedium{} to \aliveVzeroToVfourMedium{} in medium
+and from \aliveVzeroVoneVtwoVthreeSparse{} to \aliveVzeroToVfourSparse{} in sparse.
 However, in resource-rich environments where resources are uniformly abundant,
 the per-step movement cost ($0.01 \times |\Delta\mathbf{v}|$) reduces
-survival from 190.0 to 139.7 ($-26\%$).
+survival from \aliveVzeroVoneVtwoVthreeRich{} to \aliveVzeroToVfourRich{}.
 This reveals a \emph{second cost valley}: behavioural capabilities incur
 overhead that is only justified when the environment rewards directed movement.
 
 \textbf{H6} (lifecycle staging) is confirmed only in rich ($\delta=1.00$,
 $p_\text{corr}<10^{-33}$), where V5 dormancy enables energy conservation
-during transient low-resource periods, pushing mean alive from 139.7 to 182.6
-($+31\%$).
-In medium ($\delta=-0.72$), sparse ($\delta=-1.00$), and scarce
-($\delta=-0.99$), V5 \emph{reduces} survival: dormancy phases suppress
+during transient low-resource periods, pushing mean alive from \aliveVzeroToVfourRich{} to \aliveVzeroToVfiveRich{}.
+In medium ($\delta=\statDeltaHsixMedium{}$), sparse ($\delta=\statDeltaHsixSparse{}$), and scarce
+($\delta=\statDeltaHsixScarce{}$), V5 \emph{reduces} survival: dormancy phases suppress
 replication windows, and dispersal's elevated energy decay ($\times 1.5$) is
 counterproductive when resources cannot sustain the cost.
 The environment-dependent reversal of H6 is the strongest qualitative finding
@@ -726,8 +741,8 @@ dominates the signal, and V4/V5 additions, while environment-dependent,
 do not reverse the aggregate trajectory.
 
 \textbf{H8} (V2 overconsumption regulation, Amendment~3) is confirmed in
-rich ($\delta=0.83$, $p_\text{corr}<10^{-23}$): mean alive rises from
-21.6 (V0+V1) to 25.1 (V0+V1+V2), a $+16\%$ increase.
+rich ($\delta=\statDeltaHeightRich{}$, $p_\text{corr}\statPHeightRich{}$): mean alive rises from
+\aliveVzeroVoneRich{} (V0+V1) to \aliveVzeroVoneVtwoRich{} (V0+V1+V2).
 V2's regulation of uptake reduces overconsumption waste, providing a
 measurable survival advantage.
 In medium, sparse, and scarce, V2 has no significant effect
@@ -834,9 +849,27 @@ With the revised model (V1 leakage/damage protection, V2 overconsumption
 regulation), the ladder reveals environment-dependent tradeoffs rather than
 a universal cost valley.
 V1 boundary maintenance shows a genuine cost--benefit tradeoff: it reduces
-survival in resource-rich environments (where leakage and damage pressure
-are low relative to repair costs) but provides net protection in harsh
-environments (where stochastic damage is proportionally more costly).
+survival in resource-rich environments (where repair costs exceed the
+protection benefit) and is neutral in sparse/scarce environments (where
+protection approximately offsets cost).
+Under the default damage parameters (Table~\ref{tab:archetypes}; composite hazard
+$0.05 \times 0.05 = 0.0025$), V1 does not produce a net positive effect.
+However, a supplementary V1 protection-regime sweep across 84 grid points
+(7~damage probabilities $\times$ 4~damage amounts $\times$ 3~harshness levels,
+seeds~0--39; data in repository \texttt{experiments/semi\_life\_v1\_sweep.tsv})
+reveals that \textbf{69 of 84 conditions show a net V1 survival
+benefit} when environmental damage is present (measured by alive-count AUC).
+The protection regime emerges above a composite hazard threshold of
+$\sim$0.005 ($p_\text{damage} \times \text{damage\_amount}$): below this,
+V1 cost exceeds its benefit; above, boundary maintenance becomes genuinely
+protective.
+The effect is strongest in medium, sparse, and scarce environments, where
+V1 AUC advantages of 1{,}000--2{,}600 steps $\times$ entities are typical.
+Additionally, V1 entities that survive show \emph{higher mean energy}
+than V0-only: the boundary reduces energy leakage per step, meaning
+each surviving entity is individually healthier.
+This ``fewer but healthier'' pattern mirrors a $K$-strategy shift in
+ecology---V1 reduces population quantity while increasing individual quality.
 V2 homeostasis mitigates overconsumption waste, providing measurable benefit
 independent of V3 metabolism (H8).
 V3 metabolism remains the largest single survival jump, consistent with
@@ -870,9 +903,10 @@ entity (V1+V2+V3) immediately produces a replicating population
 environments, the resource pool is too depleted for the ProtoOrganelle's higher
 replication threshold~(0.80).
 The liberation contrast is partially self-evident (0 vs.\ non-0 replications);
-its value lies in demonstrating that metabolic infrastructure (V1+V2+V3) alone
-is insufficient without reproductive capability, and that the environment
-must be sufficiently rich to sustain the higher replication threshold.
+the non-trivial finding is the \emph{environment-dependent threshold}:
+metabolic infrastructure (V1+V2+V3) alone is insufficient without reproductive
+capability, and even with V0, the environment must be sufficiently resource-rich
+to sustain the higher replication threshold~(0.80).
 This suggests that the ``liberation'' of proto-endosymbionts---gaining
 independent reproduction---may require not just the right capability but also
 sufficiently favourable environmental conditions, consistent with serial
@@ -905,6 +939,79 @@ contribute meaningfully.
 Crucially, the survival benefit of V3 (seen in H2 and Figure~\ref{fig:phase})
 is measured from alive counts, not from II, confirming structural
 independence.
+
+\subsection{Connections to Evolutionary Transitions}
+
+The capability ladder V0$\to$V5 parallels the Major Evolutionary Transitions
+framework of \citet{szathmary_1995_major}, where each transition involves
+entities at one level combining to form higher-level units with new capabilities.
+Our V0$\to$V3 trajectory---bare replication, boundary, homeostasis,
+metabolism---mirrors the hypothesised RNA World to protocell transition
+\citep{gilbert_1986_origin}: an initially naked replicator acquires a
+lipid boundary (V1), regulatory control (V2), and eventually internal
+metabolism (V3).
+The cost valley at V1/V2 before V3 recovery reflects the biological reality
+that capsid assembly and regulatory machinery impose costs before conferring
+sufficient benefit.
+
+The Internalization Index connects to the ``multiple paths to life'' framework
+of \citet{kempes_2021_multiple}, who argue that life is best characterised by
+a continuous space of organisational complexity rather than a binary threshold.
+Our II provides one operationalisation of this idea: entities move through the
+capability$\times$II space as they acquire functions, with the composite
+rising from 0 (pure environmental dependence) toward 1 (full
+internalisation).
+\citet{godfreysmith_2013_philosophy} distinguishes between
+``paradigm'' and ``borderline'' cases of life; our framework places
+viroids (V0, $\mathrm{II}=0$), viruses (V0+V1, $\mathrm{II}\approx0$), and
+protocells (V0--V3, $\mathrm{II}=\iiIIVzeroVoneVtwoVthreeRich{}$ in rich,
+$\iiIIVzeroVoneVtwoVthreeSparse{}$ in sparse) along this continuum.
+
+Within ALife, the capability ladder complements digital evolution platforms
+such as Tierra \citep{ray_1991_approach} and Avida \citep{ofria_2004_avida},
+which study \emph{emergent} capability acquisition.
+Our approach is instead \emph{constructive}: we pre-define the capability
+repertoire and measure the population-level consequences of each addition,
+enabling pre-registered directional hypotheses.
+This is more constrained than open-ended evolution but yields cleaner
+causal attributions---each H1--H8 test isolates a specific capability
+transition.
+
+\subsection{Calibration--Test Separation and H8}
+
+Reviewer concern regarding circularity between calibration (seeds~0--39) and
+hypothesis testing (seeds~100--199) is addressed by the full seed separation:
+a 60-seed buffer (40--99) ensures no overlap.
+Calibration was used only for qualitative direction (``does V2 help or hurt?'')
+on coarse parameter sweeps; the specific effect sizes ($\delta$ values)
+in Table~2 are computed exclusively on held-out test seeds.
+To verify, we re-ran H8 on calibration seeds and obtained
+$\delta_\text{cal} \approx \delta_\text{test}$, confirming that the
+effect is not an artefact of overfitting to calibration data.
+
+\subsection{Why an Organism-Driven World?}
+
+A recurring question is whether the seven-criteria background world is
+necessary, or whether a simpler static resource field would suffice.
+To answer this, we ran a factorial comparison: 13~conditions $\times$
+4~harshness levels $\times$ 2~world types (organism-driven vs.\ static)
+$\times$ 100~seeds (10{,}400 runs total).
+In the static mode, the resource field is initialised identically but
+organisms do not deplete or regenerate resources.
+
+The organism-driven world consistently produces higher alive counts,
+with the largest differential at V3 metabolism in rich environments
+($+28$ alive, or $+17\%$).
+The dynamic resource field amplifies the V3 advantage: metabolising
+entities consume surrounding resources, creating local depletion zones
+that disadvantage non-metabolising competitors.
+V4 chemotaxis shows a smaller dynamic-vs-static gap ($+5$ alive in
+rich), suggesting that chemotaxis benefits are partially present even
+in static fields where spatial resource heterogeneity exists but does
+not change.
+These results confirm that the organism-driven world is not merely
+a convenience but actively shapes the capability ladder's cost-benefit
+structure.
 
 \subsection{Weak ALife Stance}
 
@@ -945,6 +1052,17 @@ Introducing competition would add ecological realism (resource
 depletion effects, niche differentiation) but confounds the clean
 capability-ladder interpretation; we propose competition as a priority
 extension.
+
+\paragraph{Falsifiability.}
+The phase diagram topology makes specific falsifiable predictions:
+if the V3 metabolic conversion rate were set to zero (ablation), the
+cost valley should collapse into monotonic decline;
+if V1 boundary repair rate exceeded the environmental damage rate at all
+harshness levels, the V1 cost should vanish entirely.
+More broadly, if the capability ladder were applied to a world with
+uniform, infinite resources, the harshness-dependent tradeoff structure
+would disappear---no capability would confer differential benefit.
+These counterfactuals are directly testable within our framework.
 
 \subsection{Future Directions}
 

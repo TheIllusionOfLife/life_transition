@@ -6,8 +6,10 @@ experiment_pairwise.py, and experiment_evolution.py.
 """
 
 import json
+import os
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 import life_transition
@@ -247,3 +249,65 @@ def run_condition_suite(
             cond_name, combined, out_dir, filename_prefix, seeds, steps, sample_every
         )
     log(f"Total time: {time.perf_counter() - total_start:.1f}s")
+
+
+# ---------------------------------------------------------------------------
+# Parallel execution utilities (GIL released by PyO3 — ThreadPoolExecutor safe)
+# ---------------------------------------------------------------------------
+
+# Default worker count: leave 2 cores for OS + background.
+DEFAULT_MAX_WORKERS = max(1, (os.cpu_count() or 1) - 2)
+
+
+def run_parallel(
+    tasks: list[tuple],
+    run_fn: callable,
+    max_workers: int | None = None,
+    description: str = "runs",
+) -> list:
+    """Run independent (task_args) pairs in parallel via ThreadPoolExecutor.
+
+    Each task is a tuple of positional arguments passed to run_fn.
+    Results are collected in deterministic (submission) order.
+
+    GIL is released by the Rust PyO3 binding during simulation, so
+    ThreadPoolExecutor achieves true parallelism for simulation-heavy tasks.
+
+    Args:
+        tasks: List of argument tuples for run_fn.
+        run_fn: Callable accepting *task_args.
+        max_workers: Thread count (default: cpu_count - 2).
+        description: Label for progress logging.
+
+    Returns:
+        List of results in the same order as tasks.
+    """
+    if max_workers is None:
+        max_workers = DEFAULT_MAX_WORKERS
+
+    total = len(tasks)
+    if total == 0:
+        return []
+
+    max_workers = max(1, min(max_workers, total))
+    log(f"Parallel {description}: {total} tasks, {max_workers} workers")
+
+    results = [None] * total
+    start = time.perf_counter()
+    done = 0
+
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        future_to_idx = {
+            pool.submit(run_fn, *task_args): idx for idx, task_args in enumerate(tasks)
+        }
+        for future in as_completed(future_to_idx):
+            idx = future_to_idx[future]
+            results[idx] = future.result()
+            done += 1
+            if done % 50 == 0 or done == total:
+                elapsed = time.perf_counter() - start
+                rate = done / elapsed if elapsed > 0 else 0
+                log(f"  {done}/{total} done ({rate:.1f} runs/s)")
+
+    log(f"  Completed in {time.perf_counter() - start:.1f}s")
+    return results

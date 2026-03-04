@@ -28,6 +28,17 @@ pub enum HomeostasisMode {
     SetpointPid,
 }
 
+#[derive(Clone, Copy, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum ResourceFieldMode {
+    /// Organism-driven dynamics: organisms deplete resources, field regenerates.
+    #[default]
+    Dynamic,
+    /// Static field: initialized at `resource_initial_value`, no regeneration.
+    /// Organisms still consume resources but the field never replenishes.
+    Static,
+}
+
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum AblationTarget {
@@ -321,6 +332,8 @@ pub struct SimConfig {
     pub growth_maturation_steps: usize,
     /// Metabolic efficiency multiplier for fully immature organisms (maturity=0).
     pub growth_immature_metabolic_efficiency: f32,
+    /// Resource field dynamics mode (dynamic = organism-driven, static = no regeneration).
+    pub resource_field_mode: ResourceFieldMode,
     /// Per-step resource regeneration rate per cell.
     pub resource_regeneration_rate: f32,
     /// Initial resource value per cell at world initialization (0.0–1.0 typical).
@@ -406,6 +419,7 @@ impl Default for SimConfig {
             homeostasis_decay_rate: 0.01,
             growth_maturation_steps: 200,
             growth_immature_metabolic_efficiency: 0.3,
+            resource_field_mode: ResourceFieldMode::Dynamic,
             resource_regeneration_rate: 0.01,
             resource_initial_value: 1.0,
             environment_shift_step: 0,

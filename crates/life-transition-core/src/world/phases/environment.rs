@@ -1,4 +1,5 @@
 use super::super::World;
+use crate::config::ResourceFieldMode;
 use crate::spatial;
 use crate::spatial::AgentLocation;
 use rstar::RTree;
@@ -23,6 +24,11 @@ impl World {
                 );
                 _sham_sum += neighbor_count as f64;
             }
+        }
+
+        // Static mode: no regeneration or environment shifts
+        if self.config.resource_field_mode == ResourceFieldMode::Static {
+            return;
         }
 
         if self.config.environment_shift_step > 0

@@ -2628,10 +2628,11 @@ fn ii_v3_energy_channel_active() {
 
 /// Old single-channel II should match ii_energy when only energy channel is active.
 #[test]
-fn ii_composite_matches_energy_when_single_channel() {
+fn ii_composite_is_quarter_of_energy_when_single_channel() {
     use crate::semi_life::capability::{V0_REPLICATION, V3_METABOLISM};
 
     // V0+V3 only (no V2/V4/V5 → only energy channel active)
+    // Fixed 4-channel formula: composite = ii_energy / 4
     let caps = V0_REPLICATION | V3_METABOLISM;
     let mut world = make_semi_life_world_v1v2(1, 1.0, 42, caps, |cfg| {
         cfg.energy_leakage_rate = 0.0;
@@ -2644,11 +2645,12 @@ fn ii_composite_matches_energy_when_single_channel() {
 
     let snaps = world.semi_life_snapshots();
     let snap = &snaps[0];
+    let expected = snap.ii_energy / 4.0;
     assert!(
-        (snap.internalization_index - snap.ii_energy).abs() < 0.001,
-        "With only energy channel, composite ({}) should equal ii_energy ({})",
+        (snap.internalization_index - expected).abs() < 0.001,
+        "Fixed 4-channel: composite ({}) should equal ii_energy/4 ({})",
         snap.internalization_index,
-        snap.ii_energy
+        expected
     );
 }
 
@@ -2703,5 +2705,80 @@ fn ii_channel_count_increases_with_capabilities() {
         s2.ii_regulation > 0.0,
         "V0+V2+V3 with overconsumption should have regulation channel > 0, got {}",
         s2.ii_regulation
+    );
+}
+
+/// Static resource field mode: resources are consumed but never regenerate.
+#[test]
+fn static_resource_field_prevents_regeneration() {
+    use crate::config::{ResourceFieldMode, SemiLifeConfig};
+    use crate::semi_life::SemiLifeArchetype::Viroid;
+
+    let steps = 50;
+
+    // Dynamic mode: resources regenerate after consumption
+    let mut world_dynamic = make_semi_life_world(vec![Viroid], 3, 1.0, 42);
+    assert_eq!(
+        world_dynamic.config().resource_field_mode,
+        ResourceFieldMode::Dynamic
+    );
+    let total_before_dynamic = world_dynamic.resource_field().total();
+    world_dynamic.run_experiment(steps, steps);
+    let total_after_dynamic = world_dynamic.resource_field().total();
+
+    // Static mode: resources never regenerate
+    let config = SimConfig {
+        seed: 42,
+        world_size: 100.0,
+        num_organisms: 1,
+        agents_per_organism: 10,
+        resource_regeneration_rate: 0.01,
+        resource_field_mode: ResourceFieldMode::Static,
+        enable_semi_life: true,
+        semi_life_config: SemiLifeConfig {
+            enabled_archetypes: vec![Viroid],
+            num_per_archetype: 3,
+            initial_energy: 0.5,
+            energy_capacity: 1.0,
+            maintenance_cost: 0.001,
+            replication_threshold: 0.8,
+            replication_cost: 0.3,
+            resource_uptake_rate: 0.02,
+            ..SemiLifeConfig::default()
+        },
+        ..SimConfig::default()
+    };
+    let nn = NeuralNet::from_weights(std::iter::repeat_n(0.1f32, NeuralNet::WEIGHT_COUNT));
+    let agents: Vec<Agent> = (0..10)
+        .map(|i| Agent::new(i as u32, 0, [50.0, 50.0]))
+        .collect();
+    let mut world_static = World::new(agents, vec![nn], config).unwrap();
+    // Pre-fill same as dynamic
+    for x in 0..100 {
+        for y in 0..100 {
+            world_static
+                .resource_field_mut()
+                .set(x as f64, y as f64, 1.0);
+        }
+    }
+    let total_before_static = world_static.resource_field().total();
+    world_static.run_experiment(steps, steps);
+    let total_after_static = world_static.resource_field().total();
+
+    // Both should have consumption (total decreases or stays same)
+    // Static mode should have strictly less resources than dynamic after same steps
+    // because dynamic regenerates but static doesn't
+    assert!(
+        total_after_static <= total_before_static,
+        "Static field should not increase: before={total_before_static}, after={total_after_static}"
+    );
+    assert!(
+        total_after_static < total_after_dynamic,
+        "Static field ({total_after_static}) should have less resources than dynamic ({total_after_dynamic}) after {steps} steps"
+    );
+    // Verify starting totals were the same
+    assert!(
+        (total_before_dynamic - total_before_static).abs() < 1.0,
+        "Starting totals should be similar: dynamic={total_before_dynamic} static={total_before_static}"
     );
 }
