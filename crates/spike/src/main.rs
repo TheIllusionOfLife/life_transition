@@ -138,7 +138,9 @@ fn run_benchmark(
         "NO-GO"
     };
     println!("  Verdict:       {verdict} (target: >={TARGET_SPS} steps/sec)");
-    let summary = world.run_experiment(100, 100);
+    let summary = world
+        .try_run_experiment(100, 100)
+        .context("benchmark summary experiment parameters were invalid")?;
     println!(
         "  Alive orgs:    {}/{}",
         summary.final_alive_count, num_organisms
@@ -199,7 +201,9 @@ fn main() -> Result<()> {
             let mut world = World::new(agents, nns, sim_config.clone())
                 .context("Failed to initialize world")?;
 
-            let summary = world.run_experiment(steps, 100);
+            let summary = world
+                .try_run_experiment(steps, 100)
+                .context("run command experiment parameters were invalid")?;
 
             if let Some(out_dir) = out {
                 std::fs::create_dir_all(&out_dir).context("failed to create output directory")?;

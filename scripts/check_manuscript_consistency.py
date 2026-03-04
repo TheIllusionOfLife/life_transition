@@ -10,6 +10,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_PAPER = PROJECT_ROOT / "paper" / "main.tex"
 DEFAULT_MANIFEST = PROJECT_ROOT / "docs" / "research" / "manifest_reference.json"
 DEFAULT_BINDINGS = PROJECT_ROOT / "docs" / "research" / "result_manifest_bindings.json"
+DEFAULT_STATS = PROJECT_ROOT / "experiments" / "semi_life_capability_stats.json"
 EXPERIMENT_SCRIPTS = [
     PROJECT_ROOT / "scripts" / "experiment_semi_life_v1v3.py",
     PROJECT_ROOT / "scripts" / "experiment_semi_life_shocks.py",
@@ -215,6 +216,115 @@ def _load_documents(
     return tex, manifest, registry, issues
 
 
+def _extract_test_family_sizes(tex: str) -> set[int]:
+    sizes: set[int] = set()
+    patterns = [
+        r"(\d+)\s*[-–]?\s*test\s+family",
+        r"across\s+(\d+)\s+tests",
+    ]
+    for pattern in patterns:
+        for match in re.finditer(pattern, tex, re.IGNORECASE):
+            try:
+                sizes.add(int(match.group(1)))
+            except (TypeError, ValueError):
+                continue
+    return sizes
+
+
+def _check_hypothesis_family(
+    tex: str, registry: dict, paper_path: Path, registry_path: Path
+) -> tuple[list[str], list[str]]:
+    issues: list[str] = []
+    checks: list[str] = []
+
+    should_check_family = (
+        paper_path.resolve() == DEFAULT_PAPER.resolve()
+        and registry_path.resolve() == DEFAULT_BINDINGS.resolve()
+    )
+    if not should_check_family:
+        return issues, checks
+
+    expected_tests = 32
+    expected_hypotheses = {f"H{i}" for i in range(1, 9)}
+
+    paper_sizes = _extract_test_family_sizes(tex)
+    if expected_tests in paper_sizes:
+        checks.append("paper reports 32-test hypothesis family")
+    else:
+        issues.append(f"paper hypothesis family mismatch: expected {expected_tests}-test family")
+
+    bindings = registry.get("bindings")
+    if isinstance(bindings, list):
+        target = next(
+            (b for b in bindings if b.get("result_id") == "semi_life_hypothesis_tests"),
+            None,
+        )
+        if target is None:
+            issues.append("bindings missing result_id=semi_life_hypothesis_tests")
+        else:
+            note = str(target.get("notes", ""))
+            if "H1-H8" in note:
+                checks.append("bindings hypothesis note includes H1-H8")
+            else:
+                issues.append("bindings hypothesis note missing H1-H8")
+            if "32-test" in note:
+                checks.append("bindings hypothesis note includes 32-test family")
+            else:
+                issues.append("bindings hypothesis note missing 32-test family")
+    else:
+        issues.append("bindings registry malformed while checking hypothesis family")
+
+    if not DEFAULT_STATS.exists():
+        issues.append(f"missing stats file for hypothesis-family check: {DEFAULT_STATS}")
+        return issues, checks
+
+    try:
+        stats = _read_json(DEFAULT_STATS)
+    except ValueError as exc:
+        issues.append(str(exc))
+        return issues, checks
+
+    if not isinstance(stats, list):
+        issues.append("stats file is not a JSON array")
+        return issues, checks
+
+    prereg = []
+    for row in stats:
+        if not isinstance(row, dict):
+            continue
+        hypothesis = str(row.get("hypothesis", ""))
+        if hypothesis in expected_hypotheses:
+            prereg.append(row)
+
+    if len(prereg) == expected_tests:
+        checks.append("stats include 32 pre-registered H1-H8 tests")
+    else:
+        issues.append(f"stats pre-registered test count mismatch: expected 32 got {len(prereg)}")
+
+    by_hypothesis: dict[str, int] = {h: 0 for h in expected_hypotheses}
+    for row in prereg:
+        hypothesis = str(row.get("hypothesis", ""))
+        by_hypothesis[hypothesis] += 1
+
+    for hypothesis in sorted(expected_hypotheses):
+        n = by_hypothesis[hypothesis]
+        if n != 4:
+            issues.append(f"stats hypothesis count mismatch: {hypothesis} expected 4 got {n}")
+    checks.append("stats hypothesis multiplicity checked (4 harshness levels each)")
+
+    missing_pcorr = [
+        row for row in prereg if row.get("p_raw") is not None and row.get("p_corrected") is None
+    ]
+    if missing_pcorr:
+        issues.append(
+            f"stats missing p_corrected for {len(missing_pcorr)} pre-registered comparisons"
+        )
+    else:
+        checks.append("stats p_corrected present for all pre-registered comparisons")
+
+    return issues, checks
+
+
 def run_checks(paper_path: Path, manifest_path: Path, registry_path: Path) -> dict:
     """Run consistency checks and return a machine-readable report."""
     # 1. Check file existence
@@ -265,6 +375,11 @@ def run_checks(paper_path: Path, manifest_path: Path, registry_path: Path) -> di
     f_issues, f_checks = _check_freshness(manifest, manifest_path)
     all_issues.extend(f_issues)
     all_checks.extend(f_checks)
+
+    # 8. Hypothesis-family consistency checks
+    h_issues, h_checks = _check_hypothesis_family(tex, registry, paper_path, registry_path)
+    all_issues.extend(h_issues)
+    all_checks.extend(h_checks)
 
     return {"ok": len(all_issues) == 0, "issues": all_issues, "checks": all_checks}
 

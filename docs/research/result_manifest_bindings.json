@@ -50,7 +50,7 @@
         "experiments/semi_life_v1v5_test.tsv",
         "experiments/semi_life_capability_stats.json"
       ],
-      "notes": "Pre-registered H1-H7 hypothesis test results table (28-test Holm-Bonferroni family)."
+      "notes": "Pre-registered H1-H8 hypothesis test results table (32-test Holm-Bonferroni family)."
     },
     {
       "result_id": "semi_life_energy_robustness",
@@ -60,7 +60,17 @@
         "experiments/semi_life_v1v5_test.tsv",
         "experiments/semi_life_mean_energy_supplement.json"
       ],
-      "notes": "Exploratory mean_energy effect sizes (H1/H2 robustness check)."
+      "notes": "Exploratory mean_energy effect sizes (H1/H2/H3/H5/H6/H8 robustness checks)."
+    },
+    {
+      "result_id": "semi_life_sham_controls",
+      "paper_ref": "sec:results-sham",
+      "manifest": "experiments/semi_life_sham_controls.json",
+      "source_files": [
+        "experiments/semi_life_v1v5_test.tsv",
+        "experiments/semi_life_sham_controls.json"
+      ],
+      "notes": "Exploratory report of pre-registered V4/V5 sham null-control comparisons."
     }
   ]
 }
