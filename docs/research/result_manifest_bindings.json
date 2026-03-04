@@ -61,33 +61,6 @@
         "experiments/semi_life_mean_energy_supplement.json"
       ],
       "notes": "Exploratory mean_energy effect sizes (H1/H2 robustness check)."
-    },
-    {
-      "result_id": "semi_life_sensitivity",
-      "paper_ref": "fig:sensitivity",
-      "manifest": null,
-      "source_files": [
-        "experiments/semi_life_sensitivity_data.tsv"
-      ],
-      "notes": "Sensitivity analysis: parameter perturbation effects on survival metrics."
-    },
-    {
-      "result_id": "semi_life_v1_sweep",
-      "paper_ref": "fig:v1sweep",
-      "manifest": null,
-      "source_files": [
-        "experiments/semi_life_v1_sweep.tsv"
-      ],
-      "notes": "V1 protection regime sweep: env_damage_prob x env_damage_amount x harshness grid."
-    },
-    {
-      "result_id": "semi_life_static_comparison",
-      "paper_ref": "fig:static",
-      "manifest": null,
-      "source_files": [
-        "experiments/semi_life_static.tsv"
-      ],
-      "notes": "Static field comparison: V0-V5 population dynamics without environmental damage."
     }
   ]
 }
