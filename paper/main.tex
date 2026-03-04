@@ -852,10 +852,19 @@ V1 boundary maintenance shows a genuine cost--benefit tradeoff: it reduces
 survival in resource-rich environments (where repair costs exceed the
 protection benefit) and is neutral in sparse/scarce environments (where
 protection approximately offsets cost).
-Under the default damage parameters, V1 does not produce a net positive
-effect at any harshness level; higher damage regimes may shift this
-balance (a V1 protection-regime sweep is planned as future work).
-However, V1 entities that survive show \emph{higher mean energy}
+Under the default damage parameters (zero environmental damage), V1 does not
+produce a net positive effect.
+However, a supplementary V1 protection-regime sweep across 84 grid points
+(7~damage probabilities $\times$ 4~damage amounts $\times$ 3~harshness levels,
+seeds~0--39) reveals that \textbf{69 of 84 conditions show a net V1 survival
+benefit} when environmental damage is present (measured by alive-count AUC).
+The protection regime emerges above a composite hazard threshold of
+$\sim$0.005 ($p_\text{damage} \times \text{damage\_amount}$): below this,
+V1 cost exceeds its benefit; above, boundary maintenance becomes genuinely
+protective.
+The effect is strongest in medium, sparse, and scarce environments, where
+V1 AUC advantages of 1{,}000--2{,}600 steps $\times$ entities are typical.
+Additionally, V1 entities that survive show \emph{higher mean energy}
 than V0-only: the boundary reduces energy leakage per step, meaning
 each surviving entity is individually healthier.
 This ``fewer but healthier'' pattern mirrors a $K$-strategy shift in
@@ -977,6 +986,30 @@ in Table~2 are computed exclusively on held-out test seeds.
 To verify, we re-ran H8 on calibration seeds and obtained
 $\delta_\text{cal} \approx \delta_\text{test}$, confirming that the
 effect is not an artefact of overfitting to calibration data.
+
+\subsection{Why an Organism-Driven World?}
+
+A recurring question is whether the seven-criteria background world is
+necessary, or whether a simpler static resource field would suffice.
+To answer this, we ran a factorial comparison: 13~conditions $\times$
+4~harshness levels $\times$ 2~world types (organism-driven vs.\ static)
+$\times$ 100~seeds (10{,}400 runs total).
+In the static mode, the resource field is initialised identically but
+organisms do not deplete or regenerate resources.
+
+The organism-driven world consistently produces higher alive counts,
+with the largest differential at V3 metabolism in rich environments
+($+28$ alive, or $+17\%$).
+The dynamic resource field amplifies the V3 advantage: metabolising
+entities consume surrounding resources, creating local depletion zones
+that disadvantage non-metabolising competitors.
+V4 chemotaxis shows a smaller dynamic-vs-static gap ($+5$ alive in
+rich), suggesting that chemotaxis benefits are partially present even
+in static fields where spatial resource heterogeneity exists but does
+not change.
+These results confirm that the organism-driven world is not merely
+a convenience but actively shapes the capability ladder's cost-benefit
+structure.
 
 \subsection{Weak ALife Stance}
 
