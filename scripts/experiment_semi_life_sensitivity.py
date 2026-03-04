@@ -17,7 +17,7 @@ import json
 from pathlib import Path
 
 import life_transition
-from experiment_common import log, make_config_dict
+from experiment_common import log, make_config_dict, run_parallel
 
 STEPS = 500
 SAMPLE_EVERY = 500  # Only final step needed for sensitivity
@@ -93,8 +93,8 @@ def run_one(
     resource_initial: float,
     seed: int,
     cap_bits: int = CAPABILITY_BITS,
-) -> None:
-    """Run one condition and print a TSV row."""
+) -> list[str]:
+    """Run one condition and return TSV row strings."""
     base_params = _load_archetype_config()
     config = make_config_dict(seed=seed, overrides={})
     config["enable_semi_life"] = True
@@ -128,7 +128,7 @@ def run_one(
         f"{mean_ii:.4f}",
         str(total_rep),
     ]
-    print("\t".join(row), flush=True)
+    return ["\t".join(row)]
 
 
 def main() -> None:
@@ -144,25 +144,29 @@ def main() -> None:
     print("\t".join(TSV_COLUMNS))
     _EXPERIMENTS_DIR.mkdir(exist_ok=True)
 
-    done = 0
+    tasks: list[tuple] = []
     for param_name, param_key, default_val, cap_bits in SWEEP_PARAMS:
         for mult in MULTIPLIERS:
             value = default_val * mult
             for harshness, resource_initial in HARSHNESS.items():
                 for seed in SEEDS:
-                    run_one(
-                        param_name,
-                        param_key,
-                        value,
-                        mult,
-                        harshness,
-                        resource_initial,
-                        seed,
-                        cap_bits,
+                    tasks.append(
+                        (
+                            param_name,
+                            param_key,
+                            value,
+                            mult,
+                            harshness,
+                            resource_initial,
+                            seed,
+                            cap_bits,
+                        )
                     )
-                    done += 1
-                    if done % 100 == 0 or done == total:
-                        log(f"  {done}/{total} runs done")
+
+    all_results = run_parallel(tasks, run_one, description="sensitivity sweep runs")
+    for rows in all_results:
+        for row in rows:
+            print(row)
 
     log("\nDone.")
 
