@@ -1,14 +1,16 @@
 {
   "schema_version": 1,
-  "generated_at_utc": "2026-03-01T03:51:14.134340+00:00",
+  "generated_at_utc": "2026-03-04T05:23:44.318998+00:00",
   "experiment_name": "semi_life_capability_ladder",
-  "artifact_source_commit": "0f91eac284324e38b90b9b9c010be418dc800015",
+  "artifact_source_commit": "aa65c69e323758ee9b8bc8b31b5ccdf25553a4c7",
   "entrypoint": null,
   "metadata_generation_argv": [
     "zenodo_staging/semi_life_calibration_data.tar.gz",
     "zenodo_staging/semi_life_capability_data.tar.gz",
     "zenodo_staging/semi_life_shock_data.tar.gz",
     "zenodo_staging/semi_life_sensitivity_data.tar.gz",
+    "zenodo_staging/semi_life_v1_sweep_data.tar.gz",
+    "zenodo_staging/semi_life_static_data.tar.gz",
     "--experiment-name",
     "semi_life_capability_ladder",
     "--steps",
@@ -31,6 +33,10 @@
     "tab:stats=experiments/semi_life_capability_stats.json",
     "--paper-binding",
     "sec:results-energy=experiments/semi_life_mean_energy_supplement.json",
+    "--paper-binding",
+    "fig:v1sweep=experiments/semi_life_v1_sweep.tsv",
+    "--paper-binding",
+    "fig:static=experiments/semi_life_static.tsv",
     "--zenodo-doi",
     "10.5281/zenodo.18795806",
     "--output",
@@ -44,23 +50,33 @@
   "artifacts": [
     {
       "path": "zenodo_staging/semi_life_calibration_data.tar.gz",
-      "size_bytes": 991,
-      "sha256": "3d78ee1f3cb4030f668717d1ff40f839e9608b62bc55aa128e82a40f0ddc9cc5"
+      "size_bytes": 977,
+      "sha256": "1b7a17170f3a1fdeddd0a364167ff397598e4971a0c0abafed1e420984547f34"
     },
     {
       "path": "zenodo_staging/semi_life_capability_data.tar.gz",
-      "size_bytes": 619662,
-      "sha256": "482470f06bfdf89d9a7c992f0e1d0bc70497ee66462f7d54975b439fccaf5b47"
+      "size_bytes": 628926,
+      "sha256": "152ac3d7e1a841d36a4bd71a9fa3aee0626008a47ef0ab06c823cade4d4b286b"
     },
     {
       "path": "zenodo_staging/semi_life_shock_data.tar.gz",
-      "size_bytes": 190066,
-      "sha256": "6808ccde187e4b4cc66e40fc7796317f3dd777b2af46b1203541db9c170cc021"
+      "size_bytes": 190042,
+      "sha256": "d5fc1e34953f66b5bfda716cd5f6b0e0c6ea0d91a49f401cc1dcfe0cea6209e1"
     },
     {
       "path": "zenodo_staging/semi_life_sensitivity_data.tar.gz",
-      "size_bytes": 17508,
-      "sha256": "17a1fdc53643bc8b8712be3cea0570cc9404d377280c8c8983c76f13166137d5"
+      "size_bytes": 34438,
+      "sha256": "5950af1e0da864ecc2200b8ce6336d724e7e0670d38a153fd445b5481cf4fc0d"
+    },
+    {
+      "path": "zenodo_staging/semi_life_v1_sweep_data.tar.gz",
+      "size_bytes": 47699,
+      "sha256": "b006b3319d83544ab26c87501e87ad20b4927310da1bbdccc82b61b4df7bcf98"
+    },
+    {
+      "path": "zenodo_staging/semi_life_static_data.tar.gz",
+      "size_bytes": 82336,
+      "sha256": "b201ad134c2c73189543c07522cd599c553f37804284288eb67817d33a43380e"
     }
   ],
   "paper_bindings": [
@@ -91,6 +107,14 @@
     {
       "paper_ref": "sec:results-energy",
       "file_path": "experiments/semi_life_mean_energy_supplement.json"
+    },
+    {
+      "paper_ref": "fig:v1sweep",
+      "file_path": "experiments/semi_life_v1_sweep.tsv"
+    },
+    {
+      "paper_ref": "fig:static",
+      "file_path": "experiments/semi_life_static.tsv"
     }
   ],
   "zenodo_doi": "10.5281/zenodo.18795806"
