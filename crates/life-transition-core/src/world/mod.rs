@@ -81,6 +81,8 @@ pub struct World {
     neighbor_counts_buffer: Vec<usize>,
     homeostasis_sums_buffer: Vec<f32>,
     homeostasis_counts_buffer: Vec<usize>,
+    live_flags_buffer: Vec<bool>,
+    spatial_tree_cache: Option<RTree<spatial::AgentLocation>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -307,6 +309,8 @@ impl World {
             neighbor_counts_buffer: Vec::with_capacity(org_count),
             homeostasis_sums_buffer: Vec::with_capacity(org_count),
             homeostasis_counts_buffer: Vec::with_capacity(org_count),
+            live_flags_buffer: Vec::with_capacity(org_count),
+            spatial_tree_cache: None,
         };
         world.init_semi_lives();
         Ok(world)
@@ -425,8 +429,10 @@ impl World {
         }
     }
 
-    fn live_flags(&self) -> Vec<bool> {
-        self.organisms.iter().map(|o| o.alive).collect()
+    fn refresh_live_flags_buffer(&mut self) {
+        self.live_flags_buffer.clear();
+        self.live_flags_buffer
+            .extend(self.organisms.iter().map(|o| o.alive));
     }
 
     fn alive_count(&self) -> usize {
@@ -563,6 +569,10 @@ impl World {
         self.config.sensing_radius * dev_sensing as f64
     }
 
+    /// Convenience wrapper around [`Self::try_run_experiment`].
+    ///
+    /// Panics when experiment parameters are invalid; prefer `try_run_experiment`
+    /// for all production/runtime call sites.
     pub fn run_experiment(&mut self, steps: usize, sample_every: usize) -> RunSummary {
         self.try_run_experiment(steps, sample_every)
             .unwrap_or_else(|e| panic!("{e}"))
@@ -925,8 +935,12 @@ impl World {
         let boundary_terminal_threshold = self.terminal_boundary_threshold();
 
         let t0 = Instant::now();
-        let live_flags = self.live_flags();
-        let tree = spatial::build_index_active(&self.agents, &live_flags);
+        let tree = if let Some(cached) = self.spatial_tree_cache.take() {
+            cached
+        } else {
+            self.refresh_live_flags_buffer();
+            spatial::build_index_active(&self.agents, &self.live_flags_buffer)
+        };
         let spatial_build_us = t0.elapsed().as_micros() as u64;
 
         let t1 = Instant::now();
@@ -955,14 +969,9 @@ impl World {
 
         // SemiLife phase: rebuild the spatial tree after organism reproduction + pruning so
         // Prion contact detection sees current organism positions including new births.
-        let semi_life_tree = if self.config.enable_semi_life {
-            let live_flags = self.live_flags();
-            spatial::build_index_active(&self.agents, &live_flags)
-        } else {
-            // Avoid rebuild cost when SemiLife is disabled; step_semi_life_phase is a no-op.
-            RTree::new()
-        };
-        self.step_semi_life_phase(&semi_life_tree);
+        self.refresh_live_flags_buffer();
+        let post_step_tree = spatial::build_index_active(&self.agents, &self.live_flags_buffer);
+        self.step_semi_life_phase(&post_step_tree);
 
         let sl_dead_count = self.semi_lives.iter().filter(|sl| !sl.alive).count();
         if sl_dead_count > 0
@@ -975,7 +984,10 @@ impl World {
             self.prune_dead_semi_lives();
         }
 
-        self.step_environment_phase(&tree);
+        self.step_environment_phase(&post_step_tree);
+        // Cache remains valid for next step because this tree indexes ORGANISM agents only.
+        // step_semi_life_phase mutates SemiLife entities, not organism positions/liveness.
+        self.spatial_tree_cache = Some(post_step_tree);
 
         let state_update_us = t2.elapsed().as_micros() as u64;
 

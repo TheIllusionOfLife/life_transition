@@ -124,7 +124,7 @@ def run_mannwhitney(a: list[float], b: list[float]) -> dict:
 
 
 def analyze_h1(rows: list[dict]) -> list[dict]:
-    """H1: Viroid V0 vs V0+V1 — boundary overhead reduces alive in scarce env."""
+    """H1: Viroid V0 vs V0+V1 — boundary tradeoff across all harshness levels."""
     results = []
     for harshness in RESOURCE_INITIAL_VALUES:
         a = get_alive_at_final(rows, "viroid_v0", harshness)
@@ -510,6 +510,37 @@ def analyze_floor_resistant_metrics(rows: list[dict]) -> list[dict]:
     return results
 
 
+def analyze_sham_controls(rows: list[dict]) -> list[dict]:
+    """Pre-registered null controls for V4/V5 sham conditions (exploratory report).
+
+    V4 sham should match the V3 condition (policy computed + energy charged, no movement).
+    V5 sham should match the V4 condition (stage transitions tracked, no multipliers applied).
+    """
+    sham_pairs = [
+        ("V4_sham_vs_V3", "viroid_v4_sham", "viroid_v0v1v2v3"),
+        ("V5_sham_vs_V4", "viroid_v5_sham", "viroid_v0v1v2v3v4"),
+    ]
+    results = []
+    for comparison_id, sham_condition, baseline_condition in sham_pairs:
+        for harshness in RESOURCE_INITIAL_VALUES:
+            sham_alive = get_alive_at_final(rows, sham_condition, harshness)
+            baseline_alive = get_alive_at_final(rows, baseline_condition, harshness)
+            stats = run_mannwhitney(sham_alive, baseline_alive)
+            stats.update(
+                {
+                    "comparison_id": comparison_id,
+                    "analysis_type": "preregistered_null_control",
+                    "harshness": harshness,
+                    "sham_condition": sham_condition,
+                    "baseline_condition": baseline_condition,
+                    "metric": "alive",
+                    "expected_outcome": "no difference",
+                }
+            )
+            results.append(stats)
+    return results
+
+
 _EXPECTED_PREREGISTERED_TESTS = 32  # H1–H8 × 4 harshness levels
 
 
@@ -616,6 +647,13 @@ def main(argv: list[str] | None = None) -> None:
     floor_path.write_text(json.dumps(floor_metrics, indent=2), encoding="utf-8")
     print(f"Wrote {floor_path}", file=sys.stderr)
     print(f"  Floor-resistant metrics: {len(floor_metrics)} entries", file=sys.stderr)
+
+    # Exploratory: pre-registered sham null controls (V4/V5)
+    sham_controls = analyze_sham_controls(rows)
+    sham_path = _EXPERIMENTS_DIR / "semi_life_sham_controls.json"
+    sham_path.write_text(json.dumps(sham_controls, indent=2), encoding="utf-8")
+    print(f"Wrote {sham_path}", file=sys.stderr)
+    print(f"  Sham-control comparisons: {len(sham_controls)}", file=sys.stderr)
 
     # Exploratory: multi-channel II summary at final step
     ii_channels = [

@@ -49,7 +49,8 @@ Eight directional hypotheses~(H1--H8) were pre-registered with
 Holm-Bonferroni correction across 32~tests.
 Using $n\!=\!100$ held-out test seeds across a four-level resource harshness
 axis, we find environment-dependent cost--benefit tradeoffs: V1 reduces
-survival in resource-rich environments but protects in harsh ones,
+survival in resource-rich environments and is near-neutral in the tested harsh
+environments,
 V2 overconsumption regulation provides measurable benefit,
 V3 metabolism produces a dramatic recovery, and
 V4~chemotaxis significantly improves survival in resource-scarce
@@ -86,11 +87,10 @@ this question for ALife systems: a capability is a functional analogy of a
 biological criterion if and only if (a) it requires sustained resource
 consumption, (b) its removal causes measurable population degradation, and
 (c) it forms a feedback loop with at least one other criterion.
-Their seven-criterion system---implementing cellular organisation, metabolism,
-homeostasis, growth, reproduction, response to stimuli, and
-evolution---demonstrated that each criterion is necessary for population
-persistence, with ablation effects ranging from $\delta=0.39$ to $1.00$
-(Cliff's~$\delta$, Holm-Bonferroni corrected).
+In an anonymized companion submission, a seven-criterion system implementing
+cellular organisation, metabolism, homeostasis, growth, reproduction, response
+to stimuli, and evolution reported criterion-ablation effects ranging from
+$\delta=0.39$ to $1.00$ (Cliff's~$\delta$, Holm-Bonferroni corrected).
 
 The present work asks a complementary question: \emph{can a minimal replicator
 become life-like by internalising the functions it initially outsources?}
@@ -98,10 +98,10 @@ We introduce \textbf{Semi-Life}---three archetypal minimal replicators (Viroid,
 Virus, ProtoOrganelle) that inhabit the same seven-criterion world---and equip
 each with a \emph{Capability Ladder} from bare replication~(V0) to internal
 metabolism~(V3).
-An \emph{Internalization Index}~(II) tracks the fraction of each entity's energy
-budget that comes from internal conversion rather than direct environmental
-uptake, providing a continuous axis from virus-like ($\mathrm{II}=0$) to
-life-like ($\mathrm{II}>0$).
+An \emph{Internalization Index}~(II) combines four channels (energy,
+regulation, behaviour, lifecycle) with a fixed denominator so capability
+levels remain directly comparable, providing a continuous axis from
+virus-like ($\mathrm{II}=0$) to life-like ($\mathrm{II}>0$).
 
 We pre-registered eight hypotheses (H1--H8) covering distinct aspects of the
 transition---boundary cost--benefit tradeoff, metabolic buffering, replication
@@ -812,6 +812,19 @@ The shock experiment uses only sparse harshness; extending to other harshness
 levels would test whether the V3 buffering advantage is consistent across
 resource regimes and is left as future work.
 
+\subsection{Pre-registered Sham Controls}
+\label{sec:results-sham}
+
+\emph{Exploratory report of pre-registered nulls}: the pre-registration states
+that sham conditions should not differ from capability-absent counterparts.
+Comparing V4 sham (\texttt{viroid\_v4\_sham}) against V3
+(\texttt{viroid\_v0v1v2v3}) and V5 sham (\texttt{viroid\_v5\_sham}) against V4
+(\texttt{viroid\_v0v1v2v3v4}) yields null effects at all harshness levels
+($\delta=0.00$, $p=1.0$ for all eight comparisons).
+These checks support the interpretation that the reported V4/V5 effects arise
+from functional movement/lifecycle dynamics rather than merely running extra
+computation.
+
 \subsection{Effect Size Robustness Check}
 \label{sec:results-energy}
 
@@ -895,6 +908,8 @@ the environment rewards the specific function it provides.
 Despite these pairwise reversals, the full V0$\to$V5 trend (H7, JT test)
 is significant at all harshness levels ($p<10^{-100}$): the V3 metabolic
 recovery dominates the aggregate signal.
+This is an aggregate ordered tendency, not a claim that each adjacent
+capability addition improves outcomes in every environment.
 
 The H3 ProtoOrganelle liberation result is environment-dependent:
 in resource-rich conditions, adding V0 replication to a metabolically complete
