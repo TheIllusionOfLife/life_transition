@@ -377,7 +377,9 @@ def analyze_mean_energy_supplement(rows: list[dict]) -> list[dict]:
     return results
 
 
-def _compute_alive_auc(rows: list[dict], condition: str, harshness: str) -> dict[int, float]:
+def _compute_alive_auc(
+    rows: list[dict], condition: str, harshness: str, num_per_archetype: int = 10
+) -> dict[int, float]:
     """Compute alive-count AUC (trapezoidal) per seed for a condition.
 
     Returns {seed: auc} mapping.
@@ -394,8 +396,7 @@ def _compute_alive_auc(rows: list[dict], condition: str, harshness: str) -> dict
         alive = float(r["alive"])
         by_seed.setdefault(seed, []).append((step, alive))
 
-    # Initial alive count (before any steps): num_per_archetype default = 10
-    initial_alive = 10
+    initial_alive = num_per_archetype
 
     result = {}
     for seed, series in by_seed.items():

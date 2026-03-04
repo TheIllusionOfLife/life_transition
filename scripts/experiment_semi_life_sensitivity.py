@@ -84,6 +84,9 @@ def _load_archetype_config() -> dict:
     return {k: v for k, v in data.items() if not k.startswith("_")}
 
 
+_CACHED_ARCHETYPE_CONFIG = _load_archetype_config()
+
+
 def run_one(
     param_name: str,
     param_key: str,
@@ -95,7 +98,7 @@ def run_one(
     cap_bits: int = CAPABILITY_BITS,
 ) -> list[str]:
     """Run one condition and return TSV row strings."""
-    base_params = _load_archetype_config()
+    base_params = _CACHED_ARCHETYPE_CONFIG
     config = make_config_dict(seed=seed, overrides={})
     config["enable_semi_life"] = True
     config["resource_regeneration_rate"] = RESOURCE_REGEN_RATE
