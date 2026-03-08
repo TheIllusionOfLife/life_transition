@@ -1,6 +1,6 @@
-.PHONY: all figures semi_life_figures paper clean reproduce
+.PHONY: all figures semi_life_figures paper supplement clean reproduce
 
-all: semi_life_figures paper
+all: semi_life_figures paper supplement
 
 # Full reproducibility pipeline: experiments → analysis → figures → paper
 reproduce:
@@ -18,6 +18,9 @@ semi_life_figures:
 
 paper: semi_life_figures
 	tectonic main.tex
+
+supplement:
+	tectonic supplement.tex
 
 clean:
 	rm -f *.aux *.bbl *.blg *.log *.out main.pdf

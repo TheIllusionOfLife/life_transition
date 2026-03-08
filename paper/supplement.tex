@@ -1,0 +1,354 @@
+\documentclass[letterpaper]{article}
+
+\usepackage{natbib,alifeconf}
+\usepackage{graphicx,amsmath,amssymb,booktabs,xcolor,multirow}
+\usepackage{url,hyperref}
+
+% Tighten float spacing
+\setlength{\textfloatsep}{6pt plus 2pt minus 2pt}
+\setlength{\floatsep}{6pt plus 2pt minus 2pt}
+\setlength{\intextsep}{6pt plus 2pt minus 2pt}
+
+% Conditional figure include (shared with main)
+\newcommand{\figifexists}[4]{%
+  \IfFileExists{#1}{%
+    \includegraphics[width=#2,#3]{#1}%
+  }{%
+    \begin{minipage}{#2}\vspace{2em}\centering\footnotesize[Fig.\ pending: #4]\vspace{2em}\end{minipage}%
+  }%
+}
+
+\title{Supplementary Material: Semi-Life: A Capability Ladder\\
+for the Virus-to-Life Transition}
+
+\author{Anonymous}
+
+\begin{document}
+\InputIfFileExists{auto_macros}{}{}
+\maketitle
+
+\noindent
+This supplement accompanies the main paper and contains supporting details
+referenced therein.
+Table~\ref{tab:lookup} maps main-paper claims to supplement sections.
+
+\begin{table}[h]
+\centering
+\footnotesize
+\caption{Lookup table: main paper reference $\to$ supplement section.}
+\label{tab:lookup}
+\begin{tabular}{ll}
+\toprule
+Main paper reference & Supplement section \\
+\midrule
+Archetype parameters & S1 \\
+Extended hypothesis rationales \& results & S2 \\
+Shock resilience analysis & S3 \\
+Effect size robustness check & S4 \\
+Pre-registered sham controls & S5 \\
+V4 policy evolution & S6 \\
+Inter-entity competition & S7 \\
+V1 protection regime sweep & S8 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ============================================================================
+\section*{S1. Archetype Parameter Table}
+\label{sec:s1}
+
+\begin{table}[h]
+\centering
+\footnotesize
+\caption{Archetype parameter summary. Rows labelled ``shared'' apply to all archetypes.}
+\label{tab:archetypes-s}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lccc}
+\toprule
+Parameter & Viroid & Virus & ProtoOrganelle \\
+\midrule
+Baseline capabilities & V0 & V0+V1 & V1+V2+V3 \\
+\texttt{replication\_threshold} & 0.60 & 0.60 & 0.80 \\
+\texttt{replication\_cost} & 0.27 & 0.27 & 0.30 \\
+\texttt{boundary\_decay\_rate} & 0.002 & 0.001 & 0.002 \\
+\texttt{boundary\_repair\_rate} & 0.010 & 0.010 & 0.010 \\
+\midrule
+\multicolumn{4}{l}{\emph{V1 protective parameters (shared)}} \\
+\texttt{energy\_leakage\_rate} & \multicolumn{3}{c}{0.005} \\
+\texttt{env\_damage\_probability} & \multicolumn{3}{c}{0.05} \\
+\texttt{env\_damage\_amount} & \multicolumn{3}{c}{0.05} \\
+\texttt{boundary\_damage\_absorption} & \multicolumn{3}{c}{0.8} \\
+\texttt{boundary\_damage\_integrity\_cost} & \multicolumn{3}{c}{0.02} \\
+\midrule
+\multicolumn{4}{l}{\emph{V2 overconsumption parameters (shared)}} \\
+\texttt{overconsumption\_waste\_fraction} & \multicolumn{3}{c}{0.3} \\
+\texttt{optimal\_uptake\_rate} & \multicolumn{3}{c}{0.015} \\
+\midrule
+\multicolumn{4}{l}{\emph{V4 chemotaxis parameters (shared)}} \\
+\texttt{v4\_move\_cost} & \multicolumn{3}{c}{0.01} \\
+\texttt{v4\_max\_speed} & \multicolumn{3}{c}{1.0} \\
+\texttt{v4\_mutation\_sigma} & \multicolumn{3}{c}{0.05} \\
+\midrule
+\multicolumn{4}{l}{\emph{V5 lifecycle parameters (shared)}} \\
+\texttt{v5\_activation\_threshold} & \multicolumn{3}{c}{0.6} \\
+\texttt{v5\_dispersal\_age} & \multicolumn{3}{c}{100} \\
+\texttt{v5\_dispersal\_duration} & \multicolumn{3}{c}{20} \\
+\texttt{v5\_dormant\_decay\_mult} & \multicolumn{3}{c}{0.3} \\
+\texttt{v5\_dispersal\_decay\_mult} & \multicolumn{3}{c}{1.5} \\
+\texttt{v5\_dispersal\_speed\_mult} & \multicolumn{3}{c}{2.0} \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+Key differentiating parameters across archetypes: Viroid and Virus share a
+replication threshold of 0.60, while ProtoOrganelle uses 0.80 (reflecting
+its more complex metabolic machinery).
+Virus has a slower boundary decay rate (0.001 vs.\ 0.002) reflecting greater
+capsid stability.
+All shared parameters (V1 protective, V2 overconsumption, V4 chemotaxis,
+V5 lifecycle) are identical across archetypes so that inter-archetype
+comparisons isolate the effect of baseline capability composition.
+
+% ============================================================================
+\section*{S2. Extended Hypothesis Rationales and Results}
+\label{sec:s2}
+
+This section provides the full rationale paragraphs for each hypothesis
+and per-harshness narrative detail that was condensed in the main paper.
+
+\paragraph{H1 rationale (boundary cost--benefit tradeoff).}
+V1 boundary repair costs per-step energy, but V1 also protects against
+energy leakage and environmental damage.
+In resource-rich environments where damage pressure is low relative to
+repair costs, V1 is a net cost; in harsh environments, V1's protective
+benefit dominates.
+
+\paragraph{H1 extended results.}
+In rich environments, V1 significantly reduces survival
+($\delta=\statDeltaHoneRich{}$, $p_\text{corr}\statPHoneRich{}$):
+mean alive drops from \aliveVzeroRich{} (V0) to \aliveVzeroVoneRich{}
+(V0+V1), because boundary maintenance cost exceeds the leakage/damage
+protection benefit when resources are abundant.
+In medium, the effect is weaker but still significant
+($\delta=\statDeltaHoneMedium{}$, $p_\text{corr}=\statPHoneMedium{}$):
+\aliveVzeroMedium{}~$\to$~\aliveVzeroVoneMedium{}.
+In sparse and scarce, V1 has \emph{no significant effect}
+($\delta=\statDeltaHoneSparse{}$, $p=\statPHoneSparse{}$): boundary
+protection exactly offsets its cost, yielding near-identical populations
+($\sim$10.0 alive).
+
+\paragraph{H2 rationale (metabolism buffering).}
+V3 internal pool decouples replication threshold from instantaneous uptake,
+buffering against resource fluctuations.
+
+\paragraph{H2 extended results.}
+V3 addition transforms survival: in rich environments, mean alive rises from
+\aliveVzeroVoneVtwoRich{} (V0+V1+V2) to \aliveVzeroVoneVtwoVthreeRich{}
+(V0+V1+V2+V3). In medium, the jump is
+\aliveVzeroVoneVtwoMedium{}~$\to$~\aliveVzeroVoneVtwoVthreeMedium{}.
+
+\paragraph{H3 rationale (replication liberation).}
+Without V0, ProtoOrganelle cannot replicate regardless of metabolic state;
+V0 addition activates replication capability already supported by the
+existing V1--V3 infrastructure.
+
+\paragraph{H3 extended results.}
+Confirmed in rich ($\delta=1.00$, $p_\text{corr}<10^{-37}$) and medium
+($\delta=1.00$, $p_\text{corr}<10^{-38}$), where liberated ProtoOrganelle
+reaches \aliveProtoLibRich{} and \aliveProtoLibMedium{} mean alive respectively.
+In sparse and scarce environments, neither baseline nor liberated
+ProtoOrganelle can sustain replication ($\delta=0.00$, $p=1.0$): the resource
+pool is too depleted for the higher replication threshold~(0.80).
+
+\paragraph{H4 rationale (monotonic trend V0--V3).}
+The Jonckheere-Terpstra test detects a dominant upward trend; pairwise
+reversals at intermediate V-levels (e.g., V0$\to$V0+V1 dip) are present
+and discussed in the main paper.
+
+\paragraph{H5 rationale (chemotaxis benefit).}
+V4 gradient-following enables directed movement toward resource-rich areas,
+improving energy intake in heterogeneous environments.
+
+\paragraph{H5 extended results.}
+V4 chemotaxis improves survival where resources are heterogeneous:
+mean alive rises from \aliveVzeroVoneVtwoVthreeMedium{} to
+\aliveVzeroToVfourMedium{} in medium and from \aliveVzeroVoneVtwoVthreeSparse{}
+to \aliveVzeroToVfourSparse{} in sparse.
+However, in resource-rich environments where resources are uniformly abundant,
+the per-step movement cost ($0.01 \times |\Delta\mathbf{v}|$) reduces survival
+from \aliveVzeroVoneVtwoVthreeRich{} to \aliveVzeroToVfourRich{}.
+
+\paragraph{H6 rationale (lifecycle staging).}
+V5 dormancy conserves energy during scarcity, and dispersal enables
+colonisation of resource patches, both improving population persistence.
+
+\paragraph{H6 extended results.}
+Confirmed only in rich ($\delta=1.00$, $p_\text{corr}<10^{-33}$), where V5
+dormancy enables energy conservation during transient low-resource periods,
+pushing mean alive from \aliveVzeroToVfourRich{} to \aliveVzeroToVfiveRich{}.
+In medium ($\delta=\statDeltaHsixMedium{}$), sparse
+($\delta=\statDeltaHsixSparse{}$), and scarce
+($\delta=\statDeltaHsixScarce{}$), V5 \emph{reduces} survival: dormancy
+phases suppress replication windows, and dispersal's elevated energy decay
+($\times 1.5$) is counterproductive.
+
+\paragraph{H7 rationale (full monotonic trend V0--V5).}
+``Monotonic'' refers to the dominant aggregate trend detected by JT;
+pairwise reversals at V4 and V5 are present.
+
+\paragraph{H8 rationale (V2 overconsumption regulation).}
+V2's regulator reduces overconsumption waste, providing a survival advantage
+independent of V3 metabolism.
+
+\paragraph{H8 extended results.}
+Confirmed in rich ($\delta=\statDeltaHeightRich{}$,
+$p_\text{corr}\statPHeightRich{}$): mean alive rises from
+\aliveVzeroVoneRich{} (V0+V1) to \aliveVzeroVoneVtwoRich{} (V0+V1+V2).
+In medium, sparse, and scarce, V2 has no significant effect
+($\delta \approx 0$, $p=1.0$): overconsumption rarely occurs when
+resources are scarce.
+
+% ============================================================================
+\section*{S3. Shock Resilience Analysis}
+\label{sec:s3}
+
+\begin{figure*}[t]
+\centering
+\figifexists{figures/fig_semi_life_recovery.pdf}{\textwidth}{}{shock recovery}
+\caption{Recovery under periodic resource shocks (Viroid, sparse harshness,
+  $n\!=\!100$).
+  Left: shock period~$=50$ (rapid crash--recovery cycles).
+  Centre: shock period~$=200$ (slow cycles).
+  Right: no-shock baseline (same harshness level for comparison).
+  Each line is one capability level; Okabe-Ito palette.}
+\label{fig:recovery-s}
+\end{figure*}
+
+\emph{Exploratory}: Under rapid shocks (period~$=50$), V0+V1+V2+V3 entities
+maintain higher mean alive counts (20.0) than V0-only (19.2), with a large
+effect size (Cliff's~$\delta=0.69$, 95\%~CI $[0.60, 0.78]$).
+Under slow shocks (period~$=200$), the effect persists ($\delta=0.66$,
+$[0.56, 0.75]$), as shown in the centre panel of Figure~\ref{fig:recovery-s}.
+The recovery time analysis shows that most conditions recover within a single
+sampling interval (50 steps), suggesting that at the current temporal
+resolution, recovery time differences are not reliably measurable.
+This comparison is exploratory: shock resilience was not included in the
+H1--H8 pre-registration.
+The shock experiment uses only sparse harshness; extending to other harshness
+levels would test whether the V3 buffering advantage is consistent across
+resource regimes and is left as future work.
+
+% ============================================================================
+\section*{S4. Effect Size Robustness Check}
+\label{sec:s4}
+
+\emph{Exploratory}: The alive-count metric used in H1--H8 exhibits
+ceiling/floor effects in some comparisons ($\delta=1.00$ with $[1.00,1.00]$~CI),
+raising the concern that the metric is too coarse to distinguish
+strong from overwhelming effects.
+As a robustness check, we repeat the H1 and H2 comparisons using
+\texttt{mean\_energy} at step~500---a continuous per-entity measure that
+avoids the binary alive/dead dichotomy.
+The H1 energy comparison at rich harshness yields $\delta=-0.61$
+with CI $[-0.73, -0.47]$---\emph{reversed} relative to the alive-count
+direction.
+V1 entities have higher mean energy ($0.432 \pm 0.033$) than V0 entities
+($0.402 \pm 0.017$), indicating that boundary protection benefits individual
+energy budgets even though population size decreases.
+The H2 energy comparison at rich yields $\delta=0.33$ with CI $[0.15, 0.49]$,
+confirming that V3 benefits are detectable but not saturated on the continuous
+metric.
+In medium, sparse, and scarce, both comparisons remain at $\delta=1.00$.
+These results demonstrate that the revised model produces a richer range of
+effect sizes ($\delta$ from $-0.61$ to $1.00$) than the prior model's
+universally saturated values.
+
+% ============================================================================
+\section*{S5. Pre-registered Sham Controls}
+\label{sec:s5}
+
+\emph{Exploratory report of pre-registered nulls}: the pre-registration states
+that sham conditions should not differ from capability-absent counterparts.
+Comparing V4 sham (\texttt{viroid\_v4\_sham}) against V3
+(\texttt{viroid\_v0v1v2v3}) and V5 sham (\texttt{viroid\_v5\_sham}) against V4
+(\texttt{viroid\_v0v1v2v3v4}) yields null effects at all harshness levels
+($\delta=0.00$, $p=1.0$ for all eight comparisons).
+These checks support the interpretation that the reported V4/V5 effects arise
+from functional movement/lifecycle dynamics rather than merely running extra
+computation.
+
+% ============================================================================
+\section*{S6. V4 Policy Evolution}
+\label{sec:s6}
+
+As an \textbf{exploratory} analysis (test seeds 100--199, no correction),
+we extracted raw V4 policy weight vectors from alive V0+V1+V2+V3+V4 Viroid
+entities at step~500 across $n\!=\!100$ test seeds.
+The initial policy is $\mathbf{w}_0 = [0.5, 0.5, 0, 0, 0, 0, 0, 0]$
+(equal gradient-following weights for $x$ and $y$; all others zero).
+After 500 steps, mean weight deviations are small across all harshness levels
+(maximum $|\Delta w| \approx 0.012$), with no weight exceeding $|\Delta w| = 0.02$.
+The overall policy magnitude remains near the initial value ($0.71$--$0.73$
+vs.\ initial $0.707$).
+This constitutes a near-null result for policy evolution over 500 steps:
+V4 chemotaxis behaviour is present and contributes to II$_B$, but the
+weight vector has not diverged substantially from its initialisation.
+This is consistent with the short simulation duration---500 steps may be
+insufficient for evolutionary pressure to reshape the initial weight
+distribution---and motivates longer runs in future work.
+
+% ============================================================================
+\section*{S7. Inter-Entity Competition}
+\label{sec:s7}
+
+As an \textbf{exploratory} analysis (seeds~0--99, no correction), we placed
+Viroid~(V0 only) and Plasmid~(V0+V1+V2+V3) simultaneously in the same world,
+using identical base parameters for both (an intentionally asymmetric capability
+test: same physiology, different capability levels).
+An ablation control placed Viroid~(V0) against Plasmid~(V0+V1+V2, no V3),
+enabling attribution of any competitive advantage specifically to V3 metabolism.
+
+In the primary condition (V3 present), Plasmid consistently dominates across
+all harshness levels: frequency ratio 0.85~(rich), 0.74~(medium), 0.67~(sparse),
+0.67~(scarce), with $\delta\!=\!1.0$ (primary vs.\ ablation, raw uncorrected
+$p < 10^{-33}$).
+In the ablation condition (V3 absent), Plasmid shows \emph{no competitive
+advantage}: frequency ratio $\approx 0.43$--$0.50$, and Viroid slightly
+dominates in resource-rich environments where V1+V2 overhead exceeds its benefit.
+This directly attributes the competitive advantage to V3 metabolism specifically,
+not to ``more capabilities'' in general.
+The result confirms that V3 internal metabolism is not only the largest single
+survival jump in the isolated ladder (H2) but also the decisive capability in
+direct inter-entity competition.
+
+% ============================================================================
+\section*{S8. V1 Protection Regime Sweep}
+\label{sec:s8}
+
+Under the default damage parameters (composite hazard
+$0.05 \times 0.05 = 0.0025$), V1 does not produce a net positive effect.
+A supplementary V1 protection-regime sweep across 84 grid points
+(7~damage probabilities $\times$ 4~damage amounts $\times$ 3~harshness levels,
+seeds~0--39; data available upon acceptance)
+reveals that \textbf{69 of 84 conditions show a net V1 survival
+benefit} when environmental damage is present (measured by alive-count AUC).
+The protection regime emerges above a composite hazard threshold of
+$\sim$0.005 ($p_\text{damage} \times \text{damage\_amount}$): below this,
+V1 cost exceeds its benefit; above, boundary maintenance becomes
+protective.
+The effect is strongest in medium, sparse, and scarce environments, where
+V1 AUC advantages of 1{,}000--2{,}600 steps $\times$ entities are typical.
+Additionally, V1 entities that survive show \emph{higher mean energy}
+than V0-only: the boundary reduces energy leakage per step, meaning
+each surviving entity is individually healthier.
+This ``fewer but healthier'' pattern mirrors a $K$-strategy shift in
+ecology---V1 reduces population quantity while increasing individual quality.
+
+% ============================================================================
+
+\footnotesize
+\bibliographystyle{apalike}
+\bibliography{references}
+
+\end{document}

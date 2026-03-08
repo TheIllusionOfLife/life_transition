@@ -133,6 +133,11 @@ def _check_bindings(registry: dict, tex: str) -> tuple[list[str], list[str]]:
 
     checks.append("bindings registry non-empty")
     paper_labels = set(re.findall(r"\\label\{([^}]+)\}", tex))
+    # Also scan supplement for labels (content moved from main)
+    supplement_path = PROJECT_ROOT / "paper" / "supplement.tex"
+    if supplement_path.exists():
+        supplement_tex = supplement_path.read_text()
+        paper_labels |= set(re.findall(r"\\label\{([^}]+)\}", supplement_tex))
     registry_refs: set[str] = set()
     for idx, binding in enumerate(bindings):
         paper_ref = binding.get("paper_ref")
