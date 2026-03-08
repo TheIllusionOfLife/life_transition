@@ -74,6 +74,28 @@
         "experiments/semi_life_sham_controls.json"
       ],
       "notes": "Exploratory V4/V5 sham null controls. Moved to Supplement S5."
+    },
+    {
+      "result_id": "semi_life_v4_policy_evolution",
+      "paper_ref": "sec:s6",
+      "paper_location": "supplement",
+      "manifest": "experiments/semi_life_v4_policy_evolution.json",
+      "source_files": [
+        "experiments/semi_life_v1v5_test.tsv",
+        "experiments/semi_life_v4_policy_evolution.json"
+      ],
+      "notes": "Exploratory V4 policy weight near-null divergence. Moved to Supplement S6."
+    },
+    {
+      "result_id": "semi_life_competition",
+      "paper_ref": "sec:s7",
+      "paper_location": "supplement",
+      "manifest": "experiments/semi_life_competition.json",
+      "source_files": [
+        "experiments/semi_life_competition.tsv",
+        "experiments/semi_life_competition.json"
+      ],
+      "notes": "Exploratory inter-entity competition (calibration seeds 0-99). V3 as competitive driver. Moved to Supplement S7."
     }
   ]
 }

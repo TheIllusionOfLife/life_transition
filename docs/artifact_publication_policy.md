@@ -16,7 +16,11 @@ Artifact publication splits across two channels:
    - Statistical outputs (`semi_life_capability_stats.json`, `semi_life_shock_stats.json`)
    - Effect size robustness check (`semi_life_mean_energy_supplement.json`)
    - Calibration data (`calibration_results.tsv`)
-   - Exploratory datasets (`semi_life_exploratory.tar.gz`): competition TSV/JSON + V4 policy JSON
+   - Sensitivity analysis data (`semi_life_sensitivity_data.tar.gz`)
+   - V1 sweep data (`semi_life_v1_sweep_data.tar.gz`)
+   - Static baseline data (`semi_life_static_data.tar.gz`)
+   - Competition data (`semi_life_competition_data.tar.gz`, seeds 0–99)
+   - V4 policy evolution data (`semi_life_v4_policy_data.tar.gz`, seeds 100–199)
 
 ## Paper-Binding Artifacts (8 total)
 
@@ -25,11 +29,11 @@ Artifact publication splits across two channels:
 | `fig:phase` (Figure 1) | `semi_life_v1v5_test.tsv` | Zenodo |
 | `fig:ii` (Figure 2) | `semi_life_v1v5_test.tsv` | Zenodo |
 | `fig:tradeoff` (Figure 3) | `semi_life_v1v5_test.tsv` | Zenodo |
-| `fig:recovery` (Figure 4) | `semi_life_shocks.tsv` | Zenodo |
+| `fig:recovery-s` (Supplement S3) | `semi_life_shocks.tsv` | Zenodo |
 | `tab:stats` (Table 2) | `semi_life_capability_stats.json` | Zenodo |
-| `sec:results-energy` (Section 5.6) | `semi_life_mean_energy_supplement.json` | Zenodo |
-| `sec:disc-competition` (Sect. 6 Exploratory) | `semi_life_competition.json` | Zenodo |
-| `sec:disc-v4policy` (Sect. 6 Exploratory) | `semi_life_v4_policy_evolution.json` | Zenodo |
+| `sec:s4` (Supplement S4) | `semi_life_mean_energy_supplement.json` | Zenodo |
+| `sec:s7` (Supplement S7) | `semi_life_competition.json` | Zenodo |
+| `sec:s6` (Supplement S6) | `semi_life_v4_policy_evolution.json` | Zenodo |
 
 ## What Must Not Be Committed to Git
 
@@ -61,9 +65,19 @@ tar -czf zenodo_staging/semi_life_shock_data.tar.gz \
   experiments/semi_life_shock_stats.json
 tar -czf zenodo_staging/semi_life_calibration_data.tar.gz \
   experiments/calibration_results.tsv
-tar -czf zenodo_staging/semi_life_exploratory.tar.gz \
+tar -czf zenodo_staging/semi_life_sensitivity_data.tar.gz \
+  experiments/semi_life_sensitivity_data.tsv
+tar -czf zenodo_staging/semi_life_v1_sweep_data.tar.gz \
+  experiments/semi_life_v1_sweep.tsv
+tar -czf zenodo_staging/semi_life_static_data.tar.gz \
+  experiments/semi_life_static.tsv
+# Note: competition data uses calibration seeds 0-99 (exploratory);
+# V4 policy data uses test seeds 100-199. Packaged separately for
+# provenance clarity.
+tar -czf zenodo_staging/semi_life_competition_data.tar.gz \
   experiments/semi_life_competition.tsv \
-  experiments/semi_life_competition.json \
+  experiments/semi_life_competition.json
+tar -czf zenodo_staging/semi_life_v4_policy_data.tar.gz \
   experiments/semi_life_v4_policy_evolution.json
 ```
 
@@ -77,9 +91,12 @@ uv run python scripts/prepare_zenodo_metadata.py \
   --paper-binding "fig:phase=experiments/semi_life_v1v5_test.tsv" \
   --paper-binding "fig:ii=experiments/semi_life_v1v5_test.tsv" \
   --paper-binding "fig:tradeoff=experiments/semi_life_v1v5_test.tsv" \
-  --paper-binding "fig:recovery=experiments/semi_life_shocks.tsv" \
+  --paper-binding "fig:recovery-s=experiments/semi_life_shocks.tsv" \
   --paper-binding "tab:stats=experiments/semi_life_capability_stats.json" \
-  --paper-binding "sec:results-energy=experiments/semi_life_mean_energy_supplement.json" \
+  --paper-binding "sec:s4=experiments/semi_life_mean_energy_supplement.json" \
+  --paper-binding "sec:s5=experiments/semi_life_sham_controls.json" \
+  --paper-binding "sec:s7=experiments/semi_life_competition.json" \
+  --paper-binding "sec:s6=experiments/semi_life_v4_policy_evolution.json" \
   --output docs/zenodo_metadata.json
 ```
 

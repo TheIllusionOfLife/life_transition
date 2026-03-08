@@ -28,15 +28,15 @@
     "--paper-binding",
     "fig:recovery-s=experiments/semi_life_shocks.tsv",
     "--paper-binding",
-    "fig:sensitivity=experiments/semi_life_sensitivity_data.tsv",
-    "--paper-binding",
     "tab:stats=experiments/semi_life_capability_stats.json",
     "--paper-binding",
     "sec:s4=experiments/semi_life_mean_energy_supplement.json",
     "--paper-binding",
-    "fig:v1sweep=experiments/semi_life_v1_sweep.tsv",
+    "sec:s5=experiments/semi_life_sham_controls.json",
     "--paper-binding",
-    "fig:static=experiments/semi_life_static.tsv",
+    "sec:s7=experiments/semi_life_competition.json",
+    "--paper-binding",
+    "sec:s6=experiments/semi_life_v4_policy_evolution.json",
     "--zenodo-doi",
     "10.5281/zenodo.18795806",
     "--output",
@@ -97,10 +97,6 @@
       "file_path": "experiments/semi_life_shocks.tsv"
     },
     {
-      "paper_ref": "fig:sensitivity",
-      "file_path": "experiments/semi_life_sensitivity_data.tsv"
-    },
-    {
       "paper_ref": "tab:stats",
       "file_path": "experiments/semi_life_capability_stats.json"
     },
@@ -109,12 +105,16 @@
       "file_path": "experiments/semi_life_mean_energy_supplement.json"
     },
     {
-      "paper_ref": "fig:v1sweep",
-      "file_path": "experiments/semi_life_v1_sweep.tsv"
+      "paper_ref": "sec:s5",
+      "file_path": "experiments/semi_life_sham_controls.json"
     },
     {
-      "paper_ref": "fig:static",
-      "file_path": "experiments/semi_life_static.tsv"
+      "paper_ref": "sec:s7",
+      "file_path": "experiments/semi_life_competition.json"
+    },
+    {
+      "paper_ref": "sec:s6",
+      "file_path": "experiments/semi_life_v4_policy_evolution.json"
     }
   ],
   "zenodo_doi": "10.5281/zenodo.18795806"

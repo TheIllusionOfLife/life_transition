@@ -23,5 +23,5 @@ supplement:
 	tectonic supplement.tex
 
 clean:
-	rm -f *.aux *.bbl *.blg *.log *.out main.pdf
+	rm -f *.aux *.bbl *.blg *.log *.out main.pdf supplement.pdf
 	rm -f figures/*.pdf
