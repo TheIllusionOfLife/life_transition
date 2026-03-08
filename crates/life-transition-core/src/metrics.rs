@@ -92,6 +92,9 @@ pub struct SemiLifeSnapshot {
     pub ii_lifecycle: f32,
     /// L2 magnitude of the V4 policy weight vector (0.0 if V4 absent).
     pub policy_magnitude: f32,
+    /// Raw V4 policy weight vector (8 weights), null if V4 absent.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub policy: Option<[f32; 8]>,
     /// V5 lifecycle stage as string ("dormant"/"active"/"dispersal"), null if V5 absent.
     pub stage: Option<String>,
 }
@@ -124,6 +127,7 @@ impl SemiLifeSnapshot {
             ii_behavior,
             ii_lifecycle,
             policy_magnitude,
+            policy: sl.policy,
             stage,
         }
     }
