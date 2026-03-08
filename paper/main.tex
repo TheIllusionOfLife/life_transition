@@ -39,7 +39,7 @@ Each archetype begins at a different point on a \emph{Capability Ladder}
 (V0: replication; V1: boundary; V2: homeostasis; V3: metabolism;
 V4: response to stimuli; V5: staged lifecycle) and gains capabilities one step
 at a time.
-V1 boundary protects against energy leakage and environmental damage;
+V1 boundary mitigates energy leakage and environmental damage, with net benefit depending on hazard level;
 V2 homeostasis mitigates overconsumption waste.
 Progress is quantified by a multi-channel \emph{Internalization Index}~(II)
 combining energy, regulation, behaviour, and lifecycle channels with a fixed
@@ -52,7 +52,7 @@ axis, we find environment-dependent cost--benefit tradeoffs: V1 reduces
 survival in resource-rich environments and is near-neutral in the tested harsh
 environments,
 V2 overconsumption regulation provides measurable benefit,
-V3 metabolism produces a dramatic recovery, and
+V3 metabolism produces a substantial recovery, and
 V4~chemotaxis significantly improves survival in resource-scarce
 environments by enabling gradient-following movement.
 V5 lifecycle staging provides dormancy-based energy conservation.
@@ -112,7 +112,7 @@ Our contributions are: (i) an operational, replicable protocol for measuring the
 virus-to-life transition using a pre-existing ALife world as the background
 platform; (ii) phase diagrams showing where in the capability~$\times$~harshness
 space survival boundaries shift; (iii) confirmation or disconfirmation of all eight
-pre-registered directional predictions; and (iv) the InternalizationIndex as a
+pre-registered directional predictions; and (iv) the Internalization Index as a
 falsifiable metric of life-likeness progress.
 
 % ============================================================================
@@ -331,7 +331,7 @@ Transitions are deterministic: Dormant$\to$Active when energy exceeds
 \texttt{v5\_dispersal\_age}~$=100$ ticks; Dispersal$\to$Dormant after
 \texttt{v5\_dispersal\_duration}~$=20$ ticks or when energy falls below~$0.2$.
 
-\subsection{Multi-Channel InternalizationIndex}
+\subsection{Multi-Channel Internalization Index}
 
 The Internalization Index is a composite of four per-step channels, each
 measuring how much a specific function is internally rather than externally
@@ -418,8 +418,8 @@ harshness.
 \label{sec:prereg}
 
 Eight directional hypotheses were pre-registered before any test-seed data
-collection (see supplementary pre-registration, committed to the repository
-at \url{[ANONYMOUS]}).
+collection (see supplementary pre-registration document; repository URL
+withheld for double-blind review).
 Hypotheses H1--H7 were filed in Amendments 1--2; H8 was added in Amendment~3
 (filed after receiving reviews but before any new simulation data was collected
 with the revised model).
@@ -531,7 +531,7 @@ V0-only Viroid achieves mean alive counts of \aliveVzeroRich{} (rich) and \alive
 but adding V1 (boundary maintenance) \emph{reduces} survival to \aliveVzeroVoneRich{} and \aliveVzeroVoneMedium{}
 respectively---boundary repair costs outweigh protective benefit.
 V2 (homeostasis) adds a partial recovery (\aliveVzeroVoneVtwoRich{} and \aliveVzeroVoneVtwoMedium{}).
-V3 (metabolism) produces a dramatic jump: \aliveVzeroVoneVtwoVthreeRich{} (rich) and \aliveVzeroVoneVtwoVthreeMedium{} (medium),
+V3 (metabolism) produces a substantial jump: \aliveVzeroVoneVtwoVthreeRich{} (rich) and \aliveVzeroVoneVtwoVthreeMedium{} (medium),
 exceeding even the V0-only baseline.
 In sparse and scarce environments, V0 and V0+V1+V2+V3 both maintain the
 initial 10--20 entities, while V0+V1 and V0+V1+V2 remain at $\sim$10.
@@ -545,21 +545,21 @@ but hurts in sparse/scarce environments where dormancy suppresses replication.
 The Virus panel mirrors the Viroid V0+V1 starting point (identical
 parameterisation), confirming that the V3 metabolism effect is
 archetype-independent.
-The ProtoOrganelle liberation contrast produces the starkest qualitative
+The ProtoOrganelle liberation contrast produces the clearest qualitative
 shift: baseline (V1+V2+V3, no V0) maintains exactly 10 entities at all
 harshness levels (no replication possible), while the liberated condition
 (V0+V1+V2+V3) reaches \aliveProtoLibRich{} (rich) and \aliveProtoLibMedium{} (medium).
 
-\subsection{InternalizationIndex}
+\subsection{Internalization Index}
 \label{sec:results-ii}
 
-Figure~\ref{fig:ii} shows mean InternalizationIndex~(II) at step~500 for
+Figure~\ref{fig:ii} shows mean Internalization Index~(II) at step~500 for
 Viroid across V-levels and harshness conditions.
 
 \begin{figure}[t]
 \centering
 \figifexists{figures/fig_semi_life_internalization.pdf}{0.9\columnwidth}{}{II vs capability}
-\caption{Multi-channel InternalizationIndex at step~500 (Viroid, $n\!=\!100$).
+\caption{Multi-channel Internalization Index at step~500 (Viroid, $n\!=\!100$).
   Left: Per-channel II contributions as stacked bars (rich harshness);
   colours denote Energy (V3, orange), Regulation (V2, blue), Behaviour
   (V4, green), and Lifecycle (V5, pink).
@@ -685,7 +685,7 @@ $p=\statPHoneSparse{}$): boundary protection exactly offsets its cost, yielding 
 populations ($\sim$10.0 alive).
 This environment-dependent pattern---V1 hurts in rich but is neutral in
 harsh---replaces the prior model's universal cost finding and demonstrates
-a genuine tradeoff between protection and overhead.
+a measurable tradeoff between protection and overhead.
 
 \textbf{H2} (metabolism buffering) is confirmed universally ($\delta=1.00$,
 all $p_\text{corr}<10^{-33}$).
@@ -710,6 +710,7 @@ severe intermediate trough.
 In sparse/scarce, the V0--V3 populations are nearly flat ($10 \to 10 \to 10
 \to 20$) with V3 producing a consistent doubling, giving the JT test a
 clear monotonic signal.
+The JT test detects a dominant aggregate trend; non-monotonic pairwise patterns are present and discussed in Section~\ref{sec:discussion}.
 
 \textbf{H5} (chemotaxis benefit) is confirmed in medium ($\delta=1.00$),
 sparse ($\delta=1.00$), and scarce ($\delta=0.99$), but \emph{reversed} in
@@ -739,6 +740,7 @@ Despite the non-monotonic pairwise reversals in H5 and H6, the overall
 six-level trend V0$\to$V5 is robustly upward: the V3 metabolism recovery
 dominates the signal, and V4/V5 additions, while environment-dependent,
 do not reverse the aggregate trajectory.
+The JT test detects a dominant aggregate trend; non-monotonic pairwise patterns are present and discussed in Section~\ref{sec:discussion}.
 
 \textbf{H8} (V2 overconsumption regulation, Amendment~3) is confirmed in
 rich ($\delta=\statDeltaHeightRich{}$, $p_\text{corr}\statPHeightRich{}$): mean alive rises from
@@ -749,7 +751,7 @@ In medium, sparse, and scarce, V2 has no significant effect
 ($\delta \approx 0$, $p=1.0$): overconsumption rarely occurs when
 resources are scarce, so the regulation benefit does not materialise.
 The rich-only significance of H8 demonstrates that V2 provides a
-\emph{genuine but environment-dependent} benefit, not an engineered win.
+\emph{measurable, environment-dependent} benefit, not an engineered win.
 
 \subsection{Replication--Persistence Tradeoff}
 \label{sec:results-tradeoff}
@@ -861,20 +863,21 @@ boundary.
 With the revised model (V1 leakage/damage protection, V2 overconsumption
 regulation), the ladder reveals environment-dependent tradeoffs rather than
 a universal cost valley.
-V1 boundary maintenance shows a genuine cost--benefit tradeoff: it reduces
+V1 boundary maintenance shows a measurable cost--benefit tradeoff: it reduces
 survival in resource-rich environments (where repair costs exceed the
-protection benefit) and is neutral in sparse/scarce environments (where
-protection approximately offsets cost).
+protection benefit) and is near-neutral in sparse/scarce environments
+(where boundary cost approximately offsets the protection benefit—consistent
+with the tradeoff rather than V1 being ineffective).
 Under the default damage parameters (Table~\ref{tab:archetypes}; composite hazard
 $0.05 \times 0.05 = 0.0025$), V1 does not produce a net positive effect.
 However, a supplementary V1 protection-regime sweep across 84 grid points
 (7~damage probabilities $\times$ 4~damage amounts $\times$ 3~harshness levels,
-seeds~0--39; data in repository \texttt{experiments/semi\_life\_v1\_sweep.tsv})
+seeds~0--39; data available upon acceptance)
 reveals that \textbf{69 of 84 conditions show a net V1 survival
 benefit} when environmental damage is present (measured by alive-count AUC).
 The protection regime emerges above a composite hazard threshold of
 $\sim$0.005 ($p_\text{damage} \times \text{damage\_amount}$): below this,
-V1 cost exceeds its benefit; above, boundary maintenance becomes genuinely
+V1 cost exceeds its benefit; above, boundary maintenance becomes
 protective.
 The effect is strongest in medium, sparse, and scarce environments, where
 V1 AUC advantages of 1{,}000--2{,}600 steps $\times$ entities are typical.
@@ -935,7 +938,47 @@ Rather, the virus-to-life transition is better modelled as a
 \emph{cost-then-benefit} trajectory than as a smooth monotonic improvement.
 The same caveat applies to H7's full V0$\to$V5 trend.
 
-\subsection{InternalizationIndex as a Life-Likeness Metric}
+\subsection{Exploratory: V4 Policy Evolution}
+
+As an \textbf{exploratory} supplement (test seeds 100--199, no correction),
+we extracted raw V4 policy weight vectors from alive V0+V1+V2+V3+V4 Viroid
+entities at step~500 across $n\!=\!100$ test seeds.
+The initial policy is $\mathbf{w}_0 = [0.5, 0.5, 0, 0, 0, 0, 0, 0]$
+(equal gradient-following weights for $x$ and $y$; all others zero).
+After 500 steps, mean weight deviations are small across all harshness levels
+(maximum $|\Delta w| \approx 0.012$), with no weight exceeding $|\Delta w| = 0.02$.
+The overall policy magnitude remains near the initial value ($0.71$--$0.73$
+vs.\ initial $0.707$).
+This constitutes a near-null result for policy evolution over 500 steps:
+V4 chemotaxis behaviour is present and contributes to II$_B$, but the
+weight vector has not diverged substantially from its initialisation.
+This is consistent with the short simulation duration---500 steps may be
+insufficient for evolutionary pressure to reshape the initial weight
+distribution---and motivates longer runs in future work.
+
+\subsection{Exploratory: Inter-Entity Competition}
+
+As an \textbf{exploratory} supplement (seeds~0--99, no correction), we placed
+Viroid~(V0 only) and Plasmid~(V0+V1+V2+V3) simultaneously in the same world,
+using identical base parameters for both (an intentionally asymmetric capability
+test: same physiology, different capability levels).
+An ablation control placed Viroid~(V0) against Plasmid~(V0+V1+V2, no V3),
+enabling attribution of any competitive advantage specifically to V3 metabolism.
+
+In the primary condition (V3 present), Plasmid consistently dominates across
+all harshness levels: frequency ratio 0.85~(rich), 0.74~(medium), 0.67~(sparse),
+0.67~(scarce), with $\delta\!=\!1.0$ (primary vs.\ ablation, raw uncorrected
+$p < 10^{-33}$).
+In the ablation condition (V3 absent), Plasmid shows \emph{no competitive
+advantage}: frequency ratio $\approx 0.43$--$0.50$, and Viroid slightly
+dominates in resource-rich environments where V1+V2 overhead exceeds its benefit.
+This directly attributes the competitive advantage to V3 metabolism specifically,
+not to ``more capabilities'' in general.
+The result confirms that V3 internal metabolism is not only the largest single
+survival jump in the isolated ladder (H2) but also the decisive capability in
+direct inter-entity competition.
+
+\subsection{Internalization Index as a Life-Likeness Metric}
 
 The multi-channel II (Figure~\ref{fig:ii}) addresses a limitation of the
 single-channel formulation: previously, II was effectively a V3 on/off
@@ -965,6 +1008,12 @@ metabolism---mirrors the hypothesised RNA World to protocell transition
 \citep{gilbert_1986_origin}: an initially naked replicator acquires a
 lipid boundary (V1), regulatory control (V2), and eventually internal
 metabolism (V3).
+This ordering corresponds to an RNA-first lineage in which boundary structures
+precede metabolism; a metabolism-first lineage \citep{martin_2007_energetics}
+would predict a different V-level ordering, with V3 emerging before V1.
+Similarly, the Lipid World hypothesis \citep{segre_2001_lipid} places
+boundary self-assembly at the origin, corresponding to V1 preceding V0,
+a scenario testable by extending the current ladder.
 The cost valley at V1/V2 before V3 recovery reflects the biological reality
 that capsid assembly and regulatory machinery impose costs before conferring
 sufficient benefit.
@@ -976,6 +1025,10 @@ Our II provides one operationalisation of this idea: entities move through the
 capability$\times$II space as they acquire functions, with the composite
 rising from 0 (pure environmental dependence) toward 1 (full
 internalisation).
+In practice, with $\mathrm{II}_B \approx 0.08$ and $\mathrm{II}_L \approx 0.01$
+under current deterministic transitions, the practical composite ceiling is
+$\approx 0.4$; the theoretical maximum II$=1.0$ represents full functional
+autonomy across all four channels.
 \citet{godfreysmith_2013_philosophy} distinguishes between
 ``paradigm'' and ``borderline'' cases of life; our framework places
 viroids (V0, $\mathrm{II}=0$), viruses (V0+V1, $\mathrm{II}\approx0$), and
@@ -1003,6 +1056,9 @@ in Table~2 are computed exclusively on held-out test seeds.
 To verify, we re-ran H8 on calibration seeds and obtained
 $\delta_\text{cal} \approx \delta_\text{test}$, confirming that the
 effect is not an artefact of overfitting to calibration data.
+Importantly, calibration targeted only qualitative direction (``does V2 help?''),
+not effect-size targets; the quantitative $\delta$ values reported in Table~\ref{tab:stats}
+are determined exclusively from held-out test seeds.
 
 \subsection{Why an Organism-Driven World?}
 
@@ -1041,6 +1097,36 @@ We take a \emph{weak ALife} position \citep{langton_1989_artificial}:
 the computational system models life-like properties without claiming to
 \emph{be} alive or to resolve the definition of life.
 
+\subsection{Analysis Ledger}
+\label{sec:ledger}
+
+The exploratory analyses below do not alter any confirmatory conclusion from
+the pre-registered H1--H8 tests.
+Table~\ref{tab:ledger} summarises all analyses reported in this paper,
+distinguishing pre-registered confirmatory tests from exploratory supplements.
+
+\begin{table}[t]
+\centering
+\footnotesize
+\caption{Analysis ledger. Seeds 100--199 are held-out test seeds; seeds 0--99 are calibration/exploratory.}
+\label{tab:ledger}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{llllll}
+\toprule
+Claim & Status & Seeds & Test & Correction \\
+\midrule
+H1--H8 (32 tests) & Pre-reg. & 100--199 & MW-U / JT & H-B (32) \\
+V1 protection regime & Expl. & 0--39 & AUC & None \\
+Organism vs.\ static & Expl. & 0--99 & Descr. & None \\
+Mean energy supplement & Expl. & 100--199 & MW-U & None \\
+Calibration cross-val. & Expl. & 0--39 & Descr. & None \\
+V4 policy evolution & Expl. & 100--199 & Descr. & None \\
+Competition (V0 vs.\ V0+V1+V2+V3) & Expl. & 0--99 & MW-U & None \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
 \subsection{Limitations}
 
 \paragraph{Platform dependence.}
@@ -1061,12 +1147,13 @@ extinction artefacts.
 An exploratory robustness analysis at these scales is planned.
 
 \paragraph{Entity interaction.}
-SemiLife entities do not compete with organisms or with each other---the
-resource field is shared but there is no direct interaction.
-Introducing competition would add ecological realism (resource
-depletion effects, niche differentiation) but confounds the clean
-capability-ladder interpretation; we propose competition as a priority
-extension.
+SemiLife entities do not compete with organisms; the resource field is shared
+but there is no direct organism--entity interaction.
+The exploratory competition experiment (Section~\ref{sec:discussion}) places
+multiple entity archetypes in the same world and finds that V3 metabolism
+is the decisive capability in direct competition, but the full ecological
+consequences of niche differentiation and density-dependent effects remain
+to be studied in future work.
 
 \paragraph{Falsifiability.}
 The phase diagram topology makes specific falsifiable predictions:
@@ -1081,10 +1168,14 @@ These counterfactuals are directly testable within our framework.
 
 \subsection{Future Directions}
 
-A competition axis---placing multiple archetypes in the same world simultaneously
----would reveal which capability profiles dominate under natural selection.
+The exploratory competition experiment confirms that V3 is the decisive
+capability in direct inter-entity competition; future work should extend
+this to larger archetype libraries and longer evolutionary runs to probe
+whether niche differentiation emerges.
 Extending V4 with nonlinear policies (small neural networks) could test
-whether complex sensing strategies emerge under selection pressure.
+whether complex sensing strategies evolve under selection pressure---the
+near-null policy evolution result at 500 steps motivates runs of
+$T\!>\!2000$ to provide a fair test.
 Allowing V5 stage-transition parameters to evolve would test whether
 lifecycle timing self-optimises across harshness gradients.
 Finally, scaling to larger populations ($n_\text{init}\!=\!50{-}100$) and

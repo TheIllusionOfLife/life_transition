@@ -2782,3 +2782,44 @@ fn static_resource_field_prevents_regeneration() {
         "Starting totals should be similar: dynamic={total_before_dynamic} static={total_before_static}"
     );
 }
+
+// ─── SemiLife policy snapshot tests ───────────────────────────────────────────
+
+/// V4 entity snapshot has a `policy` field with 8 elements.
+#[test]
+fn v4_snapshot_policy_is_some_with_8_elements() {
+    use crate::semi_life::capability::{
+        V0_REPLICATION, V1_BOUNDARY, V2_HOMEOSTASIS, V3_METABOLISM, V4_RESPONSE,
+    };
+    let caps = V0_REPLICATION | V1_BOUNDARY | V2_HOMEOSTASIS | V3_METABOLISM | V4_RESPONSE;
+    let mut world = make_semi_life_world_with_caps(1, 1.0, 42, caps);
+    world.step();
+    let snaps = world.semi_life_snapshots();
+    assert!(!snaps.is_empty(), "Expected at least one snapshot");
+    let snap = &snaps[0];
+    assert!(
+        snap.policy.is_some(),
+        "V4 entity snapshot should have policy field"
+    );
+    let policy = snap.policy.unwrap();
+    assert_eq!(policy.len(), 8, "Policy must have 8 weights");
+}
+
+/// Non-V4 entity snapshot has `policy` field as None.
+#[test]
+fn non_v4_snapshot_policy_is_none() {
+    use crate::semi_life::capability::{
+        V0_REPLICATION, V1_BOUNDARY, V2_HOMEOSTASIS, V3_METABOLISM,
+    };
+    let caps = V0_REPLICATION | V1_BOUNDARY | V2_HOMEOSTASIS | V3_METABOLISM;
+    let mut world = make_semi_life_world_with_caps(1, 1.0, 42, caps);
+    world.step();
+    let snaps = world.semi_life_snapshots();
+    assert!(!snaps.is_empty(), "Expected at least one snapshot");
+    let snap = &snaps[0];
+    assert!(
+        snap.policy.is_none(),
+        "Non-V4 entity snapshot should have policy=None, got {:?}",
+        snap.policy
+    );
+}
