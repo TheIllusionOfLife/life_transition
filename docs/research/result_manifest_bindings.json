@@ -33,14 +33,15 @@
     },
     {
       "result_id": "semi_life_recovery",
-      "paper_ref": "fig:recovery",
+      "paper_ref": "fig:recovery-s",
+      "paper_location": "supplement",
       "manifest": "experiments/semi_life_shock_stats.json",
       "source_files": [
         "experiments/semi_life_shocks.tsv",
         "experiments/semi_life_v1v5_test.tsv",
         "paper/figures/fig_semi_life_recovery.pdf"
       ],
-      "notes": "Shock recovery time series (exploratory)."
+      "notes": "Shock recovery time series (exploratory). Moved to Supplement S3."
     },
     {
       "result_id": "semi_life_hypothesis_tests",
@@ -54,23 +55,47 @@
     },
     {
       "result_id": "semi_life_energy_robustness",
-      "paper_ref": "sec:results-energy",
+      "paper_ref": "sec:s4",
+      "paper_location": "supplement",
       "manifest": "experiments/semi_life_mean_energy_supplement.json",
       "source_files": [
         "experiments/semi_life_v1v5_test.tsv",
         "experiments/semi_life_mean_energy_supplement.json"
       ],
-      "notes": "Exploratory mean_energy effect sizes (H1/H2/H3/H5/H6/H8 robustness checks)."
+      "notes": "Exploratory mean_energy effect sizes. Moved to Supplement S4."
     },
     {
       "result_id": "semi_life_sham_controls",
-      "paper_ref": "sec:results-sham",
+      "paper_ref": "sec:s5",
+      "paper_location": "supplement",
       "manifest": "experiments/semi_life_sham_controls.json",
       "source_files": [
         "experiments/semi_life_v1v5_test.tsv",
         "experiments/semi_life_sham_controls.json"
       ],
-      "notes": "Exploratory report of pre-registered V4/V5 sham null-control comparisons."
+      "notes": "Exploratory V4/V5 sham null controls. Moved to Supplement S5."
+    },
+    {
+      "result_id": "semi_life_v4_policy_evolution",
+      "paper_ref": "sec:s6",
+      "paper_location": "supplement",
+      "manifest": "experiments/semi_life_v4_policy_evolution.json",
+      "source_files": [
+        "experiments/semi_life_v1v5_test.tsv",
+        "experiments/semi_life_v4_policy_evolution.json"
+      ],
+      "notes": "Exploratory V4 policy weight near-null divergence. Moved to Supplement S6."
+    },
+    {
+      "result_id": "semi_life_competition",
+      "paper_ref": "sec:s7",
+      "paper_location": "supplement",
+      "manifest": "experiments/semi_life_competition.json",
+      "source_files": [
+        "experiments/semi_life_competition.tsv",
+        "experiments/semi_life_competition.json"
+      ],
+      "notes": "Exploratory inter-entity competition (calibration seeds 0-99). V3 as competitive driver. Moved to Supplement S7."
     }
   ]
 }

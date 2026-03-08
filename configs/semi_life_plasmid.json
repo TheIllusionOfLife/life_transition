@@ -1,7 +1,7 @@
 {
   "_generated_by": "peer-review-response: competition experiment",
   "_archetype": "plasmid",
-  "_note": "Plasmid config for inter-entity competition. Uses identical parameters to semi_life_viroid.json; only archetype and enabled_archetypes differ.",
+  "_note": "This config exists for documentation and schema reference only. make_competition_config() intentionally uses semi_life_viroid.json parameters for both archetypes (same physiology, different capability_overrides). The identical physiology ensures competitive outcomes reflect capability differences, not parameter differences.",
   "num_per_archetype": 10,
   "initial_energy": 0.5,
   "energy_capacity": 1.0,
