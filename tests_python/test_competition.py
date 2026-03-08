@@ -11,6 +11,11 @@ from __future__ import annotations
 import json
 
 import pytest
+from analyze_competition import (
+    _get_final_step_rows,
+    get_frequency_ratio_at_final,
+    run_mannwhitney,
+)
 from experiment_semi_life_competition import (
     TSV_COLUMNS,
     V0,
@@ -110,3 +115,99 @@ def test_make_competition_config_ablation_structure() -> None:
     assert overrides["plasmid"] == V0 | V1 | V2
     # V3 bit must NOT be set for plasmid in the ablation condition
     assert (overrides["plasmid"] & V3) == 0
+
+
+# ---------------------------------------------------------------------------
+# analyze_competition core logic
+# ---------------------------------------------------------------------------
+
+_SAMPLE_ROWS = [
+    {
+        "condition": "primary",
+        "harshness": "rich",
+        "seed": "0",
+        "step": "450",
+        "viroid_alive": "5",
+        "plasmid_alive": "8",
+        "viroid_replications": "10",
+        "plasmid_replications": "20",
+        "frequency_ratio": "0.615385",
+    },
+    {
+        "condition": "primary",
+        "harshness": "rich",
+        "seed": "0",
+        "step": "500",
+        "viroid_alive": "3",
+        "plasmid_alive": "9",
+        "viroid_replications": "6",
+        "plasmid_replications": "22",
+        "frequency_ratio": "0.750000",
+    },
+    {
+        "condition": "primary",
+        "harshness": "rich",
+        "seed": "1",
+        "step": "500",
+        "viroid_alive": "0",
+        "plasmid_alive": "10",
+        "viroid_replications": "0",
+        "plasmid_replications": "25",
+        "frequency_ratio": "1.000000",
+    },
+    {
+        "condition": "primary",
+        "harshness": "rich",
+        "seed": "2",
+        "step": "500",
+        "viroid_alive": "0",
+        "plasmid_alive": "0",
+        "viroid_replications": "0",
+        "plasmid_replications": "0",
+        "frequency_ratio": "nan",
+    },
+]
+
+
+def test_get_final_step_rows_selects_max_step() -> None:
+    """Only rows at the highest step value are returned."""
+    final = _get_final_step_rows(_SAMPLE_ROWS, "primary", "rich")
+    steps = {r["step"] for r in final}
+    assert steps == {"500"}
+    assert len(final) == 3  # seeds 0, 1, 2 all have step=500
+
+
+def test_get_final_step_rows_empty_on_no_match() -> None:
+    """Returns empty list when condition/harshness has no rows."""
+    final = _get_final_step_rows(_SAMPLE_ROWS, "ablation", "rich")
+    assert final == []
+
+
+def test_get_frequency_ratio_excludes_nan() -> None:
+    """'nan' string values are excluded; result contains only numeric ratios."""
+    ratios = get_frequency_ratio_at_final(_SAMPLE_ROWS, "primary", "rich")
+    # seed 2 has frequency_ratio='nan' and must be excluded
+    assert len(ratios) == 2
+    assert all(isinstance(v, float) for v in ratios)
+    assert pytest.approx(1.0) in ratios
+
+
+def test_run_mannwhitney_small_n_returns_none_fields() -> None:
+    """n < 2 in either group → all statistical fields are None (not errors)."""
+    result = run_mannwhitney([0.5], [0.8, 0.9])
+    assert result["U"] is None
+    assert result["p_raw"] is None
+    assert result["cliffs_delta"] is None
+    assert result["n_a"] == 1
+
+
+def test_run_mannwhitney_valid_inputs_returns_floats() -> None:
+    """Valid inputs return numeric U, p_raw, and cliffs_delta."""
+    a = [0.1, 0.2, 0.3, 0.4]
+    b = [0.7, 0.8, 0.9, 1.0]
+    result = run_mannwhitney(a, b)
+    assert result["U"] is not None
+    assert isinstance(result["p_raw"], float)
+    assert isinstance(result["cliffs_delta"], float)
+    assert result["n_a"] == 4
+    assert result["n_b"] == 4

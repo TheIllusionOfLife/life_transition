@@ -65,6 +65,8 @@ TSV_COLUMNS = [
     "step",
     "viroid_alive",
     "plasmid_alive",
+    # Replication counts reflect alive entities at this snapshot step only.
+    # Dead entities are pruned from Rust memory, so these are NOT world-cumulative totals.
     "viroid_replications",
     "plasmid_replications",
     "frequency_ratio",  # plasmid_alive / (viroid_alive + plasmid_alive), nan if both 0
@@ -122,7 +124,14 @@ def make_competition_config(
 
 
 def _aggregate_archetype(snapshots: list[dict], archetype: str) -> dict:
-    """Extract alive count and cumulative replications for one archetype."""
+    """Extract alive count and snapshot-level replication sum for one archetype.
+
+    Note: ``replications`` is a per-entity lifetime counter that is lost when an
+    entity dies and is pruned from Rust memory.  The returned ``total_replications``
+    therefore reflects only entities present (alive or recently dead) in *this*
+    snapshot, not a world-cumulative total.  Use ``frequency_ratio`` and alive
+    counts for competitive-fitness analysis instead.
+    """
     entities = [s for s in snapshots if s["archetype"] == archetype]
     alive = [e for e in entities if e["alive"]]
     total_replications = sum(e["replications"] for e in entities)
