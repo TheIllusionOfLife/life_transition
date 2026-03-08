@@ -1,0 +1,102 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{enumitem}
+
+\title{Paper Review: ``Semi-Life: A Capability Ladder for the Virus-to-Life Transition''}
+\author{Broad Review}
+\date{March 6, 2026}
+
+\begin{document}
+\maketitle
+
+\section*{Executive Summary}
+This is an ambitious and technically substantial manuscript that tackles a difficult question---how to formalize a virus-to-life transition as a measurable continuum. The strongest features are the explicit capability-ladder design, clear seed partitioning between calibration and testing, pre-registered directional hypotheses, and broad reporting of effect sizes with multiplicity correction. The paper succeeds in presenting a coherent empirical narrative in which capability additions are environment-dependent rather than universally beneficial.
+
+The primary weaknesses are not in basic experimental effort, but in consistency and interpretation control. Terminology and notation vary across sections; confirmatory and exploratory analyses are not always separated clearly in narrative emphasis; and rhetorical tone is sometimes stronger than what the reported evidence strictly supports. With focused revision, the paper could become a strong contribution.
+
+\section*{Overall Evaluation}
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{Novelty:} High. The capability-ladder framing and multi-channel index are a distinctive contribution.
+  \item \textbf{Methodological effort:} High. The reported run counts, held-out seeds, and hypothesis-level testing are substantial.
+  \item \textbf{Clarity:} Moderate. Core story is understandable, but consistency issues reduce precision.
+  \item \textbf{Evidence--claim alignment:} Moderate to high. Strong in confirmatory sections, weaker where exploratory claims carry equal rhetorical weight.
+  \item \textbf{Recommended decision framing:} Major revision focused on presentation discipline, claim calibration, and construct clarity.
+\end{itemize}
+
+\section*{Prioritized Findings (Ranked by Confidence)}
+\begin{enumerate}[leftmargin=1.5em]
+  \item \textbf{High confidence --- Terminology and notation inconsistencies create avoidable ambiguity.}
+  The manuscript alternates between ``Semi-Life'' and ``SemiLife,'' ``Internalization Index'' and ``InternalizationIndex,'' and mixed ladder forms (e.g., ``V0..V4'' versus additive notation). This does not invalidate results, but it weakens perceived rigor and makes cross-section mapping harder for readers.
+
+  \item \textbf{High confidence --- Confirmatory and exploratory evidence tiers need stronger structural separation.}
+  The pre-registered core is a strength, but several exploratory analyses (e.g., supplementary V1 sweep, organism-driven versus static comparison, calibration-seed re-check) are integrated into Discussion with high interpretive weight. Readers would benefit from a compact evidence-tier map that explicitly labels which claims are confirmatory versus exploratory.
+
+  \item \textbf{High confidence --- Trend-test interpretation requires more prominent guardrails.}
+  The paper correctly notes that Jonckheere--Terpstra significance can coexist with pairwise reversals, but this caveat is easy to miss. Because H5 and H6 include direction reversals, readers need a repeated and explicit statement that H4/H7 support aggregate ordering, not uniformly beneficial adjacent steps.
+
+  \item \textbf{Medium-high confidence --- Construct validity of the composite II needs reframing.}
+  The fixed-denominator index is a good comparability choice. However, behavior and lifecycle channels are less direct measures of ``internalization'' than energy and regulation channels. The construct can remain useful if reframed as a life-likeness composite with internalization-centered subcomponents, rather than as pure internalization throughout.
+
+  \item \textbf{Medium confidence --- Tone should be normalized to match statistical caution.}
+  Terms such as ``dramatic,'' ``starkest,'' and repeated ``genuine'' claims read as promotional in places. A neutral, evidence-first style would better match the manuscript's quantitative strengths and reduce over-interpretation risk.
+
+  \item \textbf{Medium confidence --- Some hypothesis wording and verdict semantics are not fully aligned.}
+  H1 is framed as ``different'' with environment-dependent direction, yet sparse/scarce null outcomes are marked as non-confirmation while later interpreted as part of the tradeoff pattern. This can be resolved by refining hypothesis wording (e.g., directional heterogeneity including null zones) or by tightening the interpretation language.
+
+  \item \textbf{Medium confidence --- Repetition across Results and Discussion reduces signal-to-noise.}
+  Major findings (V1 tradeoff, V3 recovery, H5/H6 reversals) are repeated with similar language and numbers. Consolidating where each claim is first established would improve readability and reduce cognitive load.
+\end{enumerate}
+
+\section*{Section Recommendations}
+
+\subsection*{Abstract and Introduction}
+\begin{itemize}[leftmargin=1.5em]
+  \item Keep the strong problem framing, but align terminology to one canonical form from the opening paragraph.
+  \item Add one explicit sentence that later capability additions can be beneficial, neutral, or harmful depending on harshness regime.
+  \item Avoid language that implies strict monotonic progression when pairwise reversals are central to the paper's own results.
+\end{itemize}
+
+\subsection*{Model and Experiment Design}
+\begin{itemize}[leftmargin=1.5em]
+  \item Clarify the phrase ``all capabilities consume resources every timestep'' so it exactly matches implemented mechanics for V4 and V5.
+  \item Quantify ``negligible'' Semi-Life impact on the background organisms with a compact comparative statistic.
+  \item Add a one-table ``analysis ledger'' with columns: status (pre-registered/exploratory), seed set, metric, statistical test, correction scope.
+\end{itemize}
+
+\subsection*{Results and Inference}
+\begin{itemize}[leftmargin=1.5em]
+  \item Start each hypothesis block with a one-line structured verdict (direction, effect size, corrected significance, confirmation status).
+  \item Highlight the H4/H7 caveat: trend significance does not imply monotonic adjacent steps.
+  \item Keep exploratory robustness checks, but move high-detail exploratory interpretation either to a dedicated subsection or supplement-forward framing.
+\end{itemize}
+
+\subsection*{Discussion and Positioning}
+\begin{itemize}[leftmargin=1.5em]
+  \item Split discussion into two explicit lanes: ``Pre-registered conclusions'' and ``Exploratory extensions.''
+  \item Soften assertive adjectives and tie each inferential statement to its evidence tier.
+  \item In comparative framing with evolutionary-transition literature, emphasize analogy boundaries to avoid overreach.
+\end{itemize}
+
+\subsection*{Style and Consistency}
+\begin{itemize}[leftmargin=1.5em]
+  \item Normalize spelling conventions (e.g., avoid mixing US and UK forms unless intentional and stated).
+  \item Standardize notation for capability ladders in prose, tables, and captions.
+  \item Use one formatting convention for corrected $p$-values and one naming convention for index symbols throughout.
+\end{itemize}
+
+\section*{High-Impact Revision Checklist}
+\begin{enumerate}[leftmargin=1.5em]
+  \item Enforce full terminology and notation consistency globally.
+  \item Insert a compact claim--evidence table mapping every major claim to confirmatory or exploratory status.
+  \item Rephrase H1 interpretation to reconcile null regimes with stated tradeoff logic.
+  \item Reframe composite II as a broader life-likeness construct while preserving channel-level transparency.
+  \item Reduce duplicated narrative and keep first-appearance evidence in Results as the primary citation point.
+\end{enumerate}
+
+\section*{Bottom Line}
+The manuscript has strong potential and a clearly publishable core idea. Its main path to acceptance is not additional simulation volume, but tighter editorial control over terminology, evidence-tier boundaries, and inferential tone.
+
+\end{document}
