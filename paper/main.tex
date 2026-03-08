@@ -4,6 +4,11 @@
 \usepackage{graphicx,amsmath,amssymb,booktabs,xcolor,multirow}
 \usepackage{url,hyperref}
 
+% Tighten float spacing to reduce page count
+\setlength{\textfloatsep}{6pt plus 2pt minus 2pt}
+\setlength{\floatsep}{6pt plus 2pt minus 2pt}
+\setlength{\intextsep}{6pt plus 2pt minus 2pt}
+
 \newcommand\blfootnote[1]{%
   \begingroup
   \renewcommand\thefootnote{}\footnote{#1}%
@@ -201,12 +206,7 @@ Within each archetype, 10 entities are initialised; the world runs for
 \begin{table}[t]
 \centering
 \footnotesize
-\caption{Archetype parameter summary.
-  Shared parameters: \texttt{maintenance\_cost}~$=0.0005$,
-  \texttt{resource\_uptake\_rate}~$=0.02$,
-  \texttt{internal\_conversion\_rate}~$=0.05$.
-  V1/V2 protective parameters and V4/V5 parameters are shared across
-  all archetypes.}
+\caption{Archetype parameter summary. Rows labelled ``shared'' apply to all archetypes.}
 \label{tab:archetypes}
 \resizebox{\columnwidth}{!}{%
 \begin{tabular}{lccc}
@@ -1062,27 +1062,16 @@ are determined exclusively from held-out test seeds.
 
 \subsection{Why an Organism-Driven World?}
 
-A recurring question is whether the seven-criteria background world is
-necessary, or whether a simpler static resource field would suffice.
-To answer this, we ran a factorial comparison: 13~conditions $\times$
-4~harshness levels $\times$ 2~world types (organism-driven vs.\ static)
-$\times$ 100~seeds (10{,}400 runs total).
-In the static mode, the resource field is initialised identically but
-organisms do not deplete or regenerate resources.
-
-The organism-driven world consistently produces higher alive counts,
-with the largest differential at V3 metabolism in rich environments
-($+28$ alive, or $+17\%$).
-The dynamic resource field amplifies the V3 advantage: metabolising
-entities consume surrounding resources, creating local depletion zones
-that disadvantage non-metabolising competitors.
-V4 chemotaxis shows a smaller dynamic-vs-static gap ($+5$ alive in
-rich), suggesting that chemotaxis benefits are partially present even
-in static fields where spatial resource heterogeneity exists but does
-not change.
-These results confirm that the organism-driven world is not merely
-a convenience but actively shapes the capability ladder's cost-benefit
-structure.
+A factorial comparison (13~conditions $\times$ 4~harshness $\times$
+2~world types $\times$ 100~seeds) confirms the organism-driven world
+yields consistently higher alive counts than a static resource field.
+The V3 advantage is largest ($+28$ alive, $+17\%$ in rich environments):
+metabolising entities deplete local resources, disadvantaging
+non-metabolisers.
+V4 chemotaxis shows a smaller dynamic-vs-static gap ($+5$ alive),
+as gradient-following benefits persist in static spatial heterogeneity.
+The organism-driven world actively shapes the capability ladder's
+cost-benefit structure.
 
 \subsection{Weak ALife Stance}
 

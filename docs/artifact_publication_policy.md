@@ -16,8 +16,9 @@ Artifact publication splits across two channels:
    - Statistical outputs (`semi_life_capability_stats.json`, `semi_life_shock_stats.json`)
    - Effect size robustness check (`semi_life_mean_energy_supplement.json`)
    - Calibration data (`calibration_results.tsv`)
+   - Exploratory datasets (`semi_life_exploratory.tar.gz`): competition TSV/JSON + V4 policy JSON
 
-## Paper-Binding Artifacts (6 total)
+## Paper-Binding Artifacts (8 total)
 
 | Paper reference | Source file | Channel |
 |----------------|-------------|---------|
@@ -27,6 +28,8 @@ Artifact publication splits across two channels:
 | `fig:recovery` (Figure 4) | `semi_life_shocks.tsv` | Zenodo |
 | `tab:stats` (Table 2) | `semi_life_capability_stats.json` | Zenodo |
 | `sec:results-energy` (Section 5.6) | `semi_life_mean_energy_supplement.json` | Zenodo |
+| `sec:disc-competition` (Sect. 6 Exploratory) | `semi_life_competition.json` | Zenodo |
+| `sec:disc-v4policy` (Sect. 6 Exploratory) | `semi_life_v4_policy_evolution.json` | Zenodo |
 
 ## What Must Not Be Committed to Git
 
@@ -58,6 +61,10 @@ tar -czf zenodo_staging/semi_life_shock_data.tar.gz \
   experiments/semi_life_shock_stats.json
 tar -czf zenodo_staging/semi_life_calibration_data.tar.gz \
   experiments/calibration_results.tsv
+tar -czf zenodo_staging/semi_life_exploratory.tar.gz \
+  experiments/semi_life_competition.tsv \
+  experiments/semi_life_competition.json \
+  experiments/semi_life_v4_policy_evolution.json
 ```
 
 ### Step 2: Generate metadata
