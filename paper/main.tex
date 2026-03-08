@@ -1045,34 +1045,6 @@ This is more constrained than open-ended evolution but yields cleaner
 causal attributions---each H1--H8 test isolates a specific capability
 transition.
 
-\subsection{Calibration--Test Separation and H8}
-
-Reviewer concern regarding circularity between calibration (seeds~0--39) and
-hypothesis testing (seeds~100--199) is addressed by the full seed separation:
-a 60-seed buffer (40--99) ensures no overlap.
-Calibration was used only for qualitative direction (``does V2 help or hurt?'')
-on coarse parameter sweeps; the specific effect sizes ($\delta$ values)
-in Table~2 are computed exclusively on held-out test seeds.
-To verify, we re-ran H8 on calibration seeds and obtained
-$\delta_\text{cal} \approx \delta_\text{test}$, confirming that the
-effect is not an artefact of overfitting to calibration data.
-Importantly, calibration targeted only qualitative direction (``does V2 help?''),
-not effect-size targets; the quantitative $\delta$ values reported in Table~\ref{tab:stats}
-are determined exclusively from held-out test seeds.
-
-\subsection{Why an Organism-Driven World?}
-
-A factorial comparison (13~conditions $\times$ 4~harshness $\times$
-2~world types $\times$ 100~seeds) confirms the organism-driven world
-yields consistently higher alive counts than a static resource field.
-The V3 advantage is largest ($+28$ alive, $+17\%$ in rich environments):
-metabolising entities deplete local resources, disadvantaging
-non-metabolisers.
-V4 chemotaxis shows a smaller dynamic-vs-static gap ($+5$ alive),
-as gradient-following benefits persist in static spatial heterogeneity.
-The organism-driven world actively shapes the capability ladder's
-cost-benefit structure.
-
 \subsection{Weak ALife Stance}
 
 All claims in this paper are functional analogies.
@@ -1085,36 +1057,6 @@ and staged lifecycle~(V5).
 We take a \emph{weak ALife} position \citep{langton_1989_artificial}:
 the computational system models life-like properties without claiming to
 \emph{be} alive or to resolve the definition of life.
-
-\subsection{Analysis Ledger}
-\label{sec:ledger}
-
-The exploratory analyses below do not alter any confirmatory conclusion from
-the pre-registered H1--H8 tests.
-Table~\ref{tab:ledger} summarises all analyses reported in this paper,
-distinguishing pre-registered confirmatory tests from exploratory supplements.
-
-\begin{table}[t]
-\centering
-\footnotesize
-\caption{Analysis ledger. Seeds 100--199 are held-out test seeds; seeds 0--99 are calibration/exploratory.}
-\label{tab:ledger}
-\resizebox{\columnwidth}{!}{%
-\begin{tabular}{llllll}
-\toprule
-Claim & Status & Seeds & Test & Correction \\
-\midrule
-H1--H8 (32 tests) & Pre-reg. & 100--199 & MW-U / JT & H-B (32) \\
-V1 protection regime & Expl. & 0--39 & AUC & None \\
-Organism vs.\ static & Expl. & 0--99 & Descr. & None \\
-Mean energy supplement & Expl. & 100--199 & MW-U & None \\
-Calibration cross-val. & Expl. & 0--39 & Descr. & None \\
-V4 policy evolution & Expl. & 100--199 & Descr. & None \\
-Competition (V0 vs.\ V0+V1+V2+V3) & Expl. & 0--99 & MW-U & None \\
-\bottomrule
-\end{tabular}%
-}
-\end{table}
 
 \subsection{Limitations}
 
