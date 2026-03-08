@@ -76,16 +76,22 @@ TSV_COLUMNS = [
 def _load_archetype_config(archetype: str) -> dict:
     """Load calibrated SemiLife parameters for the given archetype.
 
-    Falls back to empty dict (simulation defaults) if no calibrated config exists.
     Strips '_'-prefixed metadata keys.
+
+    Raises:
+        FileNotFoundError: If no calibrated config file exists for the archetype.
+            The competition experiment requires calibrated parameters to produce
+            reproducible results; silently falling back to defaults would corrupt
+            the experiment without any diagnostic signal.
     """
     path = _CONFIGS_DIR / f"semi_life_{archetype}.json"
-    if path.exists():
-        with open(path, encoding="utf-8") as f:
-            data = json.load(f)
-        return {k: v for k, v in data.items() if not k.startswith("_")}
-    log(f"  WARNING: no calibrated config for {archetype}; using defaults")
-    return {}
+    if not path.exists():
+        raise FileNotFoundError(
+            f"No calibrated config for archetype '{archetype}': expected {path}"
+        )
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    return {k: v for k, v in data.items() if not k.startswith("_")}
 
 
 def compute_frequency_ratio(plasmid_alive: int, viroid_alive: int) -> float | None:

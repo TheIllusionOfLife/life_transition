@@ -940,7 +940,7 @@ The same caveat applies to H7's full V0$\to$V5 trend.
 
 \subsection{Exploratory: V4 Policy Evolution}
 
-As an \textbf{exploratory} supplement (calibration/test seeds, no correction),
+As an \textbf{exploratory} supplement (test seeds 100--199, no correction),
 we extracted raw V4 policy weight vectors from alive V0+V1+V2+V3+V4 Viroid
 entities at step~500 across $n\!=\!100$ test seeds.
 The initial policy is $\mathbf{w}_0 = [0.5, 0.5, 0, 0, 0, 0, 0, 0]$
@@ -967,8 +967,8 @@ enabling attribution of any competitive advantage specifically to V3 metabolism.
 
 In the primary condition (V3 present), Plasmid consistently dominates across
 all harshness levels: frequency ratio 0.85~(rich), 0.74~(medium), 0.67~(sparse),
-0.67~(scarce), with $\delta\!=\!1.0$ (primary vs.\ ablation, Holm-Bonferroni
-corrected $p < 10^{-33}$).
+0.67~(scarce), with $\delta\!=\!1.0$ (primary vs.\ ablation, raw uncorrected
+$p < 10^{-33}$).
 In the ablation condition (V3 absent), Plasmid shows \emph{no competitive
 advantage}: frequency ratio $\approx 0.43$--$0.50$, and Viroid slightly
 dominates in resource-rich environments where V1+V2 overhead exceeds its benefit.
@@ -1117,7 +1117,7 @@ Claim & Status & Seeds & Test & Correction \\
 \midrule
 H1--H8 (32 tests) & Pre-reg. & 100--199 & MW-U / JT & H-B (32) \\
 V1 protection regime & Expl. & 0--39 & AUC & None \\
-Organism vs.\ static & Expl. & 0--39 & Descr. & None \\
+Organism vs.\ static & Expl. & 0--99 & Descr. & None \\
 Mean energy supplement & Expl. & 100--199 & MW-U & None \\
 Calibration cross-val. & Expl. & 0--39 & Descr. & None \\
 V4 policy evolution & Expl. & 100--199 & Descr. & None \\
