@@ -94,7 +94,7 @@ def generate_fig_semi_life_internalization(data_tsv: Path, out_dir: Path) -> Non
         ax_bars.set_xlabel("Capability Level", fontsize=9)
         ax_bars.set_title("Per-channel II (rich)", fontsize=9)
         ax_bars.set_ylim(bottom=0, top=1.0)
-        ax_bars.legend(fontsize=6, loc="upper left")
+        ax_bars.legend(fontsize=7, loc="upper left")
         ax_bars.spines["top"].set_visible(False)
         ax_bars.spines["right"].set_visible(False)
 

@@ -132,8 +132,8 @@ def generate_fig_semi_life_tradeoffs(data_tsv: Path, out_dir: Path) -> None:
     leg1 = ax.legend(
         handles=arch_handles,
         title="Archetype",
-        fontsize=6,
-        title_fontsize=6,
+        fontsize=7,
+        title_fontsize=7,
         loc="upper left",
         framealpha=0.8,
     )
@@ -141,8 +141,8 @@ def generate_fig_semi_life_tradeoffs(data_tsv: Path, out_dir: Path) -> None:
     ax.legend(
         handles=cap_handles,
         title="Capability",
-        fontsize=6,
-        title_fontsize=6,
+        fontsize=7,
+        title_fontsize=7,
         loc="lower right",
         framealpha=0.8,
     )
