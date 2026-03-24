@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Life Transition** is an artificial life (ALife) research project studying the **Virus → Semi-Life → Life** transition: can a virus-like replicator become life-like by internalizing the biological functions it originally outsourced?
 
-**Target venue**: ALIFE 2026 Full Paper (8p), deadline ~April 1, 2026.
+**Target venue**: ALIFE 2026 Full Paper (3-8pp excl. references/acknowledgements), deadline **March 30, 2026**. Submission portal: https://ssl.linklings.net/conferences/ALIFE/
 
 **Stance**: Weak ALife — the system is a functional model, not a claim of literal life.
 
