@@ -45,8 +45,9 @@ Each archetype begins at a different point on a \emph{Capability Ladder}
 V4: response to stimuli; V5: staged lifecycle) and gains capabilities one step
 at a time.
 Progress is quantified by a multi-channel \emph{Internalization Index}~(II)
-combining energy, regulation, behaviour, and lifecycle channels---a continuous
-axis from virus-like ($\mathrm{II}\!\approx\!0$) to life-like ($\mathrm{II}\!>\!0$).
+combining energy, regulation, behaviour, and lifecycle channels.
+II provides a continuous axis from virus-like ($\mathrm{II}\!\approx\!0$) to
+life-like ($\mathrm{II}\!>\!0$).
 Eight directional hypotheses were pre-registered with Holm-Bonferroni
 correction across 32~tests ($n\!=\!100$ held-out seeds, four harshness levels).
 We find environment-dependent cost--benefit tradeoffs: V1/V2 impose overhead
@@ -125,7 +126,7 @@ decline ($p_\text{corr}\!\leq\!0.005$, Holm-Bonferroni, $n\!=\!30$), and
 (c)~cross-criterion feedback loops.
 
 Critically, the world's organism population is \emph{not affected} by the
-Semi-Life entities introduced in this paper: SemiLife uptake
+Semi-Life entities introduced in this paper: Semi-Life uptake
 (0.02/step for 10--50 entities) is negligible relative to organism
 consumption, so the organism population dynamics are effectively
 unchanged.
@@ -133,7 +134,7 @@ The background world provides (i)~a structured resource landscape with
 spatial heterogeneity driven by organism activity, and (ii)~temporal
 dynamics from organism metabolism and reproduction that create a
 realistic, non-stationary environment for the minimal replicators.
-SemiLife entities do not directly interact with organisms.
+Semi-Life entities do not directly interact with organisms.
 
 Initial entity positions are drawn uniformly at random from the world
 grid, seeded deterministically from the world seed.
@@ -631,10 +632,11 @@ With the revised model (V1 leakage/damage protection, V2 overconsumption
 regulation), the ladder reveals environment-dependent tradeoffs rather than
 a universal cost valley.
 V1 boundary maintenance shows a measurable cost--benefit tradeoff: it reduces
-survival in resource-rich environments (where repair costs exceed the
-protection benefit) and is near-neutral in sparse/scarce environments
-(where boundary cost approximately offsets the protection benefit---consistent
-with the tradeoff rather than V1 being ineffective).
+survival in resource-rich environments, where repair costs exceed the
+protection benefit.
+In sparse and scarce environments, V1 is near-neutral because boundary cost
+approximately offsets the protection benefit, consistent with a genuine
+tradeoff rather than V1 being ineffective.
 A supplementary V1 regime sweep (Supplement~S8; 84 grid points) shows 69/84
 conditions yield net V1 benefit above composite hazard $\sim$0.005, with
 surviving V1 entities showing higher mean energy---a ``fewer but healthier''
@@ -741,14 +743,14 @@ The 10-entity initialisation per run and 500-step duration limit
 population dynamics; for larger-scale phase diagrams,
 $n_\text{init}\!=\!50{-}100$ and $T\!=\!2000$ would reduce stochastic
 extinction artefacts.
-An exploratory robustness analysis at these scales is planned.
+Future work should test robustness at these scales.
 
 \paragraph{Falsifiability.}
 The phase diagram topology yields testable counterfactuals: ablating V3
 conversion should collapse the cost valley into monotonic decline; raising
 V1 repair above damage rate should eliminate V1 cost; uniform infinite
 resources should remove all harshness-dependent tradeoffs.
-SemiLife entities share the resource field with organisms but do not
+Semi-Life entities share the resource field with organisms but do not
 interact directly; niche differentiation under competition (Supplement~S7)
 remains future work.
 

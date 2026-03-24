@@ -111,7 +111,7 @@ def generate_fig_semi_life_phase_diagram(data_tsv: Path, out_dir: Path) -> None:
                     f"{val:.0f}\n±{sd:.0f}",
                     ha="center",
                     va="center",
-                    fontsize=5.5,
+                    fontsize=7,
                     color=text_color,
                     fontweight="bold",
                 )
