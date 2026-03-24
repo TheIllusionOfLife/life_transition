@@ -360,7 +360,7 @@ Full rationales are in Supplement~S2; predictions are:
   V-levels. Jonckheere-Terpstra \citep{jonckheere_1954_distribution},
   all harshness.%
   \footnote{JT detects the dominant upward trend; pairwise reversals
-  at intermediate V-levels are present (Section~\ref{sec:results-phase}).}
+  at intermediate V-levels are present (see Phase Diagrams in Results).}
 \item[\textbf{H5}] \emph{Chemotaxis}: V0..V4 $>$ V0..V3 alive.
   Mann-Whitney~U, all harshness.
 \item[\textbf{H6}] \emph{Lifecycle}: V0..V5 $>$ V0..V4 alive.
@@ -483,52 +483,52 @@ $p$-values across the 32-test family.
 H & Harshness & $U$ & $p_\text{corr}$ & Sig. & $\delta$ [95\% CI] & Dir. \\
 \midrule
 \multicolumn{7}{l}{\emph{H1: Viroid V0 vs V0+V1 (alive, environment-dependent tradeoff)}} \\
-H1 & rich   & 9\,981 & $<\!10^{-33}$ & *** & 1.00 [0.99, 1.00] & \checkmark \\
-H1 & medium & 6\,473 & 0.002  & **  & 0.29 [0.15, 0.44] & \checkmark \\
-H1 & sparse & 4\,950 & 1.000  &     & $-$0.01 [$-$0.03, 0.00] & \texttimes \\
-H1 & scarce & 4\,950 & 1.000  &     & $-$0.01 [$-$0.03, 0.00] & \texttimes \\
+H1 & rich   & $\statUHoneRich$ & $\statPHoneRich$ & *** & $\statDeltaHoneRich$ $\statCIHoneRich$ & \checkmark \\
+H1 & medium & $\statUHoneMedium$ & $\statPHoneMedium$ & **  & $\statDeltaHoneMedium$ $\statCIHoneMedium$ & \checkmark \\
+H1 & sparse & $\statUHoneSparse$ & $\statPHoneSparse$ &     & $\statDeltaHoneSparse$ $\statCIHoneSparse$ & \texttimes \\
+H1 & scarce & $\statUHoneScarce$ & $\statPHoneScarce$ &     & $\statDeltaHoneScarce$ $\statCIHoneScarce$ & \texttimes \\
 \midrule
 \multicolumn{7}{l}{\emph{H2: Viroid V0+V1+V2+V3 vs V0+V1+V2 (alive, more with V3)}} \\
-H2 & rich   & 10\,000 & $<\!10^{-33}$ & *** & 1.00 [1.00, 1.00] & \checkmark \\
-H2 & medium & 10\,000 & $<\!10^{-33}$ & *** & 1.00 [1.00, 1.00] & \checkmark \\
-H2 & sparse & 10\,000 & $<\!10^{-43}$ & *** & 1.00 [1.00, 1.00] & \checkmark \\
-H2 & scarce & 10\,000 & $<\!10^{-43}$ & *** & 1.00 [1.00, 1.00] & \checkmark \\
+H2 & rich   & $\statUHtwoRich$ & $\statPHtwoRich$ & *** & $\statDeltaHtwoRich$ $\statCIHtwoRich$ & \checkmark \\
+H2 & medium & $\statUHtwoMedium$ & $\statPHtwoMedium$ & *** & $\statDeltaHtwoMedium$ $\statCIHtwoMedium$ & \checkmark \\
+H2 & sparse & $\statUHtwoSparse$ & $\statPHtwoSparse$ & *** & $\statDeltaHtwoSparse$ $\statCIHtwoSparse$ & \checkmark \\
+H2 & scarce & $\statUHtwoScarce$ & $\statPHtwoScarce$ & *** & $\statDeltaHtwoScarce$ $\statCIHtwoScarce$ & \checkmark \\
 \midrule
 \multicolumn{7}{l}{\emph{H3: ProtoOrganelle liberated vs baseline (total\_replications)}} \\
-H3 & rich   & 10\,000 & $<\!10^{-37}$ & *** & 1.00 [1.00, 1.00] & \checkmark \\
-H3 & medium & 10\,000 & $<\!10^{-38}$ & *** & 1.00 [1.00, 1.00] & \checkmark \\
-H3 & sparse & 5\,000  & 1.000         &     & 0.00 [0.00, 0.00] & \texttimes \\
-H3 & scarce & 5\,000  & 1.000         &     & 0.00 [0.00, 0.00] & \texttimes \\
+H3 & rich   & $\statUHthreeRich$ & $\statPHthreeRich$ & *** & $\statDeltaHthreeRich$ $\statCIHthreeRich$ & \checkmark \\
+H3 & medium & $\statUHthreeMedium$ & $\statPHthreeMedium$ & *** & $\statDeltaHthreeMedium$ $\statCIHthreeMedium$ & \checkmark \\
+H3 & sparse & $\statUHthreeSparse$ & $\statPHthreeSparse$ &     & $\statDeltaHthreeSparse$ $\statCIHthreeSparse$ & \texttimes \\
+H3 & scarce & $\statUHthreeScarce$ & $\statPHthreeScarce$ &     & $\statDeltaHthreeScarce$ $\statCIHthreeScarce$ & \texttimes \\
 \midrule
 \multicolumn{7}{l}{\emph{H4: Viroid V0$\rightarrow$V3 monotonic trend (JT)}} \\
-H4 & rich   & 20\,720 & $<\!10^{-12}$ & *** & --- & \checkmark \\
-H4 & medium & 17\,937 & $<\!10^{-100}$ & *** & --- & \checkmark \\
-H4 & sparse & 14\,900 & $<\!10^{-100}$ & *** & --- & \checkmark \\
-H4 & scarce & 14\,900 & $<\!10^{-100}$ & *** & --- & \checkmark \\
+H4 & rich   & 20\,720 & $\statPHfourRich$ & *** & --- & \checkmark \\
+H4 & medium & 17\,937 & $\statPHfourMedium$ & *** & --- & \checkmark \\
+H4 & sparse & 14\,900 & $\statPHfourSparse$ & *** & --- & \checkmark \\
+H4 & scarce & 14\,900 & $\statPHfourScarce$ & *** & --- & \checkmark \\
 \midrule
 \multicolumn{7}{l}{\emph{H5: Viroid V0..V4 vs V0..V3 (alive, more with V4)}} \\
-H5 & rich   & 95     & $<\!10^{-32}$ & *** & $-$0.98 [$-$1.00, $-$0.95] & \texttimes \\
-H5 & medium & 9\,989 & $<\!10^{-33}$ & *** & 1.00 [0.99, 1.00] & \checkmark \\
-H5 & sparse & 10\,000 & $<\!10^{-37}$ & *** & 1.00 [1.00, 1.00] & \checkmark \\
-H5 & scarce & 9\,950 & $<\!10^{-37}$ & *** & 0.99 [0.97, 1.00] & \checkmark \\
+H5 & rich   & $\statUHfiveRich$ & $\statPHfiveRich$ & *** & $\statDeltaHfiveRich$ $\statCIHfiveRich$ & \texttimes \\
+H5 & medium & $\statUHfiveMedium$ & $\statPHfiveMedium$ & *** & $\statDeltaHfiveMedium$ $\statCIHfiveMedium$ & \checkmark \\
+H5 & sparse & $\statUHfiveSparse$ & $\statPHfiveSparse$ & *** & $\statDeltaHfiveSparse$ $\statCIHfiveSparse$ & \checkmark \\
+H5 & scarce & $\statUHfiveScarce$ & $\statPHfiveScarce$ & *** & $\statDeltaHfiveScarce$ $\statCIHfiveScarce$ & \checkmark \\
 \midrule
 \multicolumn{7}{l}{\emph{H6: Viroid V0..V5 vs V0..V4 (alive, more with V5)}} \\
-H6 & rich   & 9\,994 & $<\!10^{-33}$ & *** & 1.00 [1.00, 1.00] & \checkmark \\
-H6 & medium & 1\,403 & $<\!10^{-17}$ & *** & $-$0.72 [$-$0.81, $-$0.61] & \texttimes \\
-H6 & sparse & 0      & $<\!10^{-33}$ & *** & $-$1.00 [$-$1.00, $-$1.00] & \texttimes \\
-H6 & scarce & 50     & $<\!10^{-37}$ & *** & $-$0.99 [$-$1.00, $-$0.97] & \texttimes \\
+H6 & rich   & $\statUHsixRich$ & $\statPHsixRich$ & *** & $\statDeltaHsixRich$ $\statCIHsixRich$ & \checkmark \\
+H6 & medium & $\statUHsixMedium$ & $\statPHsixMedium$ & *** & $\statDeltaHsixMedium$ $\statCIHsixMedium$ & \texttimes \\
+H6 & sparse & $\statUHsixSparse$ & $\statPHsixSparse$ & *** & $\statDeltaHsixSparse$ $\statCIHsixSparse$ & \texttimes \\
+H6 & scarce & $\statUHsixScarce$ & $\statPHsixScarce$ & *** & $\statDeltaHsixScarce$ $\statCIHsixScarce$ & \texttimes \\
 \midrule
 \multicolumn{7}{l}{\emph{H7: Viroid V0$\rightarrow$V5 monotonic trend (JT)}} \\
-H7 & rich   & 36\,893 & $<\!10^{-100}$ & *** & --- & \checkmark \\
-H7 & medium & 27\,131 & $<\!10^{-100}$ & *** & --- & \checkmark \\
-H7 & sparse & 25\,750 & $<\!10^{-100}$ & *** & --- & \checkmark \\
-H7 & scarce & 29\,900 & $<\!10^{-100}$ & *** & --- & \checkmark \\
+H7 & rich   & 36\,893 & $\statPHsevenRich$ & *** & --- & \checkmark \\
+H7 & medium & 27\,131 & $\statPHsevenMedium$ & *** & --- & \checkmark \\
+H7 & sparse & 25\,750 & $\statPHsevenSparse$ & *** & --- & \checkmark \\
+H7 & scarce & 29\,900 & $\statPHsevenScarce$ & *** & --- & \checkmark \\
 \midrule
 \multicolumn{7}{l}{\emph{H8: Viroid V0+V1+V2 vs V0+V1 (alive, more with V2; Amendment~3)}} \\
-H8 & rich   & 9\,152 & $<\!10^{-23}$ & *** & 0.83 [0.75, 0.90] & \checkmark \\
-H8 & medium & 4\,994 & 1.000         &     & $-$0.00 [$-$0.15, 0.16] & \texttimes \\
-H8 & sparse & 5\,000 & 1.000         &     & 0.00 [0.00, 0.00] & \texttimes \\
-H8 & scarce & 5\,000 & 1.000         &     & 0.00 [0.00, 0.00] & \texttimes \\
+H8 & rich   & $\statUHeightRich$ & $\statPHeightRich$ & *** & $\statDeltaHeightRich$ $\statCIHeightRich$ & \checkmark \\
+H8 & medium & $\statUHeightMedium$ & $\statPHeightMedium$ &     & $\statDeltaHeightMedium$ $\statCIHeightMedium$ & \texttimes \\
+H8 & sparse & $\statUHeightSparse$ & $\statPHeightSparse$ &     & $\statDeltaHeightSparse$ $\statCIHeightSparse$ & \texttimes \\
+H8 & scarce & $\statUHeightScarce$ & $\statPHeightScarce$ &     & $\statDeltaHeightScarce$ $\statCIHeightScarce$ & \texttimes \\
 \bottomrule
 \end{tabular}%
 }
@@ -536,12 +536,12 @@ H8 & scarce & 5\,000 & 1.000         &     & 0.00 [0.00, 0.00] & \texttimes \\
 
 \paragraph{Universal confirmations.}
 \textbf{H2} (metabolism buffering) is confirmed at all four harshness levels
-($\delta\!=\!1.00$, all $p_\text{corr}\!<\!10^{-33}$): V3 transforms survival,
+($\delta\!=\!1.00$, all $p_\text{corr}\!\statPHtwoRich$): V3 transforms survival,
 e.g.\ \aliveVzeroVoneVtwoRich{}~$\to$~\aliveVzeroVoneVtwoVthreeRich{} in rich.
 \textbf{H4} and \textbf{H7} (monotonic trends V0--V3 and V0--V5) are significant
 at all harshness levels (JT $p\!<\!10^{-12}$); the V3 recovery dominates the
 aggregate signal despite non-monotonic pairwise patterns
-(Section~\ref{sec:discussion}).
+(see Discussion).
 
 \paragraph{Environment-dependent reversals.}
 \textbf{H1} (boundary tradeoff): V1 reduces survival in rich
@@ -633,7 +633,7 @@ a universal cost valley.
 V1 boundary maintenance shows a measurable cost--benefit tradeoff: it reduces
 survival in resource-rich environments (where repair costs exceed the
 protection benefit) and is near-neutral in sparse/scarce environments
-(where boundary cost approximately offsets the protection benefit—consistent
+(where boundary cost approximately offsets the protection benefit---consistent
 with the tradeoff rather than V1 being ineffective).
 A supplementary V1 regime sweep (Supplement~S8; 84 grid points) shows 69/84
 conditions yield net V1 benefit above composite hazard $\sim$0.005, with
@@ -651,11 +651,11 @@ environmental protection.
 
 Beyond V3, the ladder reveals a second, subtler cost-benefit structure.
 V4 chemotaxis (H5) improves survival in medium through scarce environments
-where resource gradients carry useful information (mean alive rises 61--80\%
-over V3) but \emph{reduces} survival in rich environments ($-24\%$) where
+where resource gradients carry useful information (mean alive rises 21--67\%
+over V3) but \emph{reduces} survival in rich environments ($-26\%$) where
 uniform abundance makes movement wasteful.
 V5 lifecycle staging (H6) shows the opposite environment dependence: dormancy
-and dispersal pay off only in rich environments ($+34\%$ over V4), while in
+and dispersal pay off only in rich environments ($+31\%$ over V4), while in
 sparse and scarce conditions the dormancy phases suppress replication windows
 and dispersal's elevated energy cost ($\times 1.5$) is counterproductive.
 These environment-dependent reversals suggest that ``more capabilities''
@@ -670,7 +670,7 @@ capability addition improves outcomes in every environment.
 The H3 liberation result highlights an \emph{environment-dependent threshold}:
 metabolic infrastructure alone is insufficient without V0, and even with V0,
 resources must sustain the higher replication threshold~(0.80)---consistent
-with serial endosymbiosis scenarios \citep{maturana_1980_autopoiesis}.
+with autopoietic requirements for self-production \citep{maturana_1980_autopoiesis}.
 The H4/H7 monotonic trends (JT) are dominated by the V3 recovery; the
 non-monotonic intermediate dip means the virus-to-life transition is better
 modelled as a \emph{cost-then-benefit} trajectory than as smooth improvement.
@@ -704,7 +704,7 @@ The II operationalises the ``multiple paths to life'' framework of
 space from $\mathrm{II}\!=\!0$ (viroid) through
 $\mathrm{II}\!=\!\iiIIVzeroVoneVtwoVthreeRich{}$ (protocell, rich) toward
 full internalisation.
-\citet{godfreysmith_2013_philosophy}'s distinction between ``paradigm'' and
+\citet{godfreysmith_2014_philosophy}'s distinction between ``paradigm'' and
 ``borderline'' life maps directly onto this continuum.
 Within ALife, the ladder complements emergent-evolution platforms
 (Tierra \citep{ray_1991_approach}, Avida \citep{ofria_2004_avida}) with a
