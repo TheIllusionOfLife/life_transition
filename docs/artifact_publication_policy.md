@@ -30,7 +30,7 @@ Artifact publication splits across two channels:
 | `fig:ii` (Figure 2) | `semi_life_v1v5_test.tsv` | Zenodo |
 | `fig:tradeoff` (Figure 3) | `semi_life_v1v5_test.tsv` | Zenodo |
 | `fig:recovery-s` (Supplement S3) | `semi_life_shocks.tsv` | Zenodo |
-| `tab:stats` (Table 2) | `semi_life_capability_stats.json` | Zenodo |
+| `tab:stats` (Table 1) | `semi_life_capability_stats.json` | Zenodo |
 | `sec:s4` (Supplement S4) | `semi_life_mean_energy_supplement.json` | Zenodo |
 | `sec:s7` (Supplement S7) | `semi_life_competition.json` | Zenodo |
 | `sec:s6` (Supplement S6) | `semi_life_v4_policy_evolution.json` | Zenodo |
