@@ -28,7 +28,10 @@
 
 \title{Semi-Life: A Capability Ladder for the Virus-to-Life Transition}
 
-\author{Anonymous}
+\author{Yuya Mukai$^{1}$ \\
+\mbox{} \\
+$^1$Mukai Entertainment, Japan \\
+mukaiyuya@gmail.com}
 
 \begin{document}
 \InputIfFileExists{auto_macros}{}{}
@@ -39,7 +42,7 @@
 When does a minimal replicator become life-like?
 We introduce \emph{Semi-Life}: a parameterized family of minimal
 replicators---Viroid, Virus, and ProtoOrganelle---cohabiting a seven-criterion
-artificial life world \citep{background_2026_digital}.
+artificial life world.
 Each archetype begins at a different point on a \emph{Capability Ladder}
 (V0: replication; V1: boundary; V2: homeostasis; V3: metabolism;
 V4: response to stimuli; V5: staged lifecycle) and gains capabilities one step
@@ -58,8 +61,8 @@ capability is justified only when coupled with sufficient internal infrastructur
 \end{abstract}
 
 Submission type: \textbf{Full Paper}\\
-
-\blfootnote{\textcopyright 2026 The Author(s). Published under a Creative
+Data/Code available at: \url{https://github.com/TheIllusionOfLife/life_transition}
+\blfootnote{\textcopyright 2026 Yuya Mukai. Published under a Creative
 Commons Attribution 4.0 International (CC BY 4.0) license.}
 
 % ============================================================================
@@ -78,15 +81,14 @@ parasites---are precisely where a definition is most needed.
 A complementary approach replaces the question ``is it alive?'' with a
 measurable continuum: \emph{to what degree does this entity exhibit
 life-like functional organisation?}
-The functional analogy framework of \citet{background_2026_digital} operationalises
-this question for ALife systems: a capability is a functional analogy of a
-biological criterion if and only if (a) it requires sustained resource
-consumption, (b) its removal causes measurable population degradation, and
-(c) it forms a feedback loop with at least one other criterion.
-In an anonymized companion submission, a seven-criterion system implementing
-cellular organisation, metabolism, homeostasis, growth, reproduction, response
-to stimuli, and evolution reported criterion-ablation effects ranging from
-$\delta=0.39$ to $1.00$ (Cliff's~$\delta$, Holm-Bonferroni corrected).
+We adopt a \emph{functional analogy framework}: a computational capability is
+a functional analogy of a biological criterion if and only if (a) it requires
+sustained resource consumption, (b) its removal causes measurable population
+degradation, and (c) it forms a feedback loop with at least one other criterion.
+The background platform (Section~\ref{sec:background}) implements all seven
+textbook criteria---cellular organisation, metabolism, homeostasis, growth,
+reproduction, response to stimuli, and evolution---as interdependent dynamic
+processes validated through criterion-ablation tests.
 
 The present work asks a complementary question: \emph{can a minimal replicator
 become life-like by internalising the functions it initially outsources?}
@@ -115,15 +117,13 @@ falsifiable metric of life-likeness progress.
 \section{Background Platform}
 \label{sec:background}
 
-The background world is the seven-criterion ALife system of
-\citet{background_2026_digital}: a population of swarm-based organisms
-in a continuous 2D environment, each instantiating cellular organisation,
-metabolism, homeostasis, growth, reproduction, response to stimuli, and
-evolution as interdependent dynamic processes.
+The background world is a seven-criterion ALife system: a population of
+swarm-based organisms in a continuous 2D environment, each instantiating
+cellular organisation, metabolism, homeostasis, growth, reproduction,
+response to stimuli, and evolution as interdependent dynamic processes.
 Each criterion satisfies the functional analogy conditions:
 (a)~per-step resource cost, (b)~removal causes significant population
-decline ($p_\text{corr}\!\leq\!0.005$, Holm-Bonferroni, $n\!=\!30$), and
-(c)~cross-criterion feedback loops.
+decline, and (c)~cross-criterion feedback loops.
 
 Critically, the world's organism population is \emph{not affected} by the
 Semi-Life entities introduced in this paper: Semi-Life uptake
@@ -344,8 +344,8 @@ harshness.
 \label{sec:prereg}
 
 Eight directional hypotheses were pre-registered before test-seed data
-collection (pre-registration document in repository; URL withheld for
-double-blind review).
+collection (pre-registration document available at
+\url{https://github.com/TheIllusionOfLife/life_transition/blob/main/docs/research/preregistration.md}).
 H1--H7: Amendments 1--2; H8: Amendment~3.
 Holm-Bonferroni correction across all 32 tests.
 Full rationales are in Supplement~S2; predictions are:
@@ -772,11 +772,15 @@ at ecological timescales.
 \section*{Data Availability}
 
 All simulation code, experiment scripts, pre-registration, and analysis
-pipelines are available in the project repository (URL withheld for
-double-blind review).
-Raw TSV data files and statistical output (JSON) will be archived on
-Zenodo upon acceptance, with a persistent DOI linked from the
-camera-ready manuscript.
+pipelines are available at
+\url{https://github.com/TheIllusionOfLife/life_transition}.
+Raw TSV data files and statistical output (JSON) are archived on
+Zenodo at \url{https://doi.org/10.5281/zenodo.18795806}.
+
+% ============================================================================
+\section*{Acknowledgements}
+
+This research received no external funding.
 
 % ============================================================================
 

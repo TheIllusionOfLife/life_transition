@@ -56,3 +56,21 @@ zenodo_staging/
 *.swp
 *.swo
 out/
+
+# Internal development docs (not for public consumption)
+CLAUDE.md
+AGENTS.md
+PRODUCT.md
+STRUCTURE.md
+TECH.md
+.claude/
+.jules/
+docs/archive/
+docs/peer_reviews/
+docs/paper/
+docs/artifact_publication_policy.md
+docs/research/*
+!docs/research/preregistration.md
+!docs/research/result_manifest_bindings.json
+!docs/research/manifest_reference.json
+!docs/research/zenodo_niche_long_horizon_metadata.json
