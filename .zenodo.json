@@ -4,7 +4,7 @@
   "upload_type": "software",
   "access_right": "open",
   "version": "1.0.0",
-  "creators": [{"name": "Anonymous"}],
+  "creators": [{"name": "Mukai, Yuya", "affiliation": "Mukai Entertainment"}],
   "license": "MIT",
   "keywords": ["artificial life", "semi-life", "capability ladder", "virus-to-life transition"],
   "language": "eng"

@@ -1,8 +1,14 @@
 # Life Transition
 
-Life Transition is an artificial life research project studying the **Virus → Semi-Life → Life** transition: can a virus-like replicator become life-like by internalizing the biological functions it originally outsourced?
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18795806.svg)](https://doi.org/10.5281/zenodo.18795806)
 
-The repository is a Rust workspace with optional Python bindings, targeting ALIFE 2026.
+**Semi-Life: A Capability Ladder for the Virus-to-Life Transition**
+
+An artificial life research project studying the Virus to Semi-Life to Life transition: can a virus-like replicator become life-like by internalizing the biological functions it originally outsourced?
+
+**Author**: Yuya Mukai, Mukai Entertainment
+
+This repository contains the simulation code, experiment scripts, and analysis pipelines for the ALIFE 2026 paper.
 
 ## Quick Start
 
@@ -53,7 +59,6 @@ uv run python scripts/prepare_zenodo_metadata.py experiments/niche_normal_long.j
 - Commit code, manifests, compact summaries, and figure-ready outputs.
 - Do not commit large raw experiment outputs to git.
 - Publish heavy artifacts to Zenodo with checksums and commit provenance.
-- Detailed policy: `docs/research/artifact_publication_policy.md`
 
 ### Config Compatibility Note
 
@@ -82,12 +87,7 @@ print(life_transition.version())
 
 ## Repository Docs
 
-- `AGENTS.md`: instructions for coding agents and contributors
-- `PRODUCT.md`: product goals and user value
-- `TECH.md`: technology stack and technical constraints
-- `STRUCTURE.md`: code/documentation layout and conventions
-- `docs/README.md`: documentation index
-- `docs/research/`: research planning artifacts and historical design docs
+- `docs/research/preregistration.md`: pre-registered hypotheses H1-H8
 - `docs/research/result_manifest_bindings.json`: manifest-to-paper result provenance map
 
 ## Architecture (High-Level)
@@ -103,6 +103,8 @@ print(life_transition.version())
 - Keep commits focused and test-backed
 - Open PRs against `main` with test evidence (`fmt`, `clippy`, `test`)
 
-## Current Status
+## Citation
 
-This is an active research prototype. APIs and model details may evolve quickly as experiments progress.
+If you use this code, please cite:
+
+> Mukai, Y. (2026). Semi-Life: A Capability Ladder for the Virus-to-Life Transition. In *The 2026 Conference on Artificial Life (ALIFE 2026)*.

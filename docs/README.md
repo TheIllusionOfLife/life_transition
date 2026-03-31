@@ -3,21 +3,18 @@
 ## Core Project Docs
 
 - `../README.md`
-- `../AGENTS.md`
-- `../PRODUCT.md`
-- `../TECH.md`
-- `../STRUCTURE.md`
 
 ## Research Docs
 
-- `research/research-plan.md`
+- `research/preregistration.md`
 - `research/result_manifest_bindings.json`
 - `research/manifest_reference.json`
-- `research/ecological_differentiation_policy.md`
-- `research/preregistration.md`
-- `research/functional-analogy-definition.md`
-- `research/artifact_publication_policy.md`
 
-Research docs are planning/provenance artifacts for this phase. For active implementation and operations, prefer root-level docs (`README.md`, `AGENTS.md`, `STRUCTURE.md`, `TECH.md`) and the current research docs listed above.
+## Conference Docs
 
-Heavy experiment outputs are published via Zenodo per `docs/research/artifact_publication_policy.md`; keep repository-tracked artifacts compact and reproducible.
+- `alife_official_docs/` — ALIFE 2026 templates and submission info
+- `alife_submission_guide.md` — Pre-filled submission form guide
+
+## Data Archival
+
+Heavy experiment outputs are published via Zenodo; keep repository-tracked artifacts compact and reproducible.
