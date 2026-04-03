@@ -1,6 +1,6 @@
 # Life Transition
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19351508.svg)](https://doi.org/10.5281/zenodo.19351508)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19397251.svg)](https://doi.org/10.5281/zenodo.19397251)
 
 **Semi-Life: A Capability Ladder from Replicator to Life**
 
