@@ -1,11 +1,11 @@
 {
-  "title": "Semi-Life: A Capability Ladder for the Virus-to-Life Transition",
+  "title": "Semi-Life: A Capability Ladder from Replicator to Life",
   "description": "Simulation code and analysis for ALIFE 2026 paper",
   "upload_type": "software",
   "access_right": "open",
   "version": "1.0.0",
   "creators": [{"name": "Mukai, Yuya", "affiliation": "Mukai Entertainment"}],
   "license": "MIT",
-  "keywords": ["artificial life", "semi-life", "capability ladder", "virus-to-life transition"],
+  "keywords": ["artificial life", "semi-life", "capability ladder", "replicator-to-life transition"],
   "language": "eng"
 }

@@ -14,7 +14,7 @@
 
 ## 2. Title
 
-Semi-Life: A Capability Ladder for the Virus-to-Life Transition
+Semi-Life: A Capability Ladder from Replicator to Life
 
 ## 3. Presentation Preference
 
@@ -55,7 +55,7 @@ No
 
 ## 7. Abstract (plain text, ~150 words)
 
-When does a minimal replicator become life-like? We introduce Semi-Life: a parameterized family of minimal replicators -- Viroid, Virus, and ProtoOrganelle -- cohabiting a seven-criterion artificial life world. Each archetype begins at a different point on a Capability Ladder (V0: replication; V1: boundary; V2: homeostasis; V3: metabolism; V4: response to stimuli; V5: staged lifecycle) and gains capabilities one step at a time. Progress is quantified by a multi-channel Internalization Index (II) combining energy, regulation, behaviour, and lifecycle channels. II provides a continuous axis from virus-like (II near 0) to life-like (II > 0). Eight directional hypotheses were pre-registered with Holm-Bonferroni correction across 32 tests (n=100 held-out seeds, four harshness levels). We find environment-dependent cost-benefit tradeoffs: V1/V2 impose overhead recovered by V3 metabolism; V4 chemotaxis improves survival in scarce environments; V5 lifecycle staging provides dormancy-based conservation. The virus-to-life transition is a cost-then-benefit trajectory where each capability is justified only when coupled with sufficient internal infrastructure.
+When does a minimal replicator become life-like? We introduce Semi-Life: a parameterized family of minimal replicators -- Viroid, Virus, and ProtoOrganelle -- cohabiting a seven-criterion artificial life world. Each archetype begins at a different point on a Capability Ladder (V0: replication; V1: boundary; V2: homeostasis; V3: metabolism; V4: response to stimuli; V5: staged lifecycle) and gains capabilities one step at a time. Progress is quantified by a multi-channel Internalization Index (II) combining energy, regulation, behaviour, and lifecycle channels. II provides a continuous axis from virus-like (II near 0) to life-like (II > 0). Eight directional hypotheses were pre-registered with Holm-Bonferroni correction across 32 tests (n=100 held-out seeds, four harshness levels). We find environment-dependent cost-benefit tradeoffs: V1/V2 impose overhead recovered by V3 metabolism; V4 chemotaxis improves survival in scarce environments; V5 lifecycle staging provides dormancy-based conservation. The replicator-to-life transition is a cost-then-benefit trajectory where each capability is justified only when coupled with sufficient internal infrastructure.
 
 ## 8. Paper Upload
 

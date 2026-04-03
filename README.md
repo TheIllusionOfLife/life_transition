@@ -2,7 +2,7 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19351508.svg)](https://doi.org/10.5281/zenodo.19351508)
 
-**Semi-Life: A Capability Ladder for the Virus-to-Life Transition**
+**Semi-Life: A Capability Ladder from Replicator to Life**
 
 An artificial life research project studying the Virus to Semi-Life to Life transition: can a virus-like replicator become life-like by internalizing the biological functions it originally outsourced?
 
@@ -107,4 +107,4 @@ print(life_transition.version())
 
 If you use this code, please cite:
 
-> Mukai, Y. (2026). Semi-Life: A Capability Ladder for the Virus-to-Life Transition. In *The 2026 Conference on Artificial Life (ALIFE 2026)*.
+> Mukai, Y. (2026). Semi-Life: A Capability Ladder from Replicator to Life. In *The 2026 Conference on Artificial Life (ALIFE 2026)*.
