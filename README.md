@@ -1,6 +1,6 @@
 # Life Transition
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18795806.svg)](https://doi.org/10.5281/zenodo.18795806)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19351508.svg)](https://doi.org/10.5281/zenodo.19351508)
 
 **Semi-Life: A Capability Ladder for the Virus-to-Life Transition**
 
